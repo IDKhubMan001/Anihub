@@ -1,0 +1,1004 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>AniHub — аниме без рекламы: просмотр и совместный стриминг</title>
+<meta name="description" content="AniHub: каталог аниме, плеер с пропуском опенинга/эндинга, субтитры, озвучки, закладки и комнаты совместного просмотра. Реальное видео: свой HLS, Kodik или любой embed-плеер.">
+<script>try{document.documentElement.dataset.theme=JSON.parse(localStorage.getItem('ah:theme')||'"dark"')}catch(e){}</script>
+<style>
+:root{--bg:#f6f4f1;--bg2:#efece7;--panel:#fff;--panel2:#f2efea;--line:#e2ddd5;--ink:#15151b;--muted:#6d6a76;--accent:#d81e5b;--aink:#fff;--asoft:rgba(216,30,91,.12);--cyan:#0e7f9c;--live:#e0324a;--shadow:0 18px 40px -24px rgba(20,18,30,.45);--fd:"Trebuchet MS","Segoe UI",system-ui,sans-serif;--fb:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+[data-theme=dark]{--bg:#0a0a0f;--bg2:#0f0f16;--panel:#131319;--panel2:#1a1a22;--line:#26262f;--ink:#f4f2ee;--muted:#9b99a7;--accent:#ff4e6a;--aink:#12060a;--asoft:rgba(255,78,106,.16);--cyan:#59d2fe;--live:#ff3b52;--shadow:0 24px 60px -30px rgba(0,0,0,.85)}
+*{box-sizing:border-box;border-color:var(--line)}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--fb);line-height:1.45;overflow-x:hidden}
+h1,h2,h3,h4{font-family:var(--fd);letter-spacing:-.02em;margin:0}a{color:inherit;text-decoration:none}button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+::selection{background:var(--accent);color:var(--aink)}
+.skip{position:absolute;left:-999px;top:8px;background:var(--accent);color:var(--aink);padding:8px 14px;border-radius:8px;z-index:200;font-weight:700}.skip:focus{left:8px}
+.wrap{max-width:1400px;margin:0 auto;padding:0 clamp(14px,3vw,40px)}
+header.top{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--bg) 86%,transparent);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.hrow{display:flex;align-items:center;gap:12px;height:64px}
+.logo{display:flex;align-items:center;gap:8px;font-family:var(--fd);font-weight:800;font-size:18px}.logo i{display:grid;place-items:center;width:36px;height:36px;border-radius:12px;background:var(--accent);color:var(--aink);font-style:normal}.logo b{color:var(--accent)}
+nav.main{display:flex;gap:2px;margin-left:6px}nav.main a{padding:8px 12px;border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);position:relative}nav.main a:hover{color:var(--ink)}nav.main a.on{color:var(--accent)}nav.main a.on:after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:2px;background:var(--accent);border-radius:2px}
+.sbox{position:relative;margin-left:auto;flex:1;max-width:420px}.sbox input{width:100%;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:14px;outline:0}.sbox input:focus{border-color:var(--accent)}
+.sres{position:absolute;top:100%;left:0;right:0;margin-top:8px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;max-height:380px;overflow-y:auto;z-index:60}
+.sres a{display:flex;gap:10px;align-items:center;padding:8px 12px}.sres a:hover{background:var(--panel2)}.sres img{width:36px;height:50px;object-fit:cover;border-radius:6px}.sres small{display:block;color:var(--muted);font-size:11px}.sres b{font-size:13px;display:block}
+.sres p{margin:0;padding:12px;font-size:12px;color:var(--muted)}
+.ibtn{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 11px;font-size:14px;position:relative}.ibtn:hover{color:var(--accent);border-color:var(--accent)}
+.badge{position:absolute;top:-6px;right:-6px;background:var(--accent);color:var(--aink);font-size:10px;font-weight:800;border-radius:99px;min-width:16px;height:16px;display:grid;place-items:center}
+.burger{display:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:12px;font-family:var(--fd);font-weight:700;font-size:13px;padding:9px 16px;border:1px solid var(--line);background:var(--panel);transition:.2s}.btn:hover{border-color:var(--accent);color:var(--accent)}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.pri{background:var(--accent);color:var(--aink);border-color:var(--accent);box-shadow:0 10px 30px -14px var(--accent)}.btn.pri:hover{filter:brightness(1.1);color:var(--aink)}
+.btn.sm{padding:5px 10px;font-size:11px;border-radius:9px}.btn.lg{padding:13px 24px;font-size:15px}.btn.dng{color:var(--live);border-color:color-mix(in srgb,var(--live) 40%,transparent);background:color-mix(in srgb,var(--live) 10%,transparent)}.btn.ghost{border-color:transparent;background:transparent}
+.chip{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:99px;padding:4px 12px;font-size:12px;font-weight:600}.chip.on{border-color:var(--accent);background:var(--asoft);color:var(--accent)}
+input,select,textarea{font:inherit;color:var(--ink)}.inp{width:100%;padding:9px 12px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);outline:0;font-size:14px}.inp:focus{border-color:var(--accent)}
+label.f{display:block}label.f>span{display:flex;justify-content:space-between;font-family:var(--fd);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}label.f small{color:var(--muted);text-transform:none;letter-spacing:0;font-family:var(--fb);font-weight:400}
+input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;width:100%}input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:99px;background:var(--line)}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;height:14px;width:14px;margin-top:-5px;border-radius:50%;background:var(--accent);border:2px solid var(--panel)}input[type=range]::-moz-range-track{height:4px;border-radius:99px;background:var(--line)}input[type=range]::-moz-range-thumb{height:14px;width:14px;border-radius:50%;background:var(--accent);border:2px solid var(--panel)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px}
+.eyebrow{font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+.muted{color:var(--muted)}.sm{font-size:12px}.tiny{font-size:11px}
+.pagehead{border-bottom:1px solid var(--line);padding:36px 0 22px}.pagehead h1{font-size:clamp(2rem,5vw,3.4rem);line-height:1;font-weight:800;margin-top:8px}.pagehead p{max-width:680px;color:var(--muted);font-size:14px;margin:12px 0 0}
+.sechead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;border-bottom:1px solid var(--line);padding-bottom:12px;margin:56px 0 18px}.sechead h2{font-size:clamp(1.2rem,2.4vw,1.6rem);font-weight:800}.sechead p{margin:4px 0 0;font-size:12px;color:var(--muted)}.sechead a{color:var(--accent);font-weight:700;font-size:12px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.grid.w{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+.card{display:block;position:relative}.card .pw{position:relative;aspect-ratio:2/3;border-radius:14px;overflow:hidden;border:1px solid var(--line);background:var(--panel2);transition:transform .45s cubic-bezier(.22,1,.36,1),box-shadow .45s}.card:hover .pw{transform:translateY(-8px) scale(1.02);box-shadow:0 30px 60px -30px rgba(0,0,0,.75)}
+.card img{width:100%;height:100%;object-fit:cover;transition:transform .7s}.card:hover img{transform:scale(1.1)}
+.card .shade{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.92),rgba(0,0,0,.2) 55%,transparent)}.card .bar{position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--ac);transform:scaleX(0);transform-origin:left;transition:.5s}.card:hover .bar{transform:scaleX(1)}
+.card .sc{position:absolute;top:8px;right:8px;background:rgba(0,0,0,.65);color:#fcd34d;font-size:10px;font-weight:800;padding:2px 7px;border-radius:7px}
+.card .rk{position:absolute;top:6px;left:10px;font-family:var(--fd);font-size:30px;font-weight:800;color:rgba(255,255,255,.28)}.card:hover .rk{color:var(--ac)}
+.card .cap{position:absolute;left:0;right:0;bottom:0;padding:10px;color:#fff}.card .cap b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-family:var(--fd);font-size:12.5px;line-height:1.2}.card .cap small{display:block;margin-top:4px;font-size:10px;color:rgba(255,255,255,.65)}
+.card .pg{height:3px;background:rgba(255,255,255,.2);border-radius:9px;margin-top:7px;overflow:hidden}.card .pg i{display:block;height:100%;background:var(--ac)}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.tags span{background:var(--panel2);color:var(--muted);border-radius:6px;padding:1px 6px;font-size:10px}
+.hero{position:relative;min-height:84vh;overflow:hidden;display:flex;align-items:center;color:#fff}
+.hero .bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.55;filter:saturate(1.2);animation:kb 26s ease-in-out infinite}
+@keyframes kb{0%,100%{transform:scale(1.04)}50%{transform:scale(1.14) translate(-1.5%,-1.5%)}}
+.hero:after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,rgba(6,6,10,.97),rgba(6,6,10,.72) 50%,rgba(6,6,10,.3)),radial-gradient(circle at 78% 18%,rgba(255,78,106,.3),transparent 55%)}
+.hero .in{position:relative;z-index:2;display:grid;gap:40px;grid-template-columns:1.15fr .85fr;padding:70px 0}
+.hero h1{font-size:clamp(2.4rem,7vw,5.2rem);line-height:.92;font-weight:800}.hero h1 em{font-style:normal;color:var(--accent)}.hero h1 u{text-decoration:none;color:var(--cyan)}
+.pill{display:inline-flex;gap:8px;align-items:center;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);padding:6px 14px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.1);border-radius:16px;overflow:hidden;max-width:520px;margin-top:40px}.stats div{background:rgba(0,0,0,.45);padding:10px 14px}.stats b{display:block;font-family:var(--fd);font-size:22px}.stats small{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5)}
+.glass{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:16px;backdrop-filter:blur(14px)}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--live);animation:pl 1.8s infinite}@keyframes pl{0%,100%{box-shadow:0 0 0 0 rgba(255,59,82,.55)}70%{box-shadow:0 0 0 10px rgba(255,59,82,0)}}
+.marq{overflow:hidden;border-block:1px solid var(--line);background:var(--panel);padding:12px 0}.marq div{display:flex;gap:32px;width:max-content;animation:mq 50s linear infinite}.marq span{white-space:nowrap;font-family:var(--fd);font-weight:700;font-size:14px;color:var(--muted)}.marq span b{color:var(--accent);margin-left:8px}@keyframes mq{to{transform:translateX(-50%)}}
+.feat{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}.feat div{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;transition:.3s}.feat div:hover{transform:translateY(-4px);border-color:var(--accent)}.feat h3{font-size:14px;margin-bottom:6px}.feat p{margin:0;font-size:12px;color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+.list{display:grid;gap:8px}.item{display:flex;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px;transition:.25s}a.item:hover{border-color:var(--accent);transform:translateY(-2px)}
+.item img{width:48px;height:68px;object-fit:cover;border-radius:8px;flex:none}.item .t{min-width:0;flex:1}.item b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.item small{color:var(--muted);font-size:11px}
+.prog{height:4px;background:var(--panel2);border-radius:9px;overflow:hidden;margin-top:6px}.prog i{display:block;height:100%;background:var(--accent)}
+.ep{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--panel)}.ep:hover{border-color:var(--accent)}.ep.on{border-color:var(--accent);background:var(--asoft)}.ep .n{display:grid;place-items:center;width:34px;height:34px;border-radius:9px;background:var(--panel2);font-family:var(--fd);font-weight:800;font-size:12px;color:var(--muted);flex:none}.ep.on .n{background:var(--accent);color:var(--aink)}
+.tbanner{position:relative;overflow:hidden;color:#fff}.tbanner .bg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.4}.tbanner:after{content:"";position:absolute;inset:0;background:linear-gradient(to top,var(--bg) 4%,rgba(10,10,15,.75) 60%,rgba(10,10,15,.5))}
+.tbanner .in{position:relative;z-index:2;display:flex;gap:32px;padding:48px 0 32px}.tbanner .poster{width:min(240px,40vw);flex:none;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.15);box-shadow:0 40px 80px -40px #000;align-self:flex-start}.tbanner .poster img{display:block;width:100%;aspect-ratio:2/3;object-fit:cover}
+.tbanner h1{font-size:clamp(1.9rem,5vw,3.6rem);line-height:.96;font-weight:800}
+.two{display:grid;gap:24px;grid-template-columns:minmax(0,1fr) 340px;padding-top:28px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);flex-wrap:wrap}.tabs button{background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:10px 14px;font-family:var(--fd);font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}.tabs button.on{color:var(--accent);border-color:var(--accent)}
+.warn{border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.1);color:#f59e0b;border-radius:12px;padding:10px 14px;font-size:11.5px}
+.vnote{border:1px solid color-mix(in srgb,var(--cyan) 40%,transparent);background:color-mix(in srgb,var(--cyan) 10%,transparent);color:var(--cyan);border-radius:12px;padding:10px 14px;font-size:11.5px}
+.fbar{position:sticky;top:64px;z-index:30;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(14px);border-block:1px solid var(--line);padding:12px 0;margin-top:20px}
+.fpanel{margin-top:10px;display:grid;gap:14px}.fpanel h4{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:var(--muted);margin-bottom:8px}
+.empty{border:1px dashed var(--line);border-radius:18px;padding:48px 20px;text-align:center;background:color-mix(in srgb,var(--panel) 60%,transparent)}.empty h3{margin-bottom:8px}.empty p{color:var(--muted);font-size:13px;max-width:460px;margin:0 auto 14px}
+#toasts{position:fixed;right:14px;bottom:14px;z-index:300;display:grid;gap:8px;width:min(360px,calc(100vw - 28px))}.toast{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;box-shadow:var(--shadow);animation:rise .4s both}.toast b{display:block;font-family:var(--fd);font-size:13px}.toast small{color:var(--muted);font-size:11px}.toast.err{border-color:var(--live)}.toast.ok{border-color:#10b981}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.mback{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.72);backdrop-filter:blur(4px);display:grid;place-items:center;padding:14px}.modal{background:var(--panel);border:1px solid var(--line);border-radius:18px;width:min(520px,100%);max-height:90vh;overflow:auto;box-shadow:var(--shadow);animation:rise .35s both}.modal.w{width:min(720px,100%)}.mh{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}.mh h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em}.mb{padding:18px;display:grid;gap:14px}
+footer.foot{margin-top:90px;border-top:1px solid var(--line);background:var(--bg2);padding:40px 0 24px}.foot .cols{display:grid;gap:30px;grid-template-columns:1.4fr repeat(3,1fr)}.foot h4{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-bottom:12px}.foot li{list-style:none;margin:0 0 8px;font-size:13px}.foot ul{padding:0;margin:0}.foot li a:hover{color:var(--accent)}.foot .copy{margin-top:30px;border-top:1px solid var(--line);padding-top:16px;font-size:11px;color:var(--muted)}
+/* player */
+.player{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);user-select:none;color:#fff}
+.player video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+.player iframe.kframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+.player .sub{position:absolute;left:50%;transform:translateX(-50%);max-width:88%;padding:.25em .6em;border-radius:6px;text-align:center;font-weight:600;line-height:1.35;white-space:pre-line;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.6)}
+.ptop{position:absolute;inset:0 0 auto 0;display:flex;justify-content:space-between;gap:10px;padding:14px;background:linear-gradient(to bottom,rgba(0,0,0,.8),transparent);transition:opacity .3s;pointer-events:none}.ptop b{display:block;font-family:var(--fd);font-size:14px}.ptop small{color:rgba(255,255,255,.6);font-size:11px}.ptop .pb{display:flex;gap:6px;align-items:flex-start}.ptop .pb span{background:rgba(255,255,255,.12);border-radius:7px;padding:3px 8px;font-family:var(--fd);font-size:10px;font-weight:700;white-space:nowrap;height:fit-content}
+.bigplay{position:absolute;inset:0;margin:auto;width:80px;height:80px;border-radius:50%;border:0;background:var(--accent);color:var(--aink);font-size:30px;box-shadow:0 20px 60px -20px var(--accent);transition:transform .3s;z-index:5}.bigplay:hover{transform:scale(1.1)}
+.spin,.perr{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.45);font-size:12px;z-index:6}.perr{margin:auto;inset:auto 24px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.88);border:1px solid var(--live);border-radius:12px;padding:14px;text-align:center}
+.skipbtn{position:absolute;right:16px;bottom:96px;z-index:20;border:0;background:var(--accent);color:var(--aink);border-radius:12px;padding:9px 16px;font-family:var(--fd);font-weight:800;font-size:12px;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+.cd{position:absolute;inset:0;z-index:25;background:rgba(0,0,0,.82);display:grid;place-items:center;text-align:center;padding:24px}.cd h3{font-size:20px;margin:8px 0}.cd .b{height:4px;background:rgba(255,255,255,.15);border-radius:9px;overflow:hidden;margin:12px auto;max-width:320px}.cd .b i{display:block;height:100%;background:var(--accent);transition:width 1s linear}
+.pctl{position:absolute;inset:auto 0 0 0;z-index:15;padding:34px 12px 10px;background:linear-gradient(to top,rgba(0,0,0,.93),rgba(0,0,0,.7) 55%,transparent);transition:.3s}
+.player.idle .pctl{opacity:0;transform:translateY(10px);pointer-events:none}.player.idle .ptop{opacity:0}.player.idle{cursor:none}
+.bar{position:relative;height:16px;cursor:pointer;margin-bottom:6px}.bar i{position:absolute;top:50%;height:4px;transform:translateY(-50%);border-radius:9px}.bar:before{content:"";position:absolute;top:50%;left:0;right:0;height:4px;transform:translateY(-50%);background:rgba(255,255,255,.2);border-radius:9px}
+.bar .buf{left:0;background:rgba(255,255,255,.25)}.bar .ri{background:rgba(89,210,254,.65)}.bar .ro{background:rgba(251,191,36,.65)}.bar .fill{left:0;background:var(--accent)}
+.bar .marks span{position:absolute;top:50%;transform:translate(-50%,-50%);color:var(--accent);font-size:11px}
+.pctl .row{gap:6px;flex-wrap:wrap}.pctl button{border:0;border-radius:9px;background:rgba(255,255,255,.1);color:#fff;padding:7px 10px;font-size:12px;font-weight:700;min-width:34px}.pctl button:hover{background:rgba(255,255,255,.2)}.pctl button.on{background:var(--accent);color:var(--aink)}
+.pctl .tm{font-family:var(--fd);font-size:11px;font-variant-numeric:tabular-nums;margin-left:4px}.pctl .sp{flex:1}.vol{width:0!important;opacity:0;transition:.3s}.pctl .row:hover .vol,.vol:focus{width:80px!important;opacity:1}
+.pset{position:absolute;inset:0 0 0 auto;width:min(420px,100%);z-index:30;background:color-mix(in srgb,var(--panel) 94%,transparent);backdrop-filter:blur(16px);border-left:1px solid var(--line);overflow-y:auto;color:var(--ink);padding:14px;display:grid;gap:18px;align-content:start}
+.pset h4{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:8px}.pset section{display:grid;gap:8px}
+.pset .opts{display:flex;flex-wrap:wrap;gap:6px}.pset .opts button,.pset .tg{border:1px solid var(--line);background:var(--bg2);color:var(--muted);border-radius:9px;padding:6px 10px;font-size:12px;font-weight:700;pointer-events:auto}.pset .opts button.on{border-color:var(--accent);background:var(--asoft);color:var(--accent)}
+.pset .tg{display:flex;width:100%;justify-content:space-between;align-items:center;color:var(--ink);text-align:left}.sw{position:relative;width:34px;height:18px;border-radius:99px;background:var(--line);flex:none}.sw:after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s}.on .sw{background:var(--accent)}.on .sw:after{transform:translateX(16px)}
+.pset .rng{border:1px solid var(--line);background:var(--bg2);border-radius:12px;padding:10px}.pset .rng .g{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.pset .rng input[type=number]{width:100%;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--panel);outline:0}
+.pset[hidden]{display:none!important}
+.pset kbd{font-family:var(--fd);font-size:10px;font-weight:700}.keys{display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:var(--muted)}.keys li{list-style:none;border:1px solid var(--line);border-radius:7px;padding:3px 7px;display:flex;justify-content:space-between;gap:6px}.keys{padding:0;margin:0}
+.syncb{position:absolute;top:58px;left:14px;z-index:8;background:rgba(0,0,0,.55);border-radius:9px;padding:4px 10px;font-size:10px;font-weight:700;pointer-events:none}
+/* room */
+.room{display:grid;gap:20px;grid-template-columns:minmax(0,1fr) 400px;padding-top:18px}
+.chat{display:flex;flex-direction:column;height:min(78vh,760px);background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden;position:sticky;top:76px}
+.chat .hd{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}.chat .hd h3{font-size:13px;text-transform:uppercase}
+.mode{border-radius:99px;padding:2px 8px;font-size:10px;font-weight:700;border:1px solid}.mode.g{color:#10b981;border-color:rgba(16,185,129,.35);background:rgba(16,185,129,.1)}.mode.a{color:#f59e0b;border-color:rgba(245,158,11,.35);background:rgba(245,158,11,.1)}.mode.b{color:#38bdf8;border-color:rgba(56,189,248,.35);background:rgba(56,189,248,.1)}
+.msgs{flex:1;overflow-y:auto;padding:10px;display:grid;gap:4px;align-content:start}
+.msg{position:relative;display:flex;gap:9px;padding:6px 8px;border-radius:12px}.msg:hover{background:var(--panel2)}.msg.pin{border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);background:var(--asoft)}
+.msg .b{min-width:0;flex:1}.msg .nm{font-size:12px;font-weight:800;margin-right:6px}.msg p{margin:2px 0 0;font-size:13px;word-break:break-word;white-space:pre-wrap}.msg time{font-size:10px;color:var(--muted)}
+.msg .act{position:absolute;top:2px;right:4px;display:none;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:1px}.msg:hover .act{display:flex}.msg .act button{border:0;background:none;padding:2px 5px;font-size:12px;border-radius:6px}.msg .act button:hover{background:var(--panel2)}
+.msg img.gif{max-height:170px;max-width:100%;border-radius:10px;margin-top:4px;display:block}
+.sysm{border:1px dashed var(--line);background:var(--bg2);border-radius:10px;padding:5px 10px;font-size:11px;color:var(--muted)}
+.rx{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.rx button{border:1px solid var(--line);background:var(--bg2);border-radius:99px;padding:1px 7px;font-size:11px}.rx button.me{border-color:var(--accent);background:var(--asoft);color:var(--accent)}
+.emo{position:absolute;right:4px;top:30px;z-index:5;display:flex;gap:2px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:4px;box-shadow:var(--shadow)}.emo button{border:0;background:none;font-size:16px;border-radius:8px;padding:2px 5px}.emo button:hover{background:var(--panel2);transform:scale(1.2)}
+.cform{border-top:1px solid var(--line);padding:10px;display:grid;gap:6px}.cform .in{display:flex;gap:8px;align-items:center}.cform .box{flex:1;display:flex;gap:6px;align-items:center;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:3px 8px}.cform .box:focus-within{border-color:var(--accent)}.cform input{flex:1;background:none;border:0;outline:0;padding:7px 0;font-size:13px;min-width:0}
+.err{color:var(--live);font-size:11px;border:1px solid color-mix(in srgb,var(--live) 40%,transparent);background:color-mix(in srgb,var(--live) 10%,transparent);border-radius:9px;padding:5px 10px}
+.tag{display:inline-block;border:1px solid;border-radius:6px;padding:0 6px;font-family:var(--fd);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;line-height:16px;vertical-align:middle}
+.av{display:inline-grid;place-items:center;border-radius:50%;color:#fff;font-family:var(--fd);font-weight:700;flex:none}
+.gifs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.gifs button{border:1px solid var(--line);border-radius:10px;overflow:hidden;padding:0;background:var(--panel2);aspect-ratio:4/3}.gifs img{width:100%;height:100%;object-fit:cover}
+.mem{display:grid;gap:4px}.mem .m{border:1px solid transparent;border-radius:12px;padding:8px}.mem .m:hover{border-color:var(--line);background:var(--bg2)}.mem .m.me{border-color:color-mix(in srgb,var(--accent) 50%,transparent);background:var(--asoft)}
+.acts{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.acts button{border:1px solid;border-radius:7px;padding:1px 7px;font-size:10px;font-weight:800;background:transparent}
+.code{font-family:var(--fd);font-size:26px;font-weight:800;letter-spacing:.4em;text-align:center;text-transform:uppercase}
+.sched{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}.sched>div{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}.sched>div.today{border-color:var(--accent)}.sched ul{list-style:none;padding:0;margin:10px 0 0;max-height:300px;overflow-y:auto;display:grid;gap:6px}.sched li{display:flex;gap:8px;font-size:12px}.sched li b{color:var(--accent);font-family:var(--fd);font-variant-numeric:tabular-nums;width:42px;flex:none}
+.sched a{font-weight:700;text-decoration:underline;text-decoration-color:color-mix(in srgb,var(--accent) 50%,transparent)}
+.spinner{display:inline-block;width:22px;height:22px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:sp .8s linear infinite}@keyframes sp{to{transform:rotate(1turn)}}
+.center{display:grid;place-items:center;padding:80px 0}
+@media(max-width:1100px){.room,.two{grid-template-columns:1fr}.chat{position:static;height:560px}.pagehead,[style*="grid-template-columns"]{grid-template-columns:1fr!important}}
+@media(max-width:900px){.hero .in{grid-template-columns:1fr}nav.main{display:none}nav.main.open{display:grid;position:absolute;top:64px;left:0;right:0;background:var(--panel);padding:10px;border-bottom:1px solid var(--line)}.burger{display:block}.foot .cols{grid-template-columns:1fr 1fr}.tbanner .in{flex-direction:column}.stats{grid-template-columns:repeat(2,1fr)}}
+@media(prefers-reduced-motion:reduce){*{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#app">Перейти к содержимому</a>
+<header class="top"><div class="wrap hrow">
+  <a class="logo" href="#/" aria-label="AniHub — на главную"><i>A</i><span>Ani<b>Hub</b></span></a>
+  <nav class="main" id="nav" aria-label="Основная навигация">
+    <a href="#/catalog" data-nav="catalog">Каталог</a><a href="#/streaming" data-nav="streaming">Стриминг</a><a href="#/schedule" data-nav="schedule">Расписание</a><a href="#/profile" data-nav="profile">Мой AniHub</a>
+  </nav>
+  <div class="sbox"><input id="gs" placeholder="Поиск тайтла, жанра, студии…  ( / )" autocomplete="off" aria-label="Поиск по каталогу"><div class="sres" id="gsr" hidden></div></div>
+  <button class="ibtn" id="theme" aria-label="Сменить тему">☀</button>
+  <a class="ibtn" href="#/profile/notes" aria-label="Уведомления">🔔<span class="badge" id="nb" hidden></span></a>
+  <button class="ibtn burger" id="burger" aria-label="Меню">☰</button>
+</div></header>
+<main id="app" tabindex="-1"></main>
+<footer class="foot"><div class="wrap">
+  <div class="cols">
+    <div><a class="logo" href="#/"><i>A</i><span>Ani<b>Hub</b></span></a><p class="muted sm" style="max-width:340px;margin:12px 0 0">Плеер без рекламы, трекеров и сторонней аналитики. Всё хранится в вашем браузере.</p></div>
+    <div><h4>Смотреть</h4><ul><li><a href="#/catalog">Каталог</a></li><li><a href="#/catalog?sort=views">Популярное</a></li><li><a href="#/schedule">Расписание</a></li><li><a href="#/profile/history">История</a></li></ul></div>
+    <div><h4>Стриминг</h4><ul><li><a href="#/streaming">Комнаты</a></li><li><a href="#/streaming?create=1">Создать стрим</a></li></ul></div>
+    <div><h4>Данные</h4><ul><li><a href="#/profile/settings">Настройки плеера</a></li><li><a href="https://shikimori.one" target="_blank" rel="noopener noreferrer">Shikimori</a></li><li><a href="https://anilist.co" target="_blank" rel="noopener noreferrer">AniList</a></li><li><a href="https://www.studiobandoz.ru/raspisanie.html" target="_blank" rel="noopener noreferrer">StudioBand</a></li></ul></div>
+  </div>
+  <p class="copy">© AniHub · метаданные — Shikimori и AniList. Видео: демо-потоки по умолчанию; свой лицензионный HLS, Kodik или любой embed-плеер подключаются в Профиль → Настройки → «Источник видео». Ответственность за лицензионность подключаемых источников несёт владелец сайта.</p>
+</div></footer>
+<div id="toasts" aria-live="polite"></div>
+<noscript><p style="padding:40px;text-align:center">Для работы AniHub нужен JavaScript.</p></noscript>
+
+<script src="https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js"></script>
+<script>if(!window.Hls)document.write('<script src="https://unpkg.com/hls.js@1/dist/hls.min.js"><\/script>')</script>
+<script>if(!window.Hls)document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js"><\/script>')</script>
+<script>/* APP */
+(()=>{
+'use strict';
+const BUILD='2026-10-10 v3 · Kodik';
+const STUDIO_SNAPSHOT={"date":"10.10.2026","days":[{"name":"Понедельник","entries":[{"time":"16:10","title":"Я влюбился в тебя, когда ты бежала в лунной ночи"},{"time":"16:30","title":"Тайная битва за престол сильнейшего принца-дуралея"},{"time":"18:10","title":"Разгневанная леди поклялась отомстить"},{"time":"18:15","title":"Мир танцует"},{"time":"18:30","title":"Аккуратная и симпатичная девочка в моей новой школе"},{"time":"18:40","title":"Рыцарь-скелет вступает в параллельный мир 2"},{"time":"18:55","title":"Необъятный океан 3"},{"time":"20:20","title":"Игра лжецов"},{"time":"21:15","title":"Отверженная святая и её гастрономическое путешествие в другом мире"}]},{"name":"Вторник","entries":[{"time":"13:10","title":"Призрак в доспехах"},{"time":"17:10","title":"Забывчивая святая дева неосознанно изливает свою силу"},{"time":"22:55","title":"Непревзойдённый"},{"time":"19:15","title":"Истинные чудотворные рыцари 2"},{"time":"22:05","title":"Красная река"},{"time":"23:00","title":"Виктория с множеством козырей"}]},{"name":"Среда","entries":[{"time":"15:45","title":"Клеватесс 2"},{"time":"17:05","title":"Военная хроника маленькой девочки 2"},{"time":"18:00","title":"Мир отомэ-игр — это тяжелый мир для мобов 2"},{"time":"18:10","title":"Героиня? Святая? Нет, я всемогущая горничная!"},{"time":"19:45","title":"Для тебя во всём цвету 2"},{"time":"20:10","title":"Крестьянин 999-го уровня"},{"time":"20:20","title":"Тройной шторм"},{"time":"20:40","title":"Старик из деревни становится Святым мечом"}]},{"name":"Четверг","entries":[{"time":"09:45","title":"Для тебя во всём цвету 2"},{"time":"16:15","title":"Дара из Рэйвы"},{"time":"16:30","title":"Бродячие псы: Шуточные истории 2"},{"time":"18:25","title":"Ура мечте! Бесконечная мечта"},{"time":"18:45","title":"Пыль Мёбиуса"},{"time":"19:45","title":"Табакошка"},{"time":"19:50","title":"Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры"},{"time":"20:00","title":"Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга"},{"time":"21:05","title":"Монстрик Карамелька"}]},{"name":"Пятница","entries":[{"time":"18:20","title":"Прошло десять лет с момента, как я стал легендой"},{"time":"18:30","title":"О моём перерождении в слизь 4"},{"time":"19:00","title":"Население приграничного владения начинается с нуля"},{"time":"19:10","title":"Нарисуй это, потом умри"},{"time":"20:10","title":"Пожалуйста, простите моих младших братьев"},{"time":"20:15","title":"Адский режим 2"},{"time":"20:45","title":"Юный лорд — мастер побега 2"},{"time":"22:10","title":"Слёзы Бога"}]},{"name":"Суббота","entries":[{"time":"13:10","title":"Добро пожаловать в ад, Ирума! 4"},{"time":"14:10","title":"Власть книжного червя 4"},{"time":"16:45","title":"Чёрный факел"},{"time":"17:55","title":"Рекомендация старшеклассника Ивамото"},{"time":"20:15","title":"Шатёр чародея"},{"time":"20:35","title":"Шоу для взрослых: Цирк «Подсолнух»"},{"time":"20:40","title":"Следующий герцог, который скажет: «Я не хочу любить тебя», будет любить тебя по какой-то причине"},{"time":"20:50","title":"Невеста демона"},{"time":"20:55","title":"Лиричная волшебница Наноха: Опередители — Огненный выстрел возмездия"},{"time":"21:00","title":"Кот и дракон"},{"time":"21:10","title":"Ханаори хочет драться даже после перерождения"},{"time":"21:40","title":"Забота об одарённой девушке"},{"time":"22:30","title":"Мао"},{"time":"22:50","title":"Цугаи загробного мира"}]},{"name":"Воскресенье","entries":[{"time":"10:10","title":"Компания «Маги-Люмьер» 2"},{"time":"11:55","title":"Вперёд, отряд мистики!"},{"time":"12:00","title":"Прощай, Лара"},{"time":"12:10","title":"Ты и я полные противоположности"},{"time":"12:20","title":"Железный котелок Жана!"},{"time":"16:25","title":"Самый сильный в мире заступник"},{"time":"17:40","title":"История электричества в двадцатом веке"},{"time":"17:50","title":"Сто девушек 3"},{"time":"18:40","title":"Дигимоны: Битбрейк"},{"time":"18:50","title":"Реинкарнация безработного 3"},{"time":"19:20","title":"Чёрная кошка и класс ведьм"},{"time":"19:40","title":"Хоть я и бездарная злодейка"},{"time":"20:10","title":"Лазурный путь: Малый вперёд! 2"}]}]};
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const p2=n=>String(n).padStart(2,'0');
+const fmt=s=>{s=Math.max(0,Math.floor(s||0));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}:${p2(m)}:${p2(x)}`:`${m}:${p2(x)}`};
+const compact=n=>n>=1e6?(n/1e6).toFixed(1).replace('.0','')+'M':n>=1e3?(n/1e3).toFixed(1).replace('.0','')+'K':String(n);
+const ago=t=>{const d=(Date.now()-t)/1e3;return d<60?'только что':d<3600?Math.floor(d/60)+' мин назад':d<86400?Math.floor(d/3600)+' ч назад':Math.floor(d/86400)+' дн назад'};
+const LS={get(k,d){try{const v=localStorage.getItem('ah:'+k);return v==null?d:JSON.parse(v)}catch{return d}},set(k,v){try{localStorage.setItem('ah:'+k,JSON.stringify(v))}catch{}}};
+const IN_FRAME=(()=>{try{return window.self!==window.top}catch{return true}})();
+const FRAME_HINT=IN_FRAME?'Похоже, страница открыта во встроенном предпросмотре, который блокирует внешние видео и плееры. Скачайте этот файл и откройте его напрямую в браузере — там всё заработает.':'';
+const rnd=n=>Array.from({length:n},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
+const uid=()=>Math.random().toString(36).slice(2,10)+Date.now().toString(36).slice(-4);
+const hue=s=>{let h=0;for(const c of String(s))h=(h*31+c.charCodeAt(0))%360;return h};
+
+/* ------------------------------ состояние ------------------------------ */
+const DEF={autoPlay:true,autoDelay:5,skipIntro:true,skipOutro:true,quality:'auto',rate:1,volume:1,subLang:'',subSize:100,subColor:'#ffffff',subBg:'rgba(0,0,0,.65)',subPos:'bottom',audio:'ru-dub',hotkeys:true};
+const S={theme:LS.get('theme','dark'),name:LS.get('name',''),prefs:{...DEF,...LS.get('prefs',{})},lists:LS.get('lists',{}),subs:LS.get('subs',[]),hist:LS.get('hist',{}),marks:LS.get('marks',[]),ovr:LS.get('ovr',{}),notes:LS.get('notes',[]),tpl:LS.get('tpl',''),giphy:LS.get('giphy',''),aired:LS.get('aired',{}),
+dubpref:LS.get('dubpref',''),kodikSeason:LS.get('kodikseason',{}),kodikToken:LS.get('kodikToken',''),kodikDomain:LS.get('kodikDomain','kodik.info'),kodikQ:LS.get('kodikQ','720'),embeds:LS.get('embeds',{}),kodicsel:LS.get('kodicsel',{}),sourceMode:LS.get('sourceMode','auto')};
+const save=(...k)=>k.forEach(x=>LS.set(x,S[x]));
+const ME={id:(()=>{try{return sessionStorage.getItem('ah:id')||(()=>{const i=uid();sessionStorage.setItem('ah:id',i);return i})()}catch{return uid()}})()};
+let ALL=[],catalogState='idle',catalogError='';
+const extra=new Map();
+
+function toast(title,desc,tone){const el=document.createElement('div');el.className='toast '+(tone||'');el.innerHTML=`<b>${esc(title)}</b>${desc?`<small>${esc(desc)}</small>`:''}`;$('#toasts').append(el);setTimeout(()=>el.remove(),4200)}
+let modalLast=null,modalCloseFn=null;
+function modal(title,body,wide){return new Promise(res=>{const m=document.createElement('div');m.className='mback';m.innerHTML=`<div class="modal ${wide?'w':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="mh"><h3>${esc(title)}</h3><button class="btn sm ghost" data-x aria-label="Закрыть">✕</button></div><div class="mb">${body}</div></div>`;const close=v=>{m.remove();document.removeEventListener('keydown',k);res(v)};const k=e=>{if(e.key==='Escape')close(null)};document.addEventListener('keydown',k);m.addEventListener('click',e=>{if(e.target===m||e.target.closest('[data-x]'))close(null)});document.body.append(m);modalLast=m;modalCloseFn=close;(m.querySelector('input,select,textarea')||m).focus?.()})}
+const ask=(title,body,wide)=>{const pr=modal(title,body,wide);return{get m(){return modalLast},close:v=>modalCloseFn&&modalCloseFn(v),pr}};
+
+/* ------------------------ данные: Shikimori + AniList ------------------------ */
+const BASES=['https://shikimori.io','https://shikimori.one','https://shikimori.me'];
+let base=LS.get('base',BASES[0]);
+async function gql(query){let err;for(const b of [base,...BASES.filter(x=>x!==base)]){try{const r=await fetch(b+'/api/graphql',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query}),signal:AbortSignal.timeout(12000)});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.errors)throw new Error(j.errors[0].message);base=b;LS.set('base',b);return j.data}catch(e){err=e}}throw err}
+const FIELDS='id malId name russian description poster{originalUrl} score status episodes episodesAired airedOn{year date} nextEpisodeAt genres{russian name} studios{name} rating duration url';
+const AGE={g:'0+',pg:'6+',pg_13:'12+',r:'16+',r_plus:'18+',rx:'18+'};
+function clean(raw){if(!raw)return 'Описание пока не добавлено.';let t=String(raw).replace(/\[\[([^\]|]+?)(?:\|[^\]]*)?\]\]/g,'$1').replace(/\[(?:character|person|anime|manga|ranobe|user)=\d+\s+([^\]]+)\]/g,'$1').replace(/\[(?:character|person|anime|manga|ranobe|user)=\d+\]([^[]*)\[\/(?:character|person|anime|manga|ranobe|user)\]/g,'$1').replace(/\[\/?[a-z_]+(?:=[^\]]*)?\]/gi,'').replace(/\((?:Источник|Source)[^)]*\)/gi,'').replace(/\n{3,}/g,'\n\n').trim();if(t.length>1100)t=t.slice(0,1100).replace(/\s+\S*$/,'')+'…';return t||'Описание пока не добавлено.'}
+function norm(a,cover){const poster=a.poster?.originalUrl&&!/missing_/.test(a.poster.originalUrl)?a.poster.originalUrl:cover?.poster;if(!poster)return null;const id=+a.id,genres=(a.genres||[]).map(g=>g.russian||g.name);const aired=a.status==='released'?(a.episodes||a.episodesAired):a.episodesAired;
+return{id,mal:+a.malId||id,title:a.russian||a.name,alt:a.name,desc:clean(a.description),poster:poster.startsWith('/')?base+poster:poster,banner:cover?.banner||null,score:+a.score||0,status:a.status==='released'?'completed':a.status==='ongoing'?'ongoing':'announced',eps:a.episodes||0,aired:Math.min(100,Math.max(0,aired||0)),year:a.airedOn?.year||0,studio:a.studios?.[0]?.name||'Студия не указана',genres,age:AGE[a.rating]||'16+',dur:a.duration||24,next:a.nextEpisodeAt?Date.parse(a.nextEpisodeAt):null,url:a.url?(a.url.startsWith('http')?a.url:base+a.url):'https://shikimori.one',accent:`hsl(${(id*47)%360} 82% 62%)`}}
+async function anilist(mals){const out={};for(let i=0;i<mals.length;i+=50){try{const r=await fetch('https://graphql.anilist.co',{signal:AbortSignal.timeout(12000),method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:'query($ids:[Int]){Page(perPage:50){media(idMal_in:$ids,type:ANIME){idMal coverImage{extraLarge large} bannerImage}}}',variables:{ids:mals.slice(i,i+50)}})});const j=await r.json();for(const m of (j.data?.Page?.media||[]))out[m.idMal]={poster:m.coverImage.extraLarge||m.coverImage.large,banner:m.bannerImage}}catch{}}return out}
+/* --------- запасной источник каталога: AniList (если Shikimori недоступен) --------- */
+const ANI_FIELDS='id idMal title{userPreferred romaji english native} coverImage{extraLarge large} bannerImage description status episodes duration startDate{year} genres studios(isMain:true){nodes{name}} averageScore nextAiringEpisode{airingAt episode} isAdult';
+async function anilistQ(q,v){const r=await fetch('https://graphql.anilist.co',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query:q,variables:v}),signal:AbortSignal.timeout(15000)});if(!r.ok)throw new Error('HTTP '+r.status);const j=await r.json();if(j.errors)throw new Error(j.errors[0].message);return j.data}
+function normAni(m){const tt=m.title||{};const title=tt.userPreferred||tt.romaji||tt.english||'Без названия';const poster=m.coverImage?.extraLarge||m.coverImage?.large;if(!poster)return null;
+  const aired=m.status==='RELEASING'?Math.max(0,(m.nextAiringEpisode?.episode||1)-1):(m.episodes||0);
+  return{id:m.id,src:'anilist',mal:m.idMal||0,title,alt:[tt.romaji,tt.english,tt.native].filter(Boolean).join(' / '),desc:clean(String(m.description||'').replace(/<[^>]+>/g,' ').replace(/\n{3,}/g,'\n\n')),poster,banner:m.bannerImage||null,score:(m.averageScore||0)/10,status:m.status==='RELEASING'?'ongoing':m.status==='FINISHED'?'completed':'announced',eps:m.episodes||0,aired:Math.min(100,Math.max(0,aired||0)),year:m.startDate?.year||0,studio:m.studios?.nodes?.[0]?.name||'Студия не указана',genres:m.genres||[],age:'16+',dur:m.duration||24,next:m.nextAiringEpisode?.airingAt?m.nextAiringEpisode.airingAt*1000:null,url:'https://anilist.co/anime/'+m.id,accent:`hsl(${(m.id*47)%360} 82% 62%)`}}
+async function loadAllAnilist(){
+  const d=await anilistQ(`query{Page(page:1,perPage:50){media(type:ANIME,format:TV,sort:POPULARITY_DESC){${ANI_FIELDS}}}}`);
+  const items=(d.Page?.media||[]).filter(m=>!m.isAdult).map(normAni).filter(t=>t&&t.aired>0);
+  if(!items.length)throw new Error('AniList: пусто');return items}
+async function getTitleAni(id){try{const d=await anilistQ(`query($id:Int){Media(id:$id,type:ANIME){${ANI_FIELDS}}}`,{id:+id});const t=normAni(d.Media);if(t){extra.set(t.id,t);return t}}catch{}return null}
+async function normMany(list){const need=list.filter(a=>!a.poster?.originalUrl||/missing_/.test(a.poster.originalUrl)).map(a=>+a.malId||+a.id);const cov=need.length?await anilist(need):{};return list.map(a=>norm(a,cov[+a.malId||+a.id])).filter(Boolean)}
+async function shikiLoad(){
+  const q=(args,n)=>gql(`{ animes(${args}, limit:${n}, kind:"tv", censored:true){ ${FIELDS} } }`).then(d=>d.animes);
+  const [on,rec,cl]=await Promise.all([q('status:"ongoing", order:popularity',40),q('status:"released", order:ranked, season:"2022_2026"',14),q('status:"released", order:ranked',10)]);
+  const seen=new Set(),raw=[];for(const a of [...on,...rec,...cl]){if(seen.has(a.id))continue;seen.add(a.id);const ep=a.status==='released'?(a.episodes||a.episodesAired):a.episodesAired;if(!ep||Math.max(a.episodes,a.episodesAired)>100)continue;if((a.genres||[]).some(g=>/хентай|hentai/i.test(g.russian+g.name)))continue;raw.push(a)}
+  return await normMany(raw)}
+let CAT_SRC='';
+function normLibria(r){
+  const nm=r.name||{};const title=nm.main||nm.english;if(!title)return null;
+  const ps=r.poster?.src;if(!ps)return null;
+  const poster=ps.startsWith('http')?ps:'https://anilibria.top'+ps;
+  const aired=Math.max(1,+(typeof r.latest_episode==='number'?r.latest_episode:0)||r.episodes_total||1);
+  return{id:+r.id,src:'libria',shiki:+r.shikimori?.id||0,mal:+r.mal?.id||0,title,alt:nm.english||'',
+    desc:clean(String(r.description||'').replace(/<[^>]+>/g,' ').replace(/\n{3,}/g,'\n\n')),
+    poster,banner:null,score:+r.shikimori?.rating||+r.rating?.average||0,
+    status:r.is_ongoing?'ongoing':'completed',eps:r.episodes_total||0,aired:Math.min(100,aired),
+    year:r.year||0,studio:'AniLibria',genres:(r.genres||[]).map(g=>g&&g.name).filter(Boolean),
+    age:'16+',dur:r.average_duration_of_episode||24,next:null,
+    url:'https://anilibria.top/release/'+(r.alias||r.id)+'.html',accent:`hsl(${(r.id*47)%360} 82% 62%)`}}
+async function loadAllLibria(){
+  const j=await libriaGet('/anime/releases/latest?limit=50');
+  const list=Array.isArray(j)?j:(j&&j.list)||[];
+  const items=list.map(normLibria).filter(Boolean);
+  if(!items.length)throw new Error('AniLibria: пусто');return items}
+async function loadAll(force){
+  const c=LS.get('cache',null);if(c&&!force&&Date.now()-c.t<36e5&&c.items?.length){CAT_SRC=c.src||CAT_SRC;return c.items}
+  /* Все три источника стартуют одновременно — побеждает первый, кто вернул данные.
+     Порядок приоритета при равенстве: Shikimori > AniList > AniLibria. */
+  const jobs=[['Shikimori',shikiLoad()],['AniList',loadAllAnilist()],['AniLibria',loadAllLibria()]];
+  const settled=new Map();
+  const chain=(async()=>{while(settled.size<jobs.length){
+    const pend=jobs.map(([n,p],i)=>settled.has(i)?null:p.then(v=>({i,ok:true,v}),e=>({i,ok:false})).then(r=>{settled.set(r.i,r);return r})).filter(Boolean);
+    if(!pend.length)break;
+    const r=await Promise.race(pend);
+    if(r.ok&&r.v&&r.v.length){CAT_SRC=jobs[r.i][0];LS.set('cache',{t:Date.now(),src:CAT_SRC,items:r.v});return r.v}}
+  throw new Error('Shikimori, AniList и AniLibria недоступны')})();
+  /* жёсткий потолок: спиннер не живёт дольше 18 секунд никогда */
+  return await Promise.race([chain,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Источники не ответили за 18 секунд. Проверьте интернет и нажмите «Повторить».')),18000))])}
+let catalogPromise=null;
+function ensureCatalog(force){
+  if(catalogState==='ready'&&!force)return Promise.resolve(ALL);
+  if(catalogPromise&&!force)return catalogPromise;
+  catalogState='loading';
+  catalogPromise=(async()=>{
+    try{ALL=await loadAll(force);catalogState='ready';catalogError='';checkNew()}
+    catch(e){const c=LS.get('cache',null);if(c?.items?.length){ALL=c.items;catalogState='ready';toast('Каталог из кэша','Нет связи с Shikimori')}else{catalogState='error';catalogError=String(e.message||e)}}
+    return ALL})().finally(()=>{catalogPromise=null});
+  return catalogPromise}
+async function getTitleLibria(id){try{const rel=await libriaGet('/anime/releases/'+id);const t=normLibria(rel);if(t){extra.set(id,t);return t}}catch{}return null}
+/* Первый успешный источник данных тайтла; порядок задаётся тем, из какого каталога пришёл ID */
+async function getTitle(id){id=+id;const t0=ALL.find(x=>x.id===id)||extra.get(id);if(t0)return t0;if(!Number.isFinite(id)||id<=0)return null;
+ const at=(p,f)=>p.then(v=>f(v)).catch(()=>null);
+ const seq={'Shikimori':[0,1,2],'AniList':[1,0,2],'AniLibria':[2,0,1]}[CAT_SRC]||[0,1,2];
+ const mk=[()=>at(gql(`{ animes(ids:"${id}", limit:1){ ${FIELDS} } }`),d=>normMany(d.animes||[]).then(([n])=>n||null)),()=>at(getTitleAni(id),x=>x),()=>at(getTitleLibria(id),x=>x)];
+ let win=null;const grab=pr=>pr.then(v=>{if(v&&!win)win=v});
+ await Promise.race([grab(mk[seq[0]]()),new Promise(r=>setTimeout(r,4500))]);
+ if(!win){const rest=seq.slice(1).map(i=>grab(mk[i]()).catch(()=>{}));await Promise.race([Promise.all(rest),new Promise(r=>setTimeout(r,9000))])}
+ const t=win;if(t)extra.set(id,t);return t}
+
+async function getTitle(id){id=+id;const t0=ALL.find(x=>x.id===id)||extra.get(id);if(t0)return t0;if(!Number.isFinite(id)||id<=0)return null;
+ const at=(p,f)=>p.then(v=>f(v)).catch(()=>null);
+ const ps=[at(gql(`{ animes(ids:"${id}", limit:1){ ${FIELDS} } }`),d=>normMany(d.animes||[]).then(([n])=>n||null)),
+   at(getTitleAni(id),x=>x),at(getTitleLibria(id),x=>x)];
+ let win=null;const firstWin=ps.map((p,i)=>p.then(v=>{if(v&&!win){win=v}}));
+ await Promise.race([Promise.all(firstWin),new Promise(r=>setTimeout(r,15000))]);
+ const t=win;if(t)extra.set(id,t);return t}function checkNew(){let changed=false;for(const id of S.subs){const t=ALL.find(x=>x.id===id);if(!t)continue;const known=S.aired[id];if(known==null){S.aired[id]=t.aired;changed=true;continue}if(t.aired>known){S.notes.unshift({id:uid(),title:`${t.title} · серия ${t.aired}`,body:t.aired-known>1?`Вышло новых серий: ${t.aired-known}.`:'Вышла новая серия.',link:`#/watch/${t.id}/${t.aired}`,at:Date.now(),read:false});S.aired[id]=t.aired;changed=true}}if(changed){save('notes','aired');badge()}}
+function badge(){const n=S.notes.filter(x=>!x.read).length;const b=$('#nb');b.hidden=!n;b.textContent=n}
+
+/* ------------------------------ серии и видео ------------------------------ */
+function episodes(t){const n=t.aired,dur=Math.max(120,t.dur*60),long=dur>=600,iEnd=Math.max(15,Math.min(95,Math.round(dur*.15))),oS=long?dur-95:Math.round(dur*.88);return Array.from({length:n},(_,i)=>({n:i+1,title:`Серия ${i+1}`,dur,intro:[5,iEnd],outro:[oS,Math.max(oS+5,dur-(long?5:2))]}))}
+const epSuffix=ep=>/^Серия\s+\d+$/i.test(ep.title||'')?'':(ep.title?' · '+ep.title:'');
+const HLS_POOL=['https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8','https://test-streams.mux.dev/test_001/stream.m3u8','https://test-streams.mux.dev/tos_ismc/main.m3u8','https://test-streams.mux.dev/pts_shift/master.m3u8'];
+const MP4_POOL=['https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4','https://media.w3.org/2010/05/sintel/trailer.mp4','https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4','https://ia800905.us.archive.org/19/items/BigBuckBunny_124/Content/big_buck_bunny_720p_surround.mp4'];
+const SUBS=[{id:'ru',lang:'ru',label:'Русские (демо)'},{id:'en',lang:'en',label:'English (демо)'},{id:'ja',lang:'ja',label:'日本語 (демо)'}];
+const SUBTXT={ru:['Демо-субтитры','Размер, цвет, фон и положение меняются в настройках плеера'],en:['Demo subtitles','Size, color, background and position are set in the player settings'],ja:['デモ字幕','サイズ・色・背景・位置はプレイヤー設定で変更できます']};
+const demoCues=l=>{const[a,b]=SUBTXT[l]||SUBTXT.ru,o=[];for(let t=2;t<7200;t+=8)o.push({s:t,e:t+5,text:`${a} · ${fmt(t)}\n${b}`});return o};
+function sources(hls,mp4){const L=[['auto','Авто (HLS)'],['2160','4K · 2160p'],['1080','1080p'],['720','720p'],['480','480p'],['360','360p']];const o=L.map(([q,l])=>({quality:q,label:l,type:'hls',url:hls}));if(mp4)o.push({quality:'mp4',label:'MP4',type:'mp4',url:mp4});return o}
+function mediaFor(t,ep){
+  const k=t.id,hls=HLS_POOL[k%4],alt=HLS_POOL[(k+2)%4],mp4=MP4_POOL[(k+1)%2];
+  return{demo:true,sources:sources(hls,MP4_POOL[k%2]),audios:[{id:'ru-dub',label:'Русская дорожка (демо)',lang:'ru',url:hls},{id:'ja-orig',label:'Оригинал · 日本語 (демо)',lang:'ja',url:alt},{id:'en-dub',label:'English (демо)',lang:'en',url:mp4}],subs:SUBS}}
+function customMedia(url){return{demo:false,sources:[{quality:'auto',label:'Источник комнаты',type:/\.m3u8/i.test(url)?'hls':'mp4',url}],audios:[{id:'main',label:'Оригинальная дорожка',lang:'ru'}],subs:[]}}
+function kodikDirectMedia(d){const wrap=u=>location.origin+'/kodik/hls?url='+encodeURIComponent(u);
+  const q=['720','480','360'].find(x=>d.links[x])||d.max;
+  return{demo:false,kodikDirect:true,sources:[{quality:'auto',label:'Kodik · прямой поток',type:'hls',url:wrap(d.links[q])}],audios:[{id:'main',label:'Озвучка · Kodik',lang:'ru'}],subs:[]}}
+function tplMedia(t,epn){const u=String(S.tpl||'').split('{id}').join(t.id).split('{episode}').join(epn);return{demo:false,sources:[{quality:'auto',label:'Мой HLS',type:'hls',url:u}],audios:[{id:'main',label:'Основная дорожка',lang:'ru'}],subs:[]}}
+const hkey=(id,ep)=>`${id}:${ep}`;
+
+/* ------------------------ Kodik и внешние источники ------------------------ */
+const KODIK_API='https://kodik-api.com';
+const PUB_TOKENS_URL='https://raw.githubusercontent.com/YaNesyTortiK/AnimeParsers/main/kdk_tokns/tokens.json';
+/* Публичный токен из открытого репозитория AnimeParsers (раздел "stable") — запасной вариант */
+const BUILTIN_TOKEN='56a768d08f43091901c44b54fe970049';
+const withTimeout=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg||'таймаут')),ms))]);
+function dek(tkn){try{const h=Math.floor(tkn.length/2);const p1=atob(tkn.slice(0,h).split('').reverse().join(''));const p2=atob(tkn.slice(h).split('').reverse().join(''));return p2+p1}catch(e){return null}}
+function kodikTok(){return S.kodikToken||LS.get('kodikPub','')||BUILTIN_TOKEN}
+let proxyOk=null;
+async function hasProxy(){if(location.protocol==='file:')return false;if(proxyOk===null){try{const r=await fetch(location.origin+'/kodik-proxy/search?token=probe&limit=1');proxyOk=r.status!==404}catch{proxyOk=false}}return proxyOk}
+async function kodikApiGet(u){
+  const uu=new URL(u);
+  /* рядом работает kodik_proxy.py (локально или на сервере) — идём через него, без CORS-проблем */
+  if(await hasProxy()){try{const r0=await withTimeout(fetch(location.origin+'/kodik-proxy'+uu.pathname+uu.search),10000,'таймаут');if(r0.ok)return await r0.json()}catch{}}
+  try{const r=await withTimeout(fetch(u),10000,'Kodik: таймаут');if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
+  catch(e){if(S.kodikToken)throw e;
+    const r2=await withTimeout(fetch('https://api.codetabs.com/v1/proxy?quest='+encodeURIComponent(u)),8000,'Kodik: таймаут');
+    if(!r2.ok)throw new Error('Kodik API недоступен');
+    const tx=await r2.text();try{return JSON.parse(tx)}catch{throw new Error('Kodik API: некорректный ответ')}}}
+async function fetchPublicToken(){
+  const r=await withTimeout(fetch(PUB_TOKENS_URL),10000,'список токенов недоступен');if(!r.ok)throw new Error('список токенов недоступен');
+  const j=await r.json();
+  const cands=[...(j.stable||[]),...(j.unstable||[])].map(x=>dek(x.tokn)).filter(Boolean).slice(0,3);
+  for(const t of cands){try{const jj=await kodikApiGet(`${KODIK_API}/search?token=${encodeURIComponent(t)}&shikimori_id=21&limit=1`);if(jj&&Array.isArray(jj.results)){LS.set('kodikPub',t);return t}}catch(e){}}
+  throw new Error('рабочий публичный токен не найден')}
+let pubTokenBusy=null;
+function ensureKodikToken(){if(S.kodikToken||LS.get('kodikPub',''))return Promise.resolve();if(!pubTokenBusy)pubTokenBusy=fetchPublicToken().catch(()=>{}).finally(()=>{pubTokenBusy=null});return pubTokenBusy}
+function kq(link){const q=S.kodikQ||'720';let l=String(link||'').replace(/\/+$/,'');if(!l)return'';if(l.startsWith('//'))l='https:'+l;else if(!/^https?:\/\//i.test(l))l='https://'+(S.kodikDomain||'kodik.info')+l;return /\/\d+p$/.test(l)?l.replace(/\/\d+p$/,'/'+q+'p'):l+'/'+q+'p'}
+function kodikCacheHit(id){const c=LS.get('kodicache',{})||{};const e=c[id];if(!e||!e.data)return null;const ttl=e.data.total>0?432e5:6e5;if(Date.now()-e.t>ttl)return null;if(e.err&&Date.now()-e.t>6e4)return null;return e}
+const kodikInflight=new Map();
+function kodikFetch(t){const tid=t.id;
+  if(kodikInflight.has(tid))return kodikInflight.get(tid);
+  const p=(async()=>{
+    await ensureKodikToken();
+    const shikiId=+t.shiki||(t.src==='anilist'||t.src==='libria'?0:+tid);
+    const filt=shikiId?`shikimori_id=${shikiId}`:`title=${encodeURIComponent(String(t.title))}&types=anime,anime-serial`;
+    const u=`${KODIK_API}/search?token=${encodeURIComponent(kodikTok())}&${filt}&with_material_data=true&with_episodes=true`;
+    const j=await kodikApiGet(u);if(j.error)throw new Error(j.error);
+    const data={total:j.total||0,results:(j.results||[]).map(m=>({id:m.id,type:m.type,title:m.title||m.title_orig||'',translation:(m.translation&&m.translation.title)||'Озвучка',link:m.link,episodes:m.episodes&&typeof m.episodes==='object'?m.episodes:null,seasons:m.seasons&&typeof m.seasons==='object'?m.seasons:null}))};
+    const c=LS.get('kodicache',{})||{};c[tid]={t:Date.now(),data};try{LS.set('kodicache',c)}catch{}
+    return data})();
+  const shared=p.catch(e=>{const c=LS.get('kodicache',{})||{};c[tid]={t:Date.now(),data:{total:0,results:[]},err:'Kodik: '+(e.message||e)};try{LS.set('kodicache',c)}catch{};throw e}).finally(()=>kodikInflight.delete(tid));
+  kodikInflight.set(tid,shared);return shared}
+const kodikBg=new Set();let watchSrc=null;/* какой источник реально играет на открытой странице серии */
+function kodikBackground(t){if(kodikBg.has(t.id))return;kodikBg.add(t.id);const hash=location.hash;
+  kodikFetch(t).catch(()=>{}).finally(()=>{kodikBg.delete(t.id);
+    if(location.hash!==hash)return;const c=kodikCacheHit(t.id);if(!c||!(c.data.total>0))return;
+    /* Kodik дозрел в фоне: НЕ перерисовываем страницу целиком — это сносило играющий плеер в спиннер */
+    if(watchSrc==='demo'){router();return}
+    toast('Kodik: серии найдены','Переключитесь чипом «🎬 Kodik» — текущий источник не прерываем')})}
+const KODIK_PREF=['AniDUB','AniLibria.TV','AnimeVost','AniStar','Dream Cast','SHIZA Project','Studio Band','Kazoku Project','AniMaunt','Aniverse','Amazing Dubbing','Fronda Studio','Shikoku Studio','AniBaze','AniBreeze','AniMovie'];
+function kodikScore(r){const tr=String(r.translation||'');const low=tr.toLowerCase();let s=2;
+  const pi=KODIK_PREF.findIndex(p=>low===p.toLowerCase()||low.startsWith(p.toLowerCase()));
+  if(pi>=0)s=120-pi;
+  if(S.dubpref&&low===S.dubpref.toLowerCase())s+=110;
+  if(/субтитр|subtitle/.test(low))s-=60;
+  if(/^не требуется/.test(low))s-=80;
+  if(r.episodes_count&&+(r.episodes_count)>0)s+=6;
+  return s}
+function kodikPick(data){const rs=(data&&data.results)||[];let best=0,bs=-1;
+  rs.forEach((r,i)=>{const s=kodikScore(r);if(s>bs){bs=s;best=i}});
+  return best}
+function kodikEpisodes(res){if(!res)return[];
+  const out=new Map();
+  const add=(n,link,season)=>{n=+n;if(!n||!link)return;if(!out.has(n)||season>(out.get(n).season||1))out.set(n,{n,title:'Серия '+n,link:String(link),season:season||1})};
+  if(res.episodes&&typeof res.episodes==='object')Object.entries(res.episodes).forEach(([n,l])=>add(n,l,1));
+  if(res.seasons&&typeof res.seasons==='object')Object.entries(res.seasons).forEach(([sn,s])=>{if(s&&s.episodes)Object.entries(s.episodes).forEach(([n,l])=>add(n,l,+sn))});
+  if(out.size)return[...out.values()].sort((a,b)=>a.n-b.n);
+  return res.link?[{n:1,title:'',link:res.link}]:[]}
+function kodikSeasons(res){if(!res)return[];
+  const out=[];
+  if(res.episodes&&typeof res.episodes==='object'&&Object.keys(res.episodes).length)out.push({season:1,eps:Object.entries(res.episodes).map(([n,l])=>({n:+n,title:'Серия '+n,link:String(l),season:1}))});
+  if(res.seasons&&typeof res.seasons==='object')Object.entries(res.seasons).forEach(([sn,sv])=>{if(sv&&sv.episodes&&Object.keys(sv.episodes).length)out.push({season:+sn,eps:Object.entries(sv.episodes).map(([n,l])=>({n:+n,title:'Серия '+n,link:String(l),season:+sn}))})});
+  if(!out.length&&res.link)out.push({season:1,eps:[{n:1,title:'',link:String(res.link),season:1}]});
+  out.forEach(x=>x.eps.sort((a,b)=>a.n-b.n));
+  return out.sort((a,b)=>a.season-b.season)}
+/* ------------------------------ AniLibria ------------------------------ */
+/* Официальные релизы с прямыми HLS-потоками (480/720/1080), таймкодами опенинга/эндинга.
+   Манифесты и сегменты на cache.libria.fun отдают CORS — видео играет в плеере без прокси;
+   прокси /proxy используется только как запасной путь для API. */
+const LIBRIA='https://anilibria.top/api/v1';
+async function libriaGet(path){
+  const u=LIBRIA+path;
+  try{const r=await withTimeout(fetch(u),10000,'таймаут');if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
+  catch(e){
+    if(!(await hasProxy()))throw e;
+    const r=await withTimeout(fetch(location.origin+'/proxy?url='+encodeURIComponent(u)),10000,'таймаут');
+    if(!r.ok)throw new Error('HTTP '+r.status);return await r.json()}
+}
+async function libriaResolve(t){
+  const cache=LS.get('libriacache',{})||{};
+  const hit=cache[t.id];
+  if(hit&&hit.episodes?.length&&Date.now()<(hit.at||0)+12*3600e3)return hit;
+  const nmOf=o=>o&&(o.main||o.english||o.ru);
+  const store=rel=>{const data={at:Date.now(),id:rel.id,alias:rel.alias,name:nmOf(rel.name)||t.title,episodes:rel.episodes.slice().sort((a,b)=>a.ordinal-b.ordinal),total:rel.episodes_total||rel.episodes.length};
+    cache[t.id]=data;LS.set('libriacache',cache);return data};
+  /* тайтл уже из базы AniLibria — берём релиз напрямую, без поиска */
+  if(t.src==='libria'){try{const rel=await libriaGet('/anime/releases/'+t.id);if(rel?.episodes?.length)return store(rel)}catch{}}
+  const names=[];
+  const add=n=>{n=String(n||'').trim();if(n&&n!=='—'&&!names.includes(n))names.push(n)};
+  add(t.title);String(t.alt||'').split('/').forEach(add);
+  for(const nm of names){
+    try{
+      const found=await libriaGet('/app/search/releases?query='+encodeURIComponent(nm));
+      if(!Array.isArray(found)||!found.length)continue;
+      /* сначала релизы с совпадающим id Shikimori/MAL, потом — первый найденный */
+      const best=found.slice().sort((a,b)=>{
+        const sc=r=>(r.shikimori&&+r.shikimori.id===+t.id?100:0)+(r.mal&&t.mal&&+r.mal.id===+t.mal?90:0);
+        return sc(b)-sc(a)})[0];
+      const rel=await libriaGet('/anime/releases/'+best.id);
+      if(!rel||!rel.episodes?.length)continue;
+      return store(rel)}catch(e){/* пробуем следующее название */}}
+  return null}
+function libriaMedia(ep){
+  if(!ep||(!ep.hls_480&&!ep.hls_720&&!ep.hls_1080))return null;
+  const main=ep.hls_720||ep.hls_1080||ep.hls_480;
+  const sources=[{quality:'auto',label:'Авто · AniLibria',type:'hls',url:main}];
+  if(ep.hls_1080)sources.push({quality:'1080',label:'1080p',type:'hls',url:ep.hls_1080});
+  if(ep.hls_720)sources.push({quality:'720',label:'720p',type:'hls',url:ep.hls_720});
+  if(ep.hls_480)sources.push({quality:'480',label:'480p',type:'hls',url:ep.hls_480});
+  const op=ep.opening&&ep.opening.stop?[Math.max(0,Math.round(ep.opening.start||0)),Math.round(ep.opening.stop)]:null;
+  const ed=ep.ending&&ep.ending.stop?[Math.max(0,Math.round(ep.ending.start||0)),Math.round(ep.ending.stop)]:null;
+  return{demo:false,libria:true,sources,audios:[{id:'main',label:'AniLibria · русская озвучка',lang:'ru'}],subs:[],opening:op,ending:ed}}
+function resolveOrder(t){
+  if(S.sourceMode==='demo')return['demo'];
+  if(S.sourceMode==='tpl')return S.tpl?['tpl']:['demo'];
+  if(S.sourceMode==='kodik')return['kodik'];
+  if(S.sourceMode==='libria')return['libria'];
+  if(S.sourceMode==='embed')return S.embeds[t.id]?['embed']:['demo'];
+  const a=[];if(S.embeds[t.id])a.push('embed');if(S.tpl)a.push('tpl');a.push('kodik');a.push('libria');a.push('demo');return a}
+function mountEmbedPlayer(box,o){
+  box.classList.add('player');
+  box.innerHTML=`<iframe class="kframe" src="${esc(o.url)}" title="${esc(o.title)}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write" allowfullscreen referrerpolicy="no-referrer"></iframe>
+  <div class="ptop"><div><b>${esc(o.title)}</b><small>${esc(o.sub||'')}</small></div><div class="pb"><span style="background:var(--cyan);color:#04222e">${esc(o.badge||'Внешний плеер')}</span></div></div>`;
+  return{destroy(){box.innerHTML='';box.classList.remove('player')}}}
+async function embedModal(t){const d=ask('Embed-плеер для тайтла',`<label class="f"><span>Ссылка на встраиваемый плеер</span><input class="inp" id="eu" placeholder="https://…/embed или …/{episode}" value="${esc(S.embeds[t.id]||'')}"></label><p class="tiny muted">Подстановка <code>{episode}</code> заменится номером серии. Подойдёт любой сервис, отдающий страницу для &lt;iframe&gt;: собственный сервер, Sibnet, YouTube и т.п. Сохраняется отдельно для этого тайтла.</p><button class="btn pri" id="eus">Подключить</button>`);
+  d.m.querySelector('#eus').onclick=()=>{const v=d.m.querySelector('#eu').value.trim();if(!/^https?:\/\//i.test(v)){toast('Ссылка должна начинаться с http(s)://','','err');return}S.embeds[t.id]=v;S.sourceMode='embed';save('embeds','sourceMode');d.close(true);router()};
+  await d.pr}
+
+/* ------------------------------ плеер ------------------------------ */
+function clampRange(a,b){const s=Math.max(0,Math.round(+a||0));let e=Math.max(s+5,Math.round(+b||0));if(e-s>90)e=s+90;return[s,e]}
+function mountPlayer(box,o){
+  const P=S.prefs,M=o.media,aud=M.audios,subsT=M.subs||[];
+  box.classList.add('player');box.tabIndex=-1;
+  box.innerHTML=`<video playsinline preload="metadata"></video><div class="sub"></div>
+  <div class="ptop"><div><b>${esc(o.title)}</b><small>${esc(o.sub||'')}</small></div><div class="pb">${o.badge||''}<span class="qb"></span></div></div>
+  <button class="bigplay" aria-label="Воспроизвести">▶</button><div class="spin" hidden>Загружаем поток…</div><div class="perr" hidden></div>
+  <button class="skipbtn" hidden></button><div class="cd" hidden></div>
+  ${o.onSync?'<div class="syncb"><span class="dot"></span> <span class="sy"></span></div>':''}
+  <div class="pctl"><div class="bar" tabindex="0" role="slider" aria-label="Позиция воспроизведения"><i class="buf"></i><i class="rg ri"></i><i class="rg ro"></i><i class="fill"></i><span class="marks"></span></div>
+  <div class="row"><button data-c="play" aria-label="Пауза / Смотреть">▶</button><button data-c="b10" aria-label="Назад 10 секунд">⟲ 10</button><button data-c="f10" aria-label="Вперёд 10 секунд">10 ⟳</button><button data-c="prev" ${o.prev?'':'hidden'} aria-label="Предыдущая серия">⏮</button><button data-c="nextep" ${o.next?'':'hidden'} aria-label="Следующая серия">⏭</button><button data-c="mute" aria-label="Звук">🔊</button><input class="vol" type="range" min="0" max="1" step=".05" aria-label="Громкость"><span class="tm"></span><span class="sp"></span>
+  <button data-c="cc" aria-label="Субтитры">CC</button><button data-c="rate" aria-label="Скорость"></button><button data-c="skip" aria-label="Пропустить опенинг">✂</button><button data-c="mark" aria-label="Закладка момента">🔖</button><button data-c="pip" aria-label="Картинка в картинке">PiP</button><button data-c="set" aria-label="Настройки">⚙</button><button data-c="fs" aria-label="Полный экран">⛶</button></div></div>
+  <aside class="pset" hidden aria-label="Настройки плеера"></aside>`;
+  const v=$('video',box),subEl=$('.sub',box),spin=$('.spin',box),perr=$('.perr',box),skipB=$('.skipbtn',box),cd=$('.cd',box),set=$('.pset',box),big=$('.bigplay',box);
+  let hls=null,audio=aud.find(a=>a.id===P.audio)||aud[0],quality=P.quality,levels=[],cues=[],dur=o.dur||1,ranges=o.ranges,introDone=false,cdTimer=null,applying=false,lastSync=0,idleT=0,lastSave=0,dead=false,outroFired=false;
+  const hlsSrc=M.sources.find(s=>s.type==='hls'),mp4=M.sources.find(s=>s.type==='mp4');
+  const url=()=>{const primary=!audio||audio===aud[0]||!audio.url;if(!primary)return audio.url;if(quality==='mp4'&&mp4)return mp4.url;const qSrc=M.sources.find(s=>s.type==='hls'&&s.quality===quality);if(qSrc)return qSrc.url;return hlsSrc?.url||mp4?.url||''};
+  function destroyHls(){if(hls){try{hls.destroy()}catch{}hls=null}}
+  let mp4Tried=false,watchdog=null;
+  function tryMp4(reason){if(mp4&&quality!=='mp4'&&!mp4Tried){mp4Tried=true;quality='mp4';toast('Поток недоступен',reason+' — пробуем MP4…');load(v.currentTime||0)}else showErr(reason)}
+  function load(keep){
+    const u=url();if(!u)return;spin.hidden=false;perr.hidden=true;destroyHls();clearTimeout(watchdog);const at=keep??(o.resume>5?o.resume:0);
+    watchdog=setTimeout(()=>{if(!dead&&v.readyState<1)tryMp4('Поток не отвечает')},IN_FRAME?9000:12000);
+    const onMeta=()=>{clearTimeout(watchdog);if(Number.isFinite(v.duration)&&v.duration>0)dur=v.duration;if(at>5&&at<dur-10)v.currentTime=at;spin.hidden=true;applyPrefs();if(o.autoStart)v.play().catch(()=>{})};
+    v.addEventListener('loadedmetadata',onMeta,{once:true});
+    if(/\.m3u8(\?|#|$)/i.test(u)&&window.Hls&&Hls.isSupported()){
+      hls=new Hls({enableWorker:true,backBufferLength:60});hls.on(Hls.Events.MANIFEST_PARSED,(_,d)=>{levels=d.levels.map(l=>l.height||0).filter(Boolean).sort((a,b)=>b-a);applyQuality();if(settingsOpen)renderSet()});
+      hls.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal){spin.hidden=true;clearTimeout(watchdog);tryMp4(`Ошибка потока (${d.details||'network'})`)}});hls.loadSource(u);hls.attachMedia(v)
+    }else if(/\.m3u8(\?|#|$)/i.test(u)){tryMp4('Библиотека hls.js не загрузилась')}
+    else{v.src=u;v.load()}
+  }
+  function showErr(m){perr.hidden=false;perr.innerHTML=`<div><b style="color:var(--live)">Проблема с воспроизведением</b><p class="sm" style="margin:6px 0 10px;color:rgba(255,255,255,.7)">${esc(m)}</p>${FRAME_HINT?`<p class="sm" style="margin:0 0 10px;color:var(--accent)">${esc(FRAME_HINT)}</p>`:''}${mp4&&quality!=='mp4'?'<button class="btn sm pri" data-mp4>Переключить на MP4</button>':''}</div>`}
+  function applyQuality(){if(!hls)return;if(quality==='auto'||quality==='2160'){hls.autoLevelCapping=-1;return}const t=+quality;if(!t)return;let cap=-1;hls.levels.forEach((l,i)=>{if((l.height||0)<=t+1)cap=Math.max(cap,i)});hls.autoLevelCapping=cap}
+  function applyPrefs(){v.playbackRate=P.rate;v.volume=P.volume;paintRate();paintVol()}
+  const scale=()=>dur>0&&o.dur>0&&dur<o.dur*.6?dur/o.dur:1;
+  const eff=()=>{const k=scale();return{i:[Math.round(ranges.intro[0]*k),Math.min(Math.round(ranges.intro[1]*k),Math.max(1,Math.round(dur-1)))],o:[Math.min(Math.round(ranges.outro[0]*k),Math.max(0,Math.round(dur-2))),Math.min(Math.round(ranges.outro[1]*k),Math.round(dur))]}};
+  const seek=t=>{v.currentTime=Math.max(0,Math.min(dur,t))};
+  const hasIntro=()=>ranges.intro[1]>ranges.intro[0],hasOutro=()=>ranges.outro[1]>ranges.outro[0];
+  function skipIntro(){if(!hasIntro())return;seek(eff().i[1]);toast('Опенинг пропущен','Перемотка на '+fmt(eff().i[1]))}
+  function skipOutro(){if(o.next){location.hash=o.next.url;return}if(hasOutro())seek(eff().o[1]||dur-1)}
+  function startCd(){if(!o.next||!P.autoPlay||cdTimer)return;const d=Math.max(0,Math.min(30,P.autoDelay));if(d===0){location.hash=o.next.url;return}let n=d;cd.hidden=false;const paint=()=>{cd.innerHTML=`<div style="max-width:380px"><div class="eyebrow">Серия завершена</div><h3>Следующая: серия ${o.next.n}${esc(o.next.suffix||'')}</h3><p class="muted sm">Автозапуск через ${n} сек</p><div class="b"><i style="width:${n/d*100}%"></i></div><div class="row" style="justify-content:center"><button class="btn sm pri" data-go>Смотреть сейчас</button><button class="btn sm" data-cancel>Отмена</button></div></div>`};paint();cdTimer=setInterval(()=>{n--;if(n<=0){clearInterval(cdTimer);cdTimer=null;location.hash=o.next.url}else paint()},1000)}
+  const cancelCd=()=>{clearInterval(cdTimer);cdTimer=null;cd.hidden=true};
+  cd.addEventListener('click',e=>{if(e.target.closest('[data-go]'))location.hash=o.next.url;if(e.target.closest('[data-cancel]'))cancelCd()});
+  perr.addEventListener('click',e=>{if(e.target.closest('[data-mp4]')){quality='mp4';S.prefs.quality='mp4';save('prefs');load(v.currentTime)}});
+  function saveHist(done){if(o.noHist||!o.meta||v.currentTime<3)return;S.hist[hkey(o.meta.id,o.meta.ep)]={...o.meta,pos:Math.round(done?dur:v.currentTime),dur:Math.round(dur),done:!!done||v.currentTime/dur>.92,at:Date.now()};save('hist')}
+  const myMarks=()=>o.noHist||!o.meta?[]:S.marks.filter(m=>m.key===hkey(o.meta.id,o.meta.ep));
+  function addMark(){if(o.noHist||!o.meta){toast('В комнате закладки отключены');return}const t=Math.round(v.currentTime);if(S.marks.some(m=>m.key===hkey(o.meta.id,o.meta.ep)&&m.t===t))return;S.marks.push({id:uid(),key:hkey(o.meta.id,o.meta.ep),tid:o.meta.id,ep:o.meta.ep,title:o.meta.title,t,at:Date.now()});save('marks');toast('Закладка сохранена',`${fmt(t)} · ${o.meta.title}`,'ok');paintMarks();if(settingsOpen)renderSet()}
+  function paintMarks(){$('.marks',box).innerHTML=myMarks().map(m=>`<span style="left:${m.t/dur*100}%" title="${fmt(m.t)}">🔖</span>`).join('')}
+  const loadSubs=()=>{cues=P.subLang&&subsT.some(s=>s.lang===P.subLang)?demoCues(P.subLang):[];paintSub()};
+  function paintSub(){if(!cues.length){subEl.hidden=true;return}const c=cues.filter(x=>v.currentTime>=x.s&&v.currentTime<=x.e);subEl.hidden=!c.length;if(!c.length)return;subEl.textContent=c.map(x=>x.text).join('\n');subEl.style.fontSize=Math.max(12,Math.round(box.clientHeight*.042*P.subSize/100))+'px';subEl.style.color=P.subColor;subEl.style.background=P.subBg;subEl.style.top=subEl.style.bottom='auto';if(P.subPos==='top')subEl.style.top='8%';else if(P.subPos==='middle')subEl.style.bottom='44%';else subEl.style.bottom='12%'}
+  const paintRate=()=>{$('[data-c=rate]',box).textContent=P.rate+'x'};
+  const paintVol=()=>{const m=v.muted||v.volume===0;$('[data-c=mute]',box).textContent=m?'🔇':'🔊';$('.vol',box).value=m?0:v.volume};
+  function paint(){
+    const e=eff(),t=v.currentTime;$('.fill',box).style.width=t/dur*100+'%';$('.tm',box).innerHTML=`${fmt(t)} <span style="opacity:.45">/ ${fmt(dur)}</span>`;
+    if(v.buffered.length)$('.buf',box).style.width=v.buffered.end(v.buffered.length-1)/dur*100+'%';
+    const ri=$('.ri',box),ro=$('.ro',box);ri.style.display=hasIntro()?'':'none';ro.style.display=hasOutro()?'':'none';
+    ri.style.left=e.i[0]/dur*100+'%';ri.style.width=Math.max(0,e.i[1]-e.i[0])/dur*100+'%';ro.style.left=e.o[0]/dur*100+'%';ro.style.width=Math.max(0,e.o[1]-e.o[0])/dur*100+'%';
+    const inI=hasIntro()&&t>=e.i[0]&&t<e.i[1],inO=hasOutro()&&t>=e.o[0]&&t<e.o[1];
+    if(P.skipIntro&&inI&&!introDone&&t>e.i[0]+.2){introDone=true;applying=true;skipIntro();setTimeout(()=>applying=false,400)}
+    if(t<e.i[0]-2)introDone=false;
+    if(inO&&!outroFired&&P.skipOutro&&o.next){outroFired=true;startCd()}if(!inO&&t<e.o[0]-2)outroFired=false;
+    skipB.hidden=!(inI||inO);skipB.innerHTML=(inI?'⏭ Пропустить опенинг <kbd>S</kbd>':'⏭ Пропустить эндинг <kbd>E</kbd>');skipB.onclick=inI?skipIntro:skipOutro;
+    paintSub();$('.qb',box).textContent=quality==='auto'?'AUTO':quality==='mp4'?'MP4':quality+'p';
+    if(Date.now()-lastSave>8000&&!v.paused){lastSave=Date.now();saveHist()}
+  }
+  function publish(){if(!o.onSync||applying||!o.canControl())return;const n=Date.now();if(n-lastSync<600)return;lastSync=n;o.onSync({t:v.currentTime,playing:!v.paused,rate:v.playbackRate})}
+  const syLabel=()=>{const s=$('.sy',box);if(s)s.textContent=o.canControl()?'Синхронизация: вы управляете':'Синхронизация: управляет стример'};
+  v.addEventListener('timeupdate',paint);v.addEventListener('waiting',()=>spin.hidden=false);v.addEventListener('playing',()=>spin.hidden=true);
+  v.addEventListener('play',()=>{big.hidden=true;$('[data-c=play]',box).textContent='⏸';publish();wake()});
+  v.addEventListener('pause',()=>{big.hidden=false;$('[data-c=play]',box).textContent='▶';publish();saveHist();box.classList.remove('idle')});
+  v.addEventListener('seeked',publish);v.addEventListener('ratechange',()=>{publish();paintRate()});v.addEventListener('volumechange',paintVol);
+  v.addEventListener('loadedmetadata',()=>{if(Number.isFinite(v.duration)&&v.duration>0){dur=v.duration;paintMarks();paint()}});
+  v.addEventListener('ended',()=>{saveHist(true);startCd()});
+  v.addEventListener('error',()=>{if(v.src||hls){spin.hidden=true;clearTimeout(watchdog);if(/\.m3u8/i.test(v.currentSrc||v.src||''))tryMp4('Видео не загрузилось');else showErr('Не удалось загрузить видео. Попробуйте другое качество или дорожку.')}});
+  function wake(){box.classList.remove('idle');clearTimeout(idleT);if(!v.paused)idleT=setTimeout(()=>box.classList.add('idle'),2800)}
+  box.addEventListener('mousemove',wake);box.addEventListener('touchstart',wake,{passive:true});
+  const toggle=()=>v.paused?v.play().catch(()=>showErr('Браузер заблокировал автовоспроизведение — нажмите Play')):v.pause();
+  big.onclick=toggle;v.onclick=toggle;box.addEventListener('dblclick',e=>{if(!e.target.closest('.pctl,.pset,.skipbtn,.cd'))fs()});
+  const fs=()=>document.fullscreenElement?document.exitFullscreen():box.requestFullscreen?.().catch(()=>{});
+  const bar=$('.bar',box);bar.addEventListener('click',e=>{const r=bar.getBoundingClientRect();seek((e.clientX-r.left)/r.width*dur)});bar.addEventListener('keydown',e=>{if(e.key==='ArrowRight')seek(v.currentTime+5);if(e.key==='ArrowLeft')seek(v.currentTime-5)});
+  $('.vol',box).addEventListener('input',e=>{const n=+e.target.value;P.volume=n;v.volume=n;v.muted=n===0;save('prefs')});
+  $('.pctl',box).addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b)return;({play:toggle,b10:()=>seek(v.currentTime-10),f10:()=>seek(v.currentTime+10),prev:()=>o.prev&&(location.hash=o.prev.url),nextep:()=>o.next&&(location.hash=o.next.url),mute:()=>{v.muted=!v.muted},cc:()=>setPref('subLang',P.subLang?'':(subsT[0]?.lang||'')),rate:()=>setPref('rate',P.rate>=2?.5:+(P.rate+.25).toFixed(2)),skip:()=>hasIntro()?skipIntro():skipOutro(),mark:addMark,pip:()=>document.pictureInPictureElement?document.exitPictureInPicture():v.requestPictureInPicture?.().catch(()=>toast('PiP недоступен','','err')),set:()=>{settingsOpen=!settingsOpen;set.hidden=!settingsOpen;if(settingsOpen)renderSet()},fs}[b.dataset.c])()});
+  let settingsOpen=false;
+  function setPref(k,val){P[k]=val;save('prefs');if(k==='rate')v.playbackRate=val;if(k==='quality'){const before=url();quality=val;const after=url();if(after!==before)load(v.currentTime);else applyQuality()}if(k==='audio'){const a=aud.find(x=>x.id===val);if(a){audio=a;load(v.currentTime)}}if(k==='subLang')loadSubs();paintSub();paintRate();$('.qb',box).textContent=quality==='auto'?'AUTO':quality==='mp4'?'MP4':quality+'p';$('[data-c=cc]',box).classList.toggle('on',!!P.subLang);if(settingsOpen)renderSet()}
+  const opt=(k,val,label)=>`<button data-p="${k}" data-v="${esc(val)}" class="${String(P[k])===String(val)?'on':''}">${esc(label)}</button>`;
+  const tog=(k,label,hint)=>`<button class="tg ${P[k]?'on':''}" data-t="${k}" role="switch" aria-checked="${P[k]}"><span>${esc(label)}${hint?`<small class="muted tiny">${esc(hint)}</small>`:''}</span><i class="sw"></i></button>`;
+  const rng=(lab,key,r,en)=>`<div class="rng" style="${en?'':'opacity:.45'}"><div class="row between"><b class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em">${lab}</b><span class="tiny" style="color:var(--accent);font-weight:700">${fmt(r[0])} → ${fmt(r[1])} (${Math.max(0,r[1]-r[0])} сек)</span></div><div class="g"><label class="f"><span><small>Начало, сек</small></span><input type="number" min="0" data-r="${key}0" value="${r[0]}" ${en?'':'disabled'}></label><label class="f"><span><small>Конец, сек</small></span><input type="number" min="0" data-r="${key}1" value="${r[1]}" ${en?'':'disabled'}></label></div></div>`;
+  function renderSet(){
+    const q=[['auto','Авто'],['2160','4K · 2160p'],['1080','1080p'],['720','720p'],['480','480p'],['360','360p']];
+    set.innerHTML=`<div class="row between"><h4 style="margin:0;color:var(--ink)">⚙ Настройки плеера</h4><button class="btn sm" data-close>Закрыть</button></div>
+    <section><h4>✂ Пропуск опенинга и эндинга</h4>${tog('skipIntro','Пропускать опенинг','Клавиша S')}${rng('Опенинг','intro',ranges.intro,P.skipIntro)}${tog('skipOutro','Пропускать эндинг','Автозапуск следующей серии')}${rng('Эндинг','outro',ranges.outro,P.skipOutro)}<p class="tiny muted" style="margin:0">Длина диапазона 5–90 сек. Значения сохраняются для этой серии.</p><button class="btn sm ghost" data-reset>Сбросить к значениям серии</button></section>
+    <section><h4>⏭ Авто-продолжение</h4>${tog('autoPlay','Запускать следующую серию автоматически')}<label class="f"><span>Задержка <small>${P.autoDelay} сек</small></span><input type="range" min="0" max="30" value="${P.autoDelay}" data-delay ${P.autoPlay?'':'disabled'}></label><div class="opts">${[0,3,5,10,20,30].map(n=>`<button data-p="autoDelay" data-v="${n}" class="${P.autoDelay===n?'on':''}">${n} сек</button>`).join('')}</div></section>
+    <section><h4>🎞 Качество</h4><div class="opts">${q.map(([k,l])=>opt('quality',k,l)).join('')}${mp4?opt('quality','mp4','MP4'):''}</div><p class="tiny muted" style="margin:0">«Авто» — адаптивный HLS${levels.length?`. Доступно: ${levels.map(h=>h+'p').join(', ')}`:''}.</p></section>
+    <section><h4>⚡ Скорость</h4><div class="opts">${[.5,.75,1,1.25,1.5,1.75,2].map(n=>opt('rate',n,n+'x')).join('')}</div></section>
+    <section><h4>🎙 Озвучка</h4><div class="opts">${aud.map(a=>opt('audio',a.id,a.label)).join('')}</div></section>
+    <section><h4>CC Субтитры</h4><div class="opts">${opt('subLang','','Выкл')}${subsT.map(s=>opt('subLang',s.lang,s.label)).join('')}</div>${subsT.length?`<label class="f"><span>Размер <small>${P.subSize}%</small></span><input type="range" min="60" max="200" step="10" value="${P.subSize}" data-ssize></label><div class="opts">${['#ffffff','#ffe066','#7ce0d3','#ff8fb1','#9ecbff'].map(c=>`<button data-p="subColor" data-v="${c}" class="${P.subColor===c?'on':''}" style="background:${c};width:28px;height:28px;padding:0" aria-label="${c}"></button>`).join('')}</div><div class="opts">${[['rgba(0,0,0,.65)','Полупрозрачный'],['rgba(0,0,0,.92)','Плотный'],['rgba(0,0,0,0)','Без фона'],['rgba(20,40,90,.8)','Синий'],['rgba(216,30,91,.75)','Акцент']].map(([c,l])=>opt('subBg',c,l)).join('')}</div><div class="opts">${[['top','Сверху'],['middle','По центру'],['bottom','Снизу']].map(([k,l])=>opt('subPos',k,l)).join('')}</div>`:'<p class="tiny muted" style="margin:0">У этого источника нет дорожек субтитров.</p>'}</section>
+    <section><h4>🔖 Закладки</h4><div class="row"><button class="btn sm pri" data-addmark>Отметить ${fmt(v.currentTime)}</button><span class="tiny muted">Клавиша B</span></div>${myMarks().map(m=>`<div class="row between" style="border:1px solid var(--line);border-radius:9px;padding:6px 10px"><button class="btn sm ghost" data-seek="${m.t}" style="color:var(--accent)">${fmt(m.t)}</button><button class="btn sm ghost" data-delmark="${m.id}" aria-label="Удалить">✕</button></div>`).join('')||'<p class="tiny muted" style="margin:0">Закладок пока нет.</p>'}</section>
+    <section><h4>⌨ Горячие клавиши</h4>${tog('hotkeys','Включить горячие клавиши')}<ul class="keys">${[['Space / K','пауза'],['← / →','±5 сек'],['J / L','±10 сек'],['↑ / ↓','громкость'],['M','звук'],['F','полный экран'],['S / E','пропуск оп./эндинга'],['B','закладка'],['N / P','серия → / ←'],['[ / ]','скорость'],['C','субтитры'],['0…9','процент серии']].map(([a,b])=>`<li><kbd>${a}</kbd><span>${b}</span></li>`).join('')}</ul></section>`}
+  set.addEventListener('click',e=>{const t=e.target;if(t.closest('[data-close]')){settingsOpen=false;set.hidden=true;return}const pb=t.closest('[data-p]');if(pb){let val=pb.dataset.v;if(['rate','autoDelay','subSize'].includes(pb.dataset.p))val=+val;setPref(pb.dataset.p,val);return}const tb=t.closest('[data-t]');if(tb){setPref(tb.dataset.t,!P[tb.dataset.t]);return}if(t.closest('[data-reset]')){o.onReset?.();return}if(t.closest('[data-addmark]'))return addMark();const sk=t.closest('[data-seek]');if(sk)return seek(+sk.dataset.seek);const dm=t.closest('[data-delmark]');if(dm){S.marks=S.marks.filter(m=>m.id!==dm.dataset.delmark);save('marks');paintMarks();renderSet()}});
+  set.addEventListener('input',e=>{const t=e.target;if(t.matches('[data-delay]')){P.autoDelay=+t.value;save('prefs');t.closest('label').querySelector('small').textContent=P.autoDelay+' сек'}if(t.matches('[data-ssize]')){P.subSize=+t.value;save('prefs');t.closest('label').querySelector('small').textContent=P.subSize+'%';paintSub()}});
+  set.addEventListener('change',e=>{const t=e.target;if(!t.matches('[data-r]'))return;const k=t.dataset.r.slice(0,-1),g=n=>+$(`[data-r=${k}${n}]`,set).value;ranges={...ranges,[k]:clampRange(g(0),g(1))};o.onRanges?.(k,ranges[k]);renderSet();paint()});
+  const key=e=>{if(!P.hotkeys||dead||!document.body.contains(box))return;const tg=e.target;if(tg&&(['INPUT','TEXTAREA','SELECT'].includes(tg.tagName)||tg.isContentEditable))return;const k=e.key;
+    const m={' ':toggle,k:toggle,K:toggle,ArrowRight:()=>seek(v.currentTime+5),ArrowLeft:()=>seek(v.currentTime-5),l:()=>seek(v.currentTime+10),L:()=>seek(v.currentTime+10),j:()=>seek(v.currentTime-10),J:()=>seek(v.currentTime-10),ArrowUp:()=>{P.volume=Math.min(1,v.volume+.1);v.volume=P.volume;save('prefs')},ArrowDown:()=>{P.volume=Math.max(0,v.volume-.1);v.volume=P.volume;save('prefs')},m:()=>{v.muted=!v.muted},M:()=>{v.muted=!v.muted},f:fs,F:fs,s:skipIntro,S:skipIntro,e:skipOutro,E:skipOutro,b:addMark,B:addMark,c:()=>setPref('subLang',P.subLang?'':(subsT[0]?.lang||'')),C:()=>setPref('subLang',P.subLang?'':(subsT[0]?.lang||'')),n:()=>o.next&&(location.hash=o.next.url),N:()=>o.next&&(location.hash=o.next.url),p:()=>o.prev&&(location.hash=o.prev.url),P:()=>o.prev&&(location.hash=o.prev.url),'[':()=>setPref('rate',Math.max(.5,+(P.rate-.25).toFixed(2))),']':()=>setPref('rate',Math.min(2,+(P.rate+.25).toFixed(2)))}[k];
+    if(m){if(k.startsWith('Arrow')||k===' ')e.preventDefault();m();wake()}else if(/^[0-9]$/.test(k))seek(dur*(+k/10))};
+  window.addEventListener('keydown',key);
+  const unload=()=>saveHist();window.addEventListener('beforeunload',unload);
+  $('[data-c=cc]',box).classList.toggle('on',!!P.subLang);syLabel();paintMarks();loadSubs();load();
+  return{video:v,
+    apply(st){if(!st)return;applying=true;if(Math.abs(v.currentTime-st.t)>2.5)v.currentTime=st.t;if(Math.abs(v.playbackRate-st.rate)>.05)v.playbackRate=st.rate;if(st.playing&&v.paused)v.play().catch(()=>{});if(!st.playing&&!v.paused)v.pause();setTimeout(()=>applying=false,500)},
+    state:()=>({t:v.currentTime,playing:!v.paused,rate:v.playbackRate}),
+    setRanges(r){ranges=r;introDone=false;paint();if(settingsOpen)renderSet()},refreshSync:syLabel,
+    destroy(){dead=true;saveHist();clearInterval(cdTimer);clearTimeout(idleT);window.removeEventListener('keydown',key);window.removeEventListener('beforeunload',unload);destroyHls();try{v.pause();v.removeAttribute('src');v.load()}catch{}}}
+}
+
+/* ------------------------------ разметка карточек ------------------------------ */
+const statusLabel=s=>({ongoing:'Выходит',completed:'Завершено',announced:'Анонс'}[s]||s);
+const card=(t,o={})=>`<a class="card" href="#/title/${t.id}" style="--ac:${t.accent}"><div class="pw"><img loading="lazy" referrerpolicy="no-referrer" src="${esc(t.poster)}" alt="Постер: ${esc(t.title)}"><div class="shade"></div><div class="bar"></div>${o.rank?`<span class="rk">${o.rank}</span>`:''}${t.score>0?`<span class="sc">★ ${t.score.toFixed(1)}</span>`:''}<div class="cap"><b>${esc(t.title)}</b><small>${t.year||''}${t.aired?` · ${t.aired} сер.`:''}${o.note?' · '+esc(o.note):''}</small>${o.prog?`<div class="pg"><i style="width:${Math.min(100,o.prog)}%"></i></div>`:''}</div></div><div class="tags">${t.genres.slice(0,2).map(g=>`<span>${esc(g)}</span>`).join('')}</div></a>`;
+const head=(title,sub,href,link)=>`<div class="sechead"><div><h2>${title}</h2>${sub?`<p>${sub}</p>`:''}</div>${href?`<a href="${href}">${link} →</a>`:''}</div>`;
+const loading=`<div class="center"><span class="spinner" aria-label="Загрузка"></span></div>`;
+const NOTE={favorite:'в избранном',watching:'смотрю',planned:'в планах',dropped:'брошено'};
+const empty=(t,p,a='')=>`<div class="empty"><h3>${t}</h3><p>${p}</p>${a}</div>`;
+const histList=()=>Object.values(S.hist).sort((a,b)=>b.at-a.at);
+
+/* ------------------------------ роли и модерация ------------------------------ */
+const ROLE={streamer:{tag:'Streamer',c:'#ff4d5e',label:'Владелец стрима',rank:0},moderator:{tag:'Moderator',c:'#2fd67f',label:'Модератор',rank:1},vip:{tag:'VIP',c:'#ffc531',label:'VIP / Друг',rank:2},sub:{tag:'Sub',c:'#4aa8ff',label:'Подписчик',rank:3},viewer:{tag:'',c:'#9a99a6',label:'Зритель',rank:4}};
+const tag=r=>ROLE[r]?.tag?`<span class="tag" style="color:${ROLE[r].c};border-color:${ROLE[r].c}66;background:${ROLE[r].c}22">${ROLE[r].tag}</span>`:'';
+const av=(n,size=30,ring)=>`<span class="av" style="width:${size}px;height:${size}px;font-size:${size*.38}px;background:linear-gradient(140deg,hsl(${hue(n)} 78% 58%),hsl(${(hue(n)+48)%360} 72% 38%));${ring?`box-shadow:0 0 0 2px ${ring}`:''}" aria-hidden="true">${esc((n||'?').split(/[\s_-]+/).slice(0,2).map(x=>x[0]?.toUpperCase()||'').join('')||'?')}</span>`;
+const ROOTS=['хуй','хуя','хую','хуе','хуё','пизд','ебат','ёбат','ебуч','ебла','ебло','ебну','ебал','ебан','ебар','ебл','ебн','ебу','еби','еба','бляд','блят','бля','сука','сучк','муда','мудак','мудил','гандо','пидар','пидор','педик','долбо','заеб','наху','нахер','поху','охуе','шлюх','дрищ','говн','срать','траха','ублюд','fuck','shit','bitch','asshole','dick','cunt','whore','slut','bastard','pussy'];
+const LEET={'0':'о','1':'i','3':'е','4':'а','5':'s','6':'б','7':'т','@':'а','$':'s','!':'i','|':'l'};
+const normText=s=>s.toLowerCase().split('').map(c=>LEET[c]??c).join('').replace(/ь/g,'').replace(/[^a-zа-яё\s]/gi,' ').replace(/\s+/g,' ').trim();
+function censor(s){const low=s.toLowerCase();let out='',i=0;while(i<s.length){const hit=ROOTS.find(r=>low.startsWith(r.slice(0,Math.min(r.length,4)),i));if(hit){const l=Math.min(hit.length,4);out+=s[i]+'*'.repeat(Math.max(2,l-1));i+=l}else out+=s[i++]}return out}
+function moderate(raw,c){const text=(raw||'').replace(/\s+/g,' ').trim();if(!text)return{ok:false,reason:'Пустое сообщение'};if(text.length>500)return{ok:false,reason:'Сообщение длиннее 500 символов'};const flags=[];
+  if(!c.priv&&c.slow>0&&c.last){const left=c.slow-(Date.now()-c.last)/1e3;if(left>0)return{ok:false,reason:`Медленный режим: подождите ещё ${Math.ceil(left)} сек`}}
+  if(c.subsOnly&&!c.isSub&&!c.priv)return{ok:false,reason:'Чат только для подписчиков стрима'};
+  if(!c.priv&&c.recent.slice(0,3).includes(text))return{ok:false,reason:'Не повторяйте одно и то же сообщение'};
+  if(!c.filter)return{ok:true,text,flags};let clean=text;const n=normText(text);
+  if(ROOTS.some(r=>r.length>=3&&n.includes(r))){flags.push('profanity');const cc=censor(clean);clean=cc===clean?'▓▓▓ скрыто авто-фильтром ▓▓▓':cc}
+  const letters=clean.replace(/[^a-zA-Zа-яА-ЯёЁ]/g,'');if(letters.length>=8&&letters.replace(/[^A-ZА-ЯЁ]/g,'').length/letters.length>.7){flags.push('caps');clean=clean.charAt(0).toUpperCase()+clean.slice(1).toLowerCase()}
+  const cp=clean.replace(/\s+/g,'');if(cp.length>=12)for(let l=1;l<=6;l++){const u=cp.slice(0,l);let r=0;for(let i=0;i+l<=cp.length&&r<60;i+=l){if(cp.slice(i,i+l)===u)r++;else break}if(r*l>=Math.max(12,cp.length*.8))return{ok:false,reason:'Похоже на спам'}}
+  if(/(https?:\/\/|www\.|discord\.gg|t\.me\/|bit\.ly)/i.test(clean)&&!c.priv)return{ok:false,reason:'Ссылки запрещены — попросите модератора поделиться ссылкой'};
+  return{ok:true,text:clean,flags}}
+const sticker=(q,i)=>{const h=(i*47+q.length*13)%360,e=['(ﾉ◕ヮ◕)ﾉ*:･ﾟ✧','ಠ_ಠ','(╯°□°)╯︵ ┻━┻','ʕ •ᴥ• ʔ','(ノ˘ω˘)ノ','ヽ(°〇°)ﾉ'][i%6];const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="220" height="160"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${h},80%,62%)"/><stop offset="1" stop-color="hsl(${(h+55)%360},75%,42%)"/></linearGradient></defs><rect width="220" height="160" rx="14" fill="url(#g)"/><text x="110" y="88" font-family="system-ui" font-size="34" fill="#fff" text-anchor="middle">${e}</text><text x="110" y="132" font-family="system-ui" font-size="15" font-weight="700" fill="rgba(255,255,255,.9)" text-anchor="middle">${esc(q.slice(0,18).toUpperCase())}</text></svg>`;return{id:'l'+i,title:q,url:'data:image/svg+xml;utf8,'+encodeURIComponent(svg)}};
+async function findGifs(q){q=q.trim()||'anime';if(S.giphy){try{const r=await fetch(`https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(S.giphy)}&q=${encodeURIComponent(q)}&limit=12&rating=pg-13`);if(r.ok){const j=await r.json();return{provider:'giphy',items:j.data.map(g=>({id:g.id,title:g.title||q,url:g.images.fixed_width.url}))}}}catch{}}return{provider:'local',items:Array.from({length:12},(_,i)=>sticker(q,i))}}
+
+/* ------------------------------ комнаты (между вкладками браузера) ------------------------------ */
+const bc='BroadcastChannel' in window?new BroadcastChannel('anihub-rooms'):null;
+const R={all:()=>LS.get('rooms',{}),put:v=>LS.set('rooms',v),get:c=>LS.get('rooms',{})[c]};
+function mutate(code,fn){const all=R.all(),r=all[code];if(!r)return null;fn(r);R.put(all);return r}
+const online=new Map();
+function isOnline(code,id){return id===ME.id||(online.get(code+id)||0)>Date.now()-9000}
+function logMod(r,action,target,reason){r.log.unshift({at:Date.now(),by:S.name||'?',byId:ME.id,action,target,reason:reason||''});r.log=r.log.slice(0,100)}
+function sysMsg(r,body){r.msgs.push({id:uid(),sys:true,body,at:Date.now()});r.msgs=r.msgs.slice(-300)}
+function joinRoom(code){const r=R.get(code);if(!r)return null;mutate(code,x=>{if(!x.members[ME.id])x.members[ME.id]={name:S.name,role:x.hostId===ME.id?'streamer':'viewer',banned:false,mutedUntil:0,last:0,joined:Date.now()};else x.members[ME.id].name=S.name});return R.get(code)}
+async function ensureName(){if(S.name)return true;const d=ask('Как вас называть?',`<label class="f"><span>Ник <small>виден в чате</small></span><input class="inp" id="nn" maxlength="24" placeholder="midnight_viewer" autocomplete="nickname"></label><button class="btn pri" id="nok">Продолжить</button>`);const done=()=>{const v=d.m.querySelector('#nn').value.trim().slice(0,24);if(v.length<2){d.m.querySelector('#nn').focus();return}S.name=v;save('name');d.close(true)};d.m.querySelector('#nok').onclick=done;d.m.querySelector('#nn').onkeydown=e=>{if(e.key==='Enter')done()};return!!(await d.pr)}
+
+/* ------------------------------ страницы ------------------------------ */
+let cleanup=null,roomUnsub=null,nav=0;
+const app=$('#app');
+function setNav(n){$$('[data-nav]').forEach(a=>a.classList.toggle('on',a.dataset.nav===n))}
+/* safePage: синхронный И асинхронный сбой страницы = экран ошибки, не вечный спиннер */
+function safePage(f){const n=nav;let r;try{r=f()}catch(e){catalogState='error';catalogError='Ошибка страницы: '+(e.message||e);app.innerHTML=empty('Не удалось открыть страницу',esc(catalogError)+' Проверьте соединение и повторите.','<button class="btn pri" data-retry>Повторить</button>');return}
+ if(r&&typeof r.catch==='function')r.catch(e=>{if(nav!==n)return;catalogState='error';catalogError='Ошибка страницы: '+(e.message||e);app.innerHTML=empty('Не удалось открыть страницу',esc(catalogError)+' Проверьте соединение и повторите.','<button class="btn pri" data-retry>Повторить</button>')});return r}
+function needCatalog(render){
+  if(catalogState==='ready')return safePage(render);
+  if(catalogState==='error'){app.innerHTML=empty('Не удалось загрузить каталог',`${esc(catalogError)}. Пробовали по цепочке: Shikimori → AniList → AniLibria. Проверьте интернет и повторите.`,'<button class="btn pri" data-retry>Повторить</button>');return}
+  /* есть любой кэш — рисуем сразу, свежесть добираем в фоне */
+  const c=LS.get('cache',null);
+  if(c?.items?.length&&!catalogPromise){ALL=c.items;CAT_SRC=c.src||CAT_SRC;catalogState='ready';safePage(render);ensureCatalog(true);return}
+  app.innerHTML=loading;ensureCatalog().then(()=>{if(catalogState==='error'){router();return}safePage(router)}).catch(e=>{app.innerHTML=empty('Не удалось загрузить каталог',esc(String(e.message||e)),'<button class="btn pri" data-retry>Повторить</button>')})}
+
+function pageHome(){
+  setNav('');const top=[...ALL].sort((a,b)=>b.score-a.score).slice(0,12),ongoing=ALL.filter(t=>t.status==='ongoing').length,H=histList().slice(0,6);
+  const rooms=Object.entries(R.all()).filter(([,r])=>r.status==='live').slice(0,4);
+  const hero=top[0];
+  app.innerHTML=`<section class="hero"><div class="bg" style="background-image:url('${esc(hero?.banner||hero?.poster||'')}')"></div><div class="wrap in"><div>
+  <span class="pill">🛡 ноль рекламы · ноль трекеров</span><h1 style="margin-top:22px"><em>СМОТРИ</em> ОДИН — ИЛИ <u>ВМЕСТЕ</u></h1>
+  <p style="margin:22px 0 0;max-width:560px;color:rgba(255,255,255,.72);font-size:17px">Плеер, который подстраивается под вас: пропуск опенинга и эндинга по своим диапазонам, озвучки, субтитры, скорость, закладки и автосерия. Видео — своё, через Kodik или любой плеер-источник. Рядом — комнаты совместного просмотра с синхронным плеером, чатом, ролями и модерацией.</p>
+  <div class="row" style="margin-top:30px"><a class="btn pri lg" href="#/catalog">Открыть каталог →</a><a class="btn lg" href="#/streaming" style="background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.25)">● Комнаты</a><a class="btn lg" href="#/profile/settings" style="background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.25)">🎬 Подключить видео</a></div>
+  <div class="stats"><div><b>${ALL.length}</b><small>тайтлов</small></div><div><b>${ongoing}</b><small>онгоингов</small></div><div><b>${ALL.reduce((a,t)=>a+t.aired,0)}</b><small>серий</small></div><div><b>${Object.keys(R.all()).length}</b><small>комнат</small></div></div></div>
+  <div class="glass" style="align-self:center"><div class="row between"><b class="tiny" style="letter-spacing:.16em;text-transform:uppercase"><span class="dot"></span> сейчас в эфире</b><a class="tiny" href="#/streaming" style="opacity:.6">все комнаты →</a></div><div class="list" style="margin-top:12px">${rooms.length?rooms.map(([c,r])=>`<a class="item" href="#/room/${c}" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)"><span class="code" style="font-size:12px;letter-spacing:.1em;width:42px;color:var(--accent)">${c.slice(0,2)}</span><span class="t"><b>${esc(r.title)}</b><small style="color:rgba(255,255,255,.55)">${esc(Object.values(r.members).find(m=>m.role==='streamer')?.name||'')} · ${Object.keys(r.members).length} в комнате</small></span></a>`).join(''):'<p class="sm" style="color:rgba(255,255,255,.6);margin:0">Эфиров пока нет. Создайте комнату — код приглашения появится сразу.</p>'}</div><p class="tiny" style="margin:14px 0 0;color:rgba(255,255,255,.65)">Роли Streamer / Moderator / VIP / Sub видны рядом с ником.</p></div></div></section>
+  <div class="marq" aria-hidden="true"><div>${[0,1].map(()=>top.map(t=>`<span>${esc(t.title)}<b>★ ${t.score.toFixed(1)}</b></span>`).join('')).join('')}</div></div>
+  <div class="wrap">${H.length?head('Продолжить просмотр','Позиция сохраняется автоматически','#/profile/history','Вся история')+`<div class="grid w">${H.map(h=>`<a class="item" href="#/watch/${h.id}/${h.ep}"><img referrerpolicy="no-referrer" src="${esc(h.poster)}" alt=""><span class="t"><b>${esc(h.title)}</b><small>Серия ${h.ep} · ${fmt(h.pos)} из ${fmt(h.dur)}</small><div class="prog"><i style="width:${Math.min(100,h.pos/Math.max(1,h.dur)*100)}%"></i></div></span></a>`).join('')}</div>`:''}
+  ${head('В тренде сезона','Оценки зрителей по данным Shikimori','#/catalog','Весь каталог')}<div class="grid">${top.slice(0,12).map((t,i)=>card(t,{rank:i+1})).join('')}</div>
+  ${head('Возможности плеера','Все настройки хранятся в браузере и применяются к любой серии')}<div class="feat">${[['🎬 Реальные источники видео','Плеер Kodik с озвучками работает сразу (публичный токен подтягивается автоматически), плюс свой лицензионный HLS-шаблон или любой embed — переключение прямо на странице серии.'],['✂ Пропуск опенинга/эндинга','Диапазон задаётся вручную, длина 5–90 сек, своя настройка для каждой серии.'],['⏭ Авто-продолжение','Следующая серия стартует сама с задержкой 0–30 секунд, отсчёт можно отменить.'],['CC Субтитры','Язык, размер 60–200%, цвет, фон и положение: сверху, по центру, снизу.'],['🎙 Озвучки','Несколько дорожек с сохранением позиции при переключении.'],['🎞 Качество и скорость','360p / 480p / 720p / 1080p / 4K или авто-HLS. Скорость 0.5x–2x.'],['🔖 Таймстемпы и закладки','Позиция пишется в историю, любимые моменты — на таймлайн.'],['⌨ Горячие клавиши','Space, ←/→, F, S, N и ещё десяток — все в настройках.']].map(([a,b])=>`<div><h3>${a}</h3><p>${b}</p></div>`).join('')}</div></div>`;
+}
+
+function pageCatalog(qs){
+  setNav('catalog');const P=new URLSearchParams(qs||'');
+  const gen=new Set(ALL.flatMap(t=>t.genres)),G=[...gen].sort((a,b)=>a.localeCompare(b,'ru')),Y=[...new Set(ALL.map(t=>t.year))].filter(Boolean).sort((a,b)=>b-a),ST=[...new Set(ALL.map(t=>t.studio))].sort((a,b)=>a.localeCompare(b,'ru'));
+  const f={q:P.get('q')||'',sort:P.get('sort')||'rating',status:P.get('status')||'',min:+P.get('min')||0,genre:(P.get('genre')||'').split(',').filter(Boolean),year:(P.get('year')||'').split(',').filter(Boolean),studio:(P.get('studio')||'').split(',').filter(Boolean),open:P.get('open')==='1'};
+  const url=(patch)=>{const n={...f,...patch};const u=new URLSearchParams();if(n.q)u.set('q',n.q);if(n.sort!=='rating')u.set('sort',n.sort);if(n.status)u.set('status',n.status);if(n.min)u.set('min',n.min);if(n.genre.length)u.set('genre',n.genre.join(','));if(n.year.length)u.set('year',n.year.join(','));if(n.studio.length)u.set('studio',n.studio.join(','));if(n.open)u.set('open','1');return '#/catalog'+(u.toString()?'?'+u:'')};
+  const tog=(a,v)=>a.includes(v)?a.filter(x=>x!==v):[...a,v];
+  const q=f.q.toLowerCase();let items=ALL.filter(t=>(!q||[t.title,t.alt,t.studio,...t.genres].join(' ').toLowerCase().includes(q))&&f.genre.every(g=>t.genres.includes(g))&&(!f.year.length||f.year.includes(String(t.year)))&&(!f.studio.length||f.studio.includes(t.studio))&&(!f.status||t.status===f.status)&&t.score>=f.min);
+  items.sort({rating:(a,b)=>b.score-a.score,year:(a,b)=>b.year-a.year,views:(a,b)=>b.aired-a.aired,title:(a,b)=>a.title.localeCompare(b.title,'ru')}[f.sort]||((a,b)=>b.score-a.score));
+  const act=f.genre.length+f.year.length+f.studio.length+(f.status?1:0)+(f.min?1:0);
+  const dice=()=>{const t=items[Math.floor(Math.random()*items.length)]||ALL[Math.floor(Math.random()*ALL.length)];if(t)location.hash='#/title/'+t.id};
+  app.innerHTML=`<div class="wrap"><div class="pagehead"><div class="eyebrow">раздел 01 · просмотр аниме</div><h1>Каталог</h1><p>Фильтры по жанру, году, студии и рейтингу. Поиск с автодополнением — в шапке сайта, клавиша <b>/</b>. ${CAT_SRC?`Сейчас загружен из: <b style="color:var(--accent)">${esc(CAT_SRC)}</b>.`:''}</p></div>
+  <div class="fbar"><div class="row"><input class="inp" style="flex:1;min-width:200px" id="cq" value="${esc(f.q)}" placeholder="Название, жанр или студия…" aria-label="Поиск по каталогу"><select class="inp" style="width:auto" id="cs" aria-label="Сортировка">${[['rating','По рейтингу'],['year','По году'],['views','По числу серий'],['title','По алфавиту']].map(([k,l])=>`<option value="${k}" ${f.sort===k?'selected':''}>${l}</option>`).join('')}</select><select class="inp" style="width:auto" id="cst" aria-label="Статус">${[['','Любой статус'],['ongoing','Выходит'],['completed','Завершено']].map(([k,l])=>`<option value="${k}" ${f.status===k?'selected':''}>${l}</option>`).join('')}</select><a class="btn ${f.open?'pri':''}" href="${url({open:!f.open})}">Фильтры${act?` · ${act}`:''}</a><button class="btn" id="dice" title="Случайный тайтл из выборки">🎲</button></div>
+  ${f.open?`<div class="panel fpanel"><div><h4>Жанр</h4><div class="row" style="gap:6px">${G.map(g=>`<a class="chip ${f.genre.includes(g)?'on':''}" href="${url({genre:tog(f.genre,g)})}">${esc(g)}</a>`).join('')}</div></div><div><h4>Год</h4><div class="row" style="gap:6px">${Y.map(y=>`<a class="chip ${f.year.includes(String(y))?'on':''}" href="${url({year:tog(f.year,String(y))})}">${y}</a>`).join('')}</div></div><div><h4>Студия</h4><div class="row" style="gap:6px">${ST.map(s=>`<a class="chip ${f.studio.includes(s)?'on':''}" href="${url({studio:tog(f.studio,s)})}">${esc(s)}</a>`).join('')}</div></div><div class="row"><label class="row sm" style="font-weight:700">Рейтинг от <input type="range" id="cmin" min="0" max="10" step=".5" value="${f.min}" style="width:160px" aria-label="Минимальный рейтинг"> <b style="color:var(--accent)">${f.min.toFixed(1)}</b></label>${act?`<a class="btn sm ghost" href="#/catalog${f.q?'?q='+encodeURIComponent(f.q):''}">✕ Сбросить фильтры</a>`:''}</div></div>`:''}</div>
+  <p class="muted sm" style="margin:18px 0 10px" aria-live="polite">Найдено тайтлов: ${items.length}</p>
+  ${items.length?`<div class="grid">${items.map(t=>card(t,{note:NOTE[S.lists[t.id]]})).join('')}</div>`:empty('Ничего не найдено','Попробуйте убрать часть фильтров или изменить запрос — например, «Фрирен» или «Madhouse».','<a class="btn pri" href="#/catalog">Сбросить всё</a>')}</div>`;
+  const go=patch=>{location.hash=url(patch)};let tm;$('#cq').oninput=e=>{clearTimeout(tm);const v=e.target.value;tm=setTimeout(()=>{location.replace(url({q:v}));setTimeout(()=>{const i=$('#cq');if(i){i.focus();i.setSelectionRange(v.length,v.length)}},0)},250)};$('#cq').onkeydown=e=>{if(e.key==='Enter'){clearTimeout(tm);location.replace(url({q:e.target.value}))}};$('#cs').onchange=e=>go({sort:e.target.value});$('#cst').onchange=e=>go({status:e.target.value});$('#dice').onclick=dice;const m=$('#cmin');if(m)m.onchange=e=>go({min:+e.target.value})
+}
+
+async function pageTitle(id){
+  setNav('catalog');app.innerHTML=loading;const my=nav;const t=await getTitle(id);if(my!==nav)return;if(!t){app.innerHTML=`<div class="wrap" style="padding-top:60px">${empty('Тайтл не найден','Возможно, он удалён из каталога.','<a class="btn pri" href="#/catalog">В каталог</a>')}</div>`;return}
+  const eps=episodes(t),kind=S.lists[t.id],sub=S.subs.includes(t.id),next=t.next&&t.next>Date.now()-6*36e5?t.next:null;
+  const rel=ALL.filter(x=>x.id!==t.id&&x.genres.some(g=>t.genres.includes(g))).sort((a,b)=>b.score-a.score).slice(0,6);
+  const rooms=Object.entries(R.all()).filter(([,r])=>r.titleId===t.id).slice(0,3);
+  const LISTS=[['favorite','♥ Избранное'],['watching','▶ Смотрю сейчас'],['planned','🔖 В планах']];
+  const srcBadges=[S.embeds[t.id]?'🔗 Embed':'',S.tpl?'📡 HLS':'','🎬 Kodik'].filter(Boolean);
+  app.innerHTML=`<section class="tbanner"><div class="bg" style="background-image:url('${esc(t.banner||t.poster)}')"></div><div class="wrap in"><div class="poster"><img referrerpolicy="no-referrer" src="${esc(t.poster)}" alt="Постер ${esc(t.title)}"></div><div style="min-width:0;flex:1">
+  <div class="eyebrow" style="color:${t.accent}">${esc(t.studio)} · ${t.year||'—'} · ${t.age}</div><h1 style="margin-top:8px">${esc(t.title)}</h1><div style="color:rgba(255,255,255,.6);font-size:14px;margin-top:4px">${esc(t.alt)}</div>
+  <div class="row" style="gap:6px;margin-top:14px">${t.genres.map(g=>`<a class="chip" style="color:#fff;background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2)" href="#/catalog?genre=${encodeURIComponent(g)}">${esc(g)}</a>`).join('')}<span class="chip" style="color:rgba(255,255,255,.7);background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2)">${statusLabel(t.status)}</span>${srcBadges.map(b=>`<span class="chip" style="color:var(--cyan);background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2)">${b} доступен</span>`).join('')}</div>
+  <p style="margin:18px 0 0;max-width:700px;color:rgba(255,255,255,.78);font-size:14px;white-space:pre-line">${esc(t.desc)}</p>
+  <div class="row" style="gap:28px;margin-top:20px">${[[t.score>0?'★ '+t.score.toFixed(1):'—','оценка'],[eps.length,'серий'],[fmt(eps[0]?.dur||0),'хронометраж']].map(([a,b])=>`<div><b style="font-family:var(--fd);font-size:20px;display:block">${a}</b><small style="color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.14em;font-size:10px">${b}</small></div>`).join('')}</div>
+  ${next?`<div style="margin-top:18px"><span class="pill" style="border-color:var(--accent);color:var(--accent)">⚡ Новая серия <b data-cd="${next}" style="margin-left:6px">${esc(cdLabel(next))}</b></span></div>`:''}<div class="row" style="margin-top:24px"><a class="btn pri lg" href="#/watch/${t.id}/${S.hist[hkey(t.id,1)]&&!S.hist[hkey(t.id,1)].done?1:(histList().find(h=>h.id===t.id)?.ep||1)}">▶ Смотреть</a><a class="btn lg" style="background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.25)" href="#/streaming?create=1&title=${t.id}">● Смотреть вместе</a></div>
+  <div class="row" style="margin-top:12px;gap:6px">${LISTS.map(([k,l])=>`<button class="btn sm ${kind===k?'pri':''}" data-list="${k}" style="${kind===k?'':'background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.25)'}">${l}</button>`).join('')}<button class="btn sm ${sub?'pri':''}" data-sub style="${sub?'':'background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.25)'}">${sub?'🔕 Уведомления вкл':'🔔 О новых сериях'}</button></div>
+  <div class="row" style="margin-top:14px;gap:8px;font-size:11px;font-weight:700;color:rgba(255,255,255,.85)">${next?`<span class="chip" style="color:#fff;background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2)">📅 Серия ${t.aired+1}: ${new Date(next).toLocaleString('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit',timeZone:'Europe/Moscow'})} МСК</span>`:''}</div></div></div></section>
+  <div class="wrap two"><section id="epsarea"><h2 style="font-size:20px;padding-bottom:12px;border-bottom:1px solid var(--line)">▶ Серии · ${eps.length}</h2><div class="grid w" style="margin-top:16px;gap:8px">${eps.map(e=>{const h=S.hist[hkey(t.id,e.n)];return`<a class="ep" href="#/watch/${t.id}/${e.n}"><span class="n">${e.n}</span><span class="t" style="min-width:0;flex:1"><b style="display:block;font-size:13px">Серия ${e.n}${esc(epSuffix(e))}</b><small class="muted tiny">${fmt(e.dur)}${h?(h.done?' · досмотрено':' · '+fmt(h.pos)):''}</small>${h&&!h.done?`<div class="prog" style="height:3px"><i style="width:${Math.min(100,h.pos/Math.max(1,h.dur)*100)}%"></i></div>`:''}</span></a>`}).join('')}</div></section>
+  <aside style="display:grid;gap:18px;align-content:start"><p class="panel sm muted" style="margin:0">Описание, оценки и постер — по данным <a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700">Shikimori</a> (часть обложек — AniList).</p>
+  ${rooms.length?`<div class="panel"><h3 style="font-size:12px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">● Комнаты по тайтлу</h3><div class="list">${rooms.map(([c,r])=>`<a class="item" href="#/room/${c}"><span class="t"><b>${c}</b><small>${esc(r.title)}</small></span></a>`).join('')}</div></div>`:''}
+  ${rel.length?`<div><h3 style="font-size:15px;padding-bottom:10px;border-bottom:1px solid var(--line)">Похожее</h3><div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:14px;gap:10px">${rel.map(card).join('')}</div></div>`:''}</aside></div>`;
+  app.onclick=e=>{const l=e.target.closest('[data-list]');if(l){const k=l.dataset.list;if(S.lists[t.id]===k){delete S.lists[t.id];toast('Убрано из списка',t.title)}else{S.lists[t.id]=k;toast('Добавлено в список',t.title,'ok')}save('lists');pageTitle(id)}
+    if(e.target.closest('[data-sub]')){if(S.subs.includes(t.id)){S.subs=S.subs.filter(x=>x!==t.id);toast('Подписка отключена')}else{S.subs.push(t.id);S.aired[t.id]=t.aired;S.notes.unshift({id:uid(),title:`${t.title} · серия ${t.aired}`,body:'Вы подписались на тайтл — пришлём уведомление о новой серии.',link:`#/watch/${t.id}/${t.aired}`,at:Date.now(),read:false});toast('Подписка оформлена','Уведомим о новой серии','ok');save('notes','aired');badge()}save('subs');pageTitle(id)}}
+
+  /* ==== Сезоны и фильмы: догружаем из Kodik в фоне, обновляем блок серий точечно ==== */
+  kodikFetch(t).then(data=>{
+    if(my!==nav||!data||!data.results||!data.results.length)return;
+    const area=document.getElementById('epsarea');if(!area)return;
+    const kres=data.results[kodikPick(data)];
+    const seasons=kodikSeasons(kres);
+    const words=x=>new Set(String(x||'').toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9\s]/g,' ').split(/\s+/).filter(w=>w.length>2));
+    const b1=words(t.title),b2=words(t.alt),hay=(t.title+' '+(t.alt||'')).toLowerCase();
+    const films=data.results.filter(r=>r.type==='movie').filter(r=>{const nm=(r.title||r.title_orig||'');const w=words(nm);let i=0;for(const x of w)if(b1.has(x)||b2.has(x))i++;return i>=2||(w.size&&[...w].some(x=>x.length>4&&hay.includes(x)))});
+    if(seasons.length<=1&&!films.length)return;
+    const H2='<h2 style="font-size:20px;padding-bottom:12px;border-bottom:1px solid var(--line)">▶ Серии</h2>';
+    let epsHtml='';
+    if(seasons.length>1)epsHtml=H2+seasons.map(x=>`<h3 class="muted tiny" style="letter-spacing:.14em;text-transform:uppercase;margin:18px 0 8px">Сезон ${x.season} · ${x.eps.length} сер.</h3><div class="grid w" style="margin-top:10px;gap:8px">${x.eps.map(e=>{const k2=e.season>1?e.season+'x'+e.n:e.n,hh=S.hist[hkey(t.id,k2)];return`<a class="ep" href="#/watch/${t.id}/${k2}"><span class="n">${e.n}</span><span class="t" style="min-width:0;flex:1"><b style="display:block;font-size:13px">Серия ${e.n}</b><small class="muted">${hh&&!hh.done?'смотрели · до '+fmt(hh.pos||0):hh&&hh.done?'просмотрено':'Kodik · '+esc(kres.translation||'озвучка')}</small></span>${hh&&!hh.done?'<b class="tiny" style="color:var(--accent)">▶ продолжить</b>':hh&&hh.done?'<b class="tiny" style="color:var(--accent)">✓</b>':''}</a>`}).join('')}</div>`).join('');
+    let filmsHtml='';
+    if(films.length){filmsHtml=`<h3 class="muted tiny" style="letter-spacing:.14em;text-transform:uppercase;margin:22px 0 8px">🎬 Фильмы по этому аниме · ${films.length}</h3><div class="grid w" style="margin-top:10px;gap:8px">${films.map((f,i)=>`<div class="ep" style="cursor:pointer" data-film="${i}"><span class="n">🎥</span><span class="t" style="min-width:0;flex:1"><b style="display:block;font-size:13px">${esc(f.title||f.title_orig||'Фильм')}</b><small class="muted">фильм${f.year?' · '+f.year:''}${f.material_data&&f.material_data.duration?' · '+f.material_data.duration+' мин':''} · Kodik</small></span><b class="tiny" style="color:var(--accent)">▶ смотреть</b></div>`).join('')}</div><div id="filmbay" style="margin-top:14px"></div>`}
+    if(seasons.length>1)area.innerHTML=epsHtml+filmsHtml;
+    else area.insertAdjacentHTML('beforeend',filmsHtml);
+    if(!films.length)return;
+    let filmCtl=null;
+    area.querySelectorAll('[data-film]').forEach(btn=>btn.onclick=async()=>{
+      const f=films[+btn.dataset.film],bay=document.getElementById('filmbay');if(!bay)return;
+      bay.innerHTML=loading;
+      const mm=String(f.link||'').match(/\/movie\/(\d+)\/([a-f0-9]+)/i);
+      try{
+        let js=null;
+        if(mm&&await hasProxy()){const r0=await withTimeout(fetch(location.origin+`/kodik/resolve?id=${mm[1]}&hash=${mm[2]}&type=movie`),25000,'таймаут');if(r0.ok)js=await r0.json()}
+        bay.innerHTML='';
+        if(js&&js.links){filmCtl=mountPlayer(bay,{title:f.title||t.title,sub:'Фильм · Kodik · прямой поток',media:kodikDirectMedia(js),dur:((f.material_data&&f.material_data.duration)||90)*60,ranges:{intro:[0,0],outro:[0,0]},autoStart:true,meta:{id:t.id,ep:'film'+mm[1],title:t.title,poster:t.poster},badge:'<span style="color:var(--cyan)">● Фильм · Kodik</span>'})}
+        else{filmCtl=mountEmbedPlayer(bay,{title:f.title||t.title,sub:'Фильм · внешний плеер Kodik',url:kq(f.link),badge:'● Kodik'});if(IN_FRAME)toast('Чистый поток недоступен','Запустите kodik_proxy.py локально — фильм заиграет без рекламы')}
+        cleanup=()=>{try{filmCtl&&filmCtl.destroy&&filmCtl.destroy()}catch(e){}filmCtl=null}
+      }catch(e){bay.innerHTML=empty('Не удалось открыть фильм',esc(String(e.message||e)),'')}
+    });
+  }).catch(()=>{})
+}
+
+async function pageWatch(id,epn){
+  setNav('catalog');app.innerHTML=loading;let my=nav;const t=await getTitle(id);if(my!==nav)return;
+  if(!t){app.innerHTML=`<div class="wrap" style="padding-top:60px">${empty('Не удалось загрузить данные тайтла','Shikimori, AniList и AniLibria не ответили. Проверьте интернет и повторите.','<button class="btn pri" data-retry>Повторить</button>')}</div>`;return}
+  /* --- выбор источника видео: страница не должна ждать сеть --- */
+  const order=resolveOrder(t);let used=null,kodik=null,kodikErr='';my=nav;
+  /* AniLibria ищем сразу параллельно с Kodik — источник подхватится без ожидания очереди */
+  const libP=order.includes('libria')?libriaResolve(t).catch(()=>null):null;
+  if(order.includes('kodik')){
+    const kc=kodikCacheHit(t.id);
+    if(kc){
+      if(kc.data.total>0&&kc.data.results.length){kodik={data:kc.data};kodik.sel=Math.max(0,Math.min(S.kodicsel[t.id]!=null?S.kodicsel[t.id]:kodikPick(kodik.data),kodik.data.results.length-1));if(order[0]==='kodik')used='kodik'}
+      else kodikErr=kc.err||'Kodik: материал по этому тайтлу не найден'}
+    else if(order[0]==='kodik'){
+      try{const data=await withTimeout(kodikFetch(t),4000,'таймаут');if(my!==nav)return;
+        if(data.total>0&&data.results.length){kodik={data};kodik.sel=Math.max(0,Math.min(S.kodicsel[t.id]!=null?S.kodicsel[t.id]:kodikPick(data),data.results.length-1));used='kodik'}
+        else kodikErr='Kodik: материал по этому тайтлу не найден'}
+      catch(e){if(my!==nav)return;kodikErr=e.message==='таймаут'?'Kodik: поиск занимает время — ищем в фоне, страница обновится сама.':('Kodik: '+(e.message||e));kodikBackground(t)}}
+    else kodikBackground(t)}
+  if(my!==nav)return;if(!used)used=order.find(m=>m!=='kodik')||'demo';
+  /* AniLibria: ищем релиз и список эпизодов с прямыми потоками */
+  let lib=null,libErr='';
+  if(used==='libria'){
+    try{lib=await withTimeout(libP||libriaResolve(t),9000,'таймаут')}catch(e){if(my!==nav)return;libErr='AniLibria: '+(e.message||e)}
+    if(my!==nav)return;
+    if(!lib||!lib.episodes.length){lib=null;libErr=libErr||'AniLibria: тайтл не найден в базе озвучки';used=order.find(m=>m!=='kodik'&&m!=='libria')||'demo'}
+  }
+  let eps,kres=null,kodikSeasonsAll=null,season=1;
+  const _mm=String(epn||'').match(/^(\d+)x(\d+)$/),qS=_mm?+_mm[1]:0,qE=_mm?+_mm[2]:(+epn||0);
+  if(used==='kodik'){kres=kodik.data.results[kodik.sel];kodikSeasonsAll=kodikSeasons(kres);
+    const want=+S.kodikSeason[t.id]||0;
+    const selS=(qS&&kodikSeasonsAll.find(x=>x.season===qS))||kodikSeasonsAll.find(x=>x.season===want)||kodikSeasonsAll.find(x=>x.eps.some(e=>e.n===qE))||kodikSeasonsAll[0]||{season:1,eps:[]};
+    season=selS.season;S.kodikSeason[t.id]=season;
+    eps=selS.eps.map(e=>({...e,dur:(t.dur||24)*60}))}
+  else if(used==='libria'&&lib){eps=lib.episodes.map(e=>({n:e.ordinal,title:e.name&&!/^серия\s*\d+$/i.test(e.name)?e.name:'',dur:Math.max(120,(e.duration>600?e.duration:(e.duration||0)*60)||(t.dur||24)*60)}))}
+  else eps=episodes(t);
+  watchSrc=used;
+  const ep=eps.find(e=>e.n===qE)||eps[0];
+  const ek=e=>hkey(t.id,e.season>1?e.season+'x'+e.n:e.n);
+  const key=ek(ep),hist=S.hist[key];
+  let nx=eps.find(e=>e.n===ep.n+1),pv=eps.find(e=>e.n===ep.n-1);
+  if(used==='kodik'&&kodikSeasonsAll&&kodikSeasonsAll.length>1){const si=kodikSeasonsAll.findIndex(x=>x.season===season);
+    if(!nx&&kodikSeasonsAll[si+1]&&kodikSeasonsAll[si+1].eps[0]){const e=kodikSeasonsAll[si+1].eps[0];nx={...e,dur:(t.dur||24)*60,_u:`#/watch/${t.id}/${e.season}x${e.n}`}}
+    if(!pv&&si>0&&kodikSeasonsAll[si-1]&&kodikSeasonsAll[si-1].eps.length){const e=kodikSeasonsAll[si-1].eps[kodikSeasonsAll[si-1].eps.length-1];pv={...e,dur:(t.dur||24)*60,_u:`#/watch/${t.id}/${e.season}x${e.n}`}}}
+  /* Kodik: рядом работает прокси — достаём прямой m3u8 и играем в своём плеере (без зависающего iframe) */
+  let kodikDirect=null,noProxy=false;
+  if(used==='kodik'&&ep.link){
+    const m=String(ep.link).match(/\/(seria|serial|video|season|movie)\/(\d+)\/([a-f0-9]+)/i);
+    if(m&&await hasProxy()){
+      try{const r=await withTimeout(fetch(location.origin+`/kodik/resolve?id=${m[2]}&hash=${m[3]}&type=${m[1]}`),25000,'таймаут');
+        if(r.ok){const j=await r.json();if(j&&j.links)kodikDirect=j}}catch{}
+      if(my!==nav)return}
+    else if(m)noProxy=true;
+  }
+  let libMedia=null;
+  if(used==='libria'&&lib){libMedia=libriaMedia(lib.episodes.find(e=>e.ordinal===ep.n)||lib.episodes[0]);if(!libMedia){libErr='AniLibria: у серии нет прямых ссылок';used='demo'}}
+  const media=kodikDirect?kodikDirectMedia(kodikDirect):libMedia?libMedia:used==='demo'?mediaFor(t,ep.n):used==='tpl'?tplMedia(t,ep.n):null;
+  const embedUrl=used==='embed'?String(S.embeds[t.id]||'').split('{episode}').join(ep.n):(used==='kodik'&&!kodikDirect)?kq(ep.link||kres.link):null;
+  const chip=(m,l)=>`<button class="chip ${used===m?'on':''}" data-src="${m}">${l}</button>`;
+  const srcStatus={demo:'Тестовый ролик без рекламы — подключите источник, чтобы смотреть настоящие серии.',tpl:'Играет ваш HLS-источник из настроек.',kodik:kodik?(kodikDirect?`Kodik: прямой поток в плеере AniHub · переводов найдено ${kodik.data.results.length}.`:`Kodik: найдено переводов — ${kodik.data.results.length}, серий — ${eps.length}.`):(kodikDirect?'Kodik: прямой поток готов.':'Kodik: переводов — поиск ещё идёт в фоне, статус обновится сам.'),libria:lib?`AniLibria: релиз «${lib.name}» · прямые потоки 480/720/1080, серий в озвучке — ${eps.length}.`:'AniLibria: поиск релиза…',embed:'Играет ваш внешний плеер (embed).'}[used];
+  app.innerHTML=`<div class="wrap" style="padding-top:20px;padding-bottom:10px"><nav class="tiny muted" aria-label="Хлебные крошки" style="margin-bottom:14px"><a href="#/catalog">Каталог</a> › <a href="#/title/${t.id}">${esc(t.title)}</a> › <b style="color:var(--ink)">серия ${ep.n}</b></nav>
+  <div class="row between" id="srcbar" style="margin-bottom:12px"><div class="row" style="gap:6px">${chip('demo','🎞 Демо')}${chip('tpl','📡 Мой HLS')}${chip('kodik','🎬 Kodik')}${chip('libria','🎙 AniLibria')}${chip('embed','🔗 Embed')}</div><small class="muted tiny" style="max-width:46%;text-align:right">${esc(srcStatus)}</small></div>
+  ${used==='kodik'&&kodik.data.results.length>1?`<label class="f" style="max-width:380px;margin-bottom:12px"><span>Озвучка · Kodik</span><select class="inp" id="ktrans">${kodik.data.results.map((r,i)=>[kodikScore(r),i,r]).sort((x,y)=>y[0]-x[0]).map(([sc,i,r])=>`<option value="${i}" ${i===kodik.sel?'selected':''}>${i===kodik.sel?'▶ ':''}${esc(r.translation)}${sc>=100?' · без рекламы ✓':''}</option>`).join('')}</select></label>`:''}
+  <div style="padding-top:0;display:grid;gap:16px"><div style="min-width:0"><div id="pl"></div>
+  ${used==='demo'?`<p class="warn" style="margin:12px 0 0"><b>Демонстрационный видеопоток.</b> Реальный материал для этого тайтла не найден. Попробуйте нажать «🎬 Kodik» ещё раз, обновить публичный токен (Профиль → Настройки → Kodik) или подключить свой источник: лицензионный HLS либо любой embed.${FRAME_HINT?'<br><b style="color:var(--accent)">'+FRAME_HINT+'</b>':''}</p>`:''}
+${IN_FRAME&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0"><b>Предпросмотр может блокировать встроенный плеер.</b> Если видео ниже не запускается — откройте этот файл напрямую в браузере или воспользуйтесь ссылкой «в новой вкладке» под плеером.</p>`:''}
+  ${!IN_FRAME&&noProxy&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0"><b>Прямой чистый поток недоступен — не запущен локальный прокси.</b> Сейчас играет встроенный плеер Kodik: в нём бывает реклама и он может не работать. Запуск без рекламы: положите <b>kodik_proxy.py</b> рядом с этим файлом → в терминале <b>python3 kodik_proxy.py</b> → откройте <b>http://localhost:8080</b> (сам файл по двойному клику не даёт прямых потоков).</p>`:''}
+  ${used==='demo'&&kodikErr?`<p class="warn" style="margin:12px 0 0">${esc(kodikErr)}</p>`:''}
+  ${used==='demo'&&libErr?`<p class="warn" style="margin:12px 0 0">${esc(libErr)}</p>`:''}
+  <div class="panel" style="margin-top:14px"><h2 style="font-size:20px">Серия ${ep.n}${esc(epSuffix(ep))}</h2><p class="muted sm" style="margin:6px 0 0">${esc(t.desc.slice(0,300))}${t.desc.length>300?'…':''}</p><div class="row" style="margin-top:12px;gap:14px;font-size:11px;color:var(--muted)"><span>★ ${t.score.toFixed(1)}</span><span>${esc(t.studio)}</span><span>${t.year}</span><span>${statusLabel(t.status)}</span>${used!=='kodik'&&used!=='embed'?`<span>${fmt(ep.dur)}</span>`:''}</div>${hist&&used==='demo'?`<p class="sm muted" style="margin:10px 0 0;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--bg2)">${hist.done?'Серия досмотрена — таймстемп сохранён в истории.':`Сохранённая позиция: ${fmt(hist.pos)} из ${fmt(hist.dur)}.`}</p>`:''}<div class="row" style="margin-top:12px"><a class="btn sm" href="#/title/${t.id}">К тайтлу</a><a class="btn sm" href="#/streaming?create=1&title=${t.id}&ep=${ep.n}">● Создать комнату</a>${used==='demo'?`<span class="tiny muted">Настройки пропуска опенинга/эндинга — в плеере, кнопка ⚙.</span>`:''}</div></div></div>
+  <aside>${used==='kodik'&&kodikSeasonsAll&&kodikSeasonsAll.length>1?`<select class="inp" id="ssn" style="margin-bottom:10px;max-width:280px">${kodikSeasonsAll.map(x=>`<option value="${x.season}" ${x.season===season?'selected':''}>Сезон ${x.season} · ${x.eps.length} сер.</option>`).join('')}</select>`:''}<h2 style="font-size:13px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">${used==='kodik'&&kodikSeasonsAll&&kodikSeasonsAll.length>1?`Сезон ${season} · серии · ${eps.length}`:`Серии · ${eps.length}`}</h2><div class="list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px">${eps.map(e=>{const h=S.hist[ek(e)];return`<a class="ep ${e.n===ep.n?'on':''}" href="#/watch/${t.id}/${e.n}"><span class="n">${e.n}</span><span style="min-width:0;flex:1"><b style="display:block;font-size:12px">Серия ${e.n}${esc(epSuffix(e))}</b><small class="muted tiny">${fmt(e.dur)}${h&&used==='demo'?(h.done?' · досмотрено':' · '+fmt(h.pos)):''}</small>${h&&!h.done&&used==='demo'?`<div class="prog" style="height:3px"><i style="width:${Math.min(100,h.pos/Math.max(1,h.dur)*100)}%"></i></div>`:''}</span>${nx&&e.n===nx.n?'<span class="chip" style="font-size:9px;padding:1px 6px">далее</span>':''}</a>`}).join('')}</div>${nx?`<a class="btn pri" style="width:100%;margin-top:12px" href="#/watch/${t.id}/${nx.n}">Следующая серия ${nx.n} →</a>`:''}</aside></div></div>`;
+  $('#srcbar').onclick=async e=>{const c=e.target.closest('[data-src]');if(!c)return;const m=c.dataset.src;
+    if(m==='demo'){S.sourceMode='demo';save('sourceMode');return router()}
+    if(m==='tpl'){if(!S.tpl){toast('Сначала укажите шаблон HLS','Профиль → Настройки → Источник видео','err');location.hash='#/profile/settings';return}S.sourceMode='tpl';save('sourceMode');return router()}
+    if(m==='kodik'){S.sourceMode='kodik';save('sourceMode');return router()}
+    if(m==='libria'){S.sourceMode='libria';save('sourceMode');return router()}
+    if(m==='embed'){await embedModal(t)}};
+  const ss=$('#ssn');if(ss)ss.onchange=e=>{S.kodikSeason[t.id]=+e.target.value;save('kodikseason');const L=(kodikSeasonsAll.find(x=>x.season===+e.target.value)||{eps:[]}).eps;if(L.some(x=>x.n===qE))router();else location.hash='#/watch/'+t.id+'/'+(+e.target.value)+'x'+((L[0]||{}).n||1)};
+  const kt=$('#ktrans');if(kt)kt.onchange=e=>{const i=+e.target.value;S.kodicsel[t.id]=i;S.dubpref=(kodik.data.results[i]||{}).translation||'';save('kodicsel');save('dubpref');toast('Озвучка запомнена',S.dubpref+' — будет первой на всех тайтлах');router()};
+  let ctl=null;
+  if(embedUrl){ctl=mountEmbedPlayer($('#pl'),{title:t.title,sub:`${ep.season>1?`Сезон ${ep.season} · `:''}Серия ${ep.n}${epSuffix(ep)}`,url:embedUrl,badge:used==='kodik'?'● Kodik':'● Embed'})}
+  else{const ksk=kodikDirect&&Array.isArray(kodikDirect.skip)?kodikDirect.skip:[];
+    const lsk=libMedia?[libMedia.opening,libMedia.ending]:[];
+    let ranges={intro:S.ovr[key]?.intro||ksk[0]||lsk[0]||ep.intro,outro:S.ovr[key]?.outro||ksk[1]||lsk[1]||ep.outro};
+    ctl=mountPlayer($('#pl'),{title:t.title,sub:`${ep.season>1?`Сезон ${ep.season} · `:''}Серия ${ep.n}${epSuffix(ep)}`,media,dur:ep.dur,ranges,resume:hist&&!hist.done?hist.pos:0,autoStart:!!(kodikDirect||libMedia),
+      next:nx?{n:nx.n,url:nx._u||`#/watch/${t.id}/${nx.n}`,suffix:epSuffix(nx)}:null,prev:pv?{n:pv.n,url:pv._u||`#/watch/${t.id}/${pv.n}`}:null,
+      meta:{id:t.id,ep:ep.season>1?ep.season+'x'+ep.n:ep.n,title:t.title,poster:t.poster,epTitle:ep.title},badge:kodikDirect?'<span style="color:var(--cyan)">● Kodik · прямой поток</span>':libMedia?'<span style="color:var(--accent)">● AniLibria · официальный дубляж</span>':'<span style="color:#34d399">без рекламы</span>',
+      onRanges:(k,r)=>{ranges={...ranges,[k]:r};S.ovr[key]={...(S.ovr[key]||{}),[k]:r};save('ovr')},
+      onReset:()=>{delete S.ovr[key];save('ovr');ranges={intro:ep.intro,outro:ep.outro};ctl.setRanges(ranges);toast('Диапазоны сброшены','Восстановлены значения серии')}})}
+  cleanup=()=>ctl?.destroy?.();
+}
+
+/* ==== живой обратный отсчёт до новой серии, формат Н:Д:Ч:М:С ==== */
+let cdRefresh=null;
+function cdParts(ms){ms=Math.max(0,ms);const sec=Math.floor(ms/1e3),n=Math.floor(sec/604800),d=Math.floor(sec%604800/86400),h=Math.floor(sec%86400/3600),m=Math.floor(sec%3600/60),ss=sec%60,p=x=>String(x).padStart(2,'0');return n+':'+p(d)+':'+p(h)+':'+p(m)+':'+p(ss)}
+function cdLabel(ts){const rem=ts-Date.now();return rem<=0?'серия уже вышла!':'через '+cdParts(rem)}
+function cdTickAll(){document.querySelectorAll('[data-cd]').forEach(el=>{const ts=+el.dataset.cd;if(ts)el.textContent=cdLabel(ts)})}
+setInterval(cdTickAll,1000);
+function schedAuto(){clearInterval(cdRefresh);cdRefresh=setInterval(()=>{if(!location.hash.startsWith('#/schedule'))return;ensureCatalog(true).then(()=>{if(location.hash.startsWith('#/schedule'))router()}).catch(()=>{})},12e4)}
+function pageSchedule(){
+  setNav('schedule');const TZ='Europe/Moscow',up=ALL.filter(t=>t.status==='ongoing'&&t.next&&t.next>Date.now()-6*36e5).sort((a,b)=>a.next-b.next);
+  const groups={};for(const t of up){const k=new Date(t.next).toLocaleDateString('ru-RU',{weekday:'long',day:'numeric',month:'long',timeZone:TZ});(groups[k]=groups[k]||[]).push(t)}
+  const tr=new Date().toLocaleDateString('ru-RU',{weekday:'long',timeZone:TZ}),today=tr[0].toUpperCase()+tr.slice(1);
+  const titles=ALL.map(t=>({t,k:tk(t.title)}));
+  function tk(s){const c=s.toLowerCase().replace(/ё/g,'е').replace(/[^a-zа-я0-9\s]/g,' ');const w=new Set(),n=[];for(const x of c.split(/\s+/).filter(Boolean)){if(/^\d+$/.test(x))n.push(x);else if(x.length>1&&!['и','в','во','на','с','со','о','об','я','не','по','для','из','за','от','что','как','это','к','у','а','но','же','то'].includes(x))w.add(x.slice(0,5))}return{w,n:n.join(',')}}
+  const match=title=>{const a=tk(title);let best=null,bs=0;for(const{t,k}of titles){if(a.n!==k.n)continue;const den=Math.min(a.w.size,k.w.size);if(!den)continue;let i=0;for(const x of a.w)if(k.w.has(x))i++;if(i<Math.min(2,den))continue;const s=i/den;if(s>bs){bs=s;best=t}}return bs>=.8?best:null};
+  app.innerHTML=`<div class="wrap"><div class="pagehead"><div class="eyebrow">календарь выхода</div><h1>Расписание</h1><p>Когда выйдет следующая серия онгоингов каталога и по каким дням выходят русские озвучки. Подпишитесь на тайтл — придёт уведомление.</p></div>
+  ${head('📅 Ближайшие серии каталога','Время по Москве. Данные: Shikimori · обновляется автоматически.')}${Object.keys(groups).length?Object.entries(groups).map(([d,list])=>`<h3 class="muted tiny" style="letter-spacing:.14em;text-transform:uppercase;margin:18px 0 8px">${d}</h3><div class="grid w" style="gap:8px">${list.map(t=>`<a class="item" href="#/title/${t.id}"><img referrerpolicy="no-referrer" src="${esc(t.poster)}" alt="" style="width:44px;height:62px"><span class="t"><b>${esc(t.title)}</b><small>серия ${t.aired+1} · ${esc(t.studio)}</small></span><span style="text-align:right"><b style="color:${t.accent};font-family:var(--fd)">${new Date(t.next).toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:TZ})}</b><small class="muted" style="display:block;font-size:10px;margin-top:2px" data-cd="${t.next}">${esc(cdLabel(t.next))}</small></span></a>`).join('')}</div>`).join(''):empty('Дат выхода пока нет','У онгоингов не заявлено время следующей серии.')}
+  ${head('🎙 Расписание озвучек','Недельная сетка выхода русских озвучек. Источник: <a href="https://www.studiobandoz.ru/raspisanie.html" target="_blank" rel="noopener noreferrer" style="color:var(--accent)">StudioBand</a>'+(STUDIO_SNAPSHOT?` · снимок на ${esc(STUDIO_SNAPSHOT.date)}`:''))}
+  ${STUDIO_SNAPSHOT?`<div class="sched">${STUDIO_SNAPSHOT.days.map(d=>`<div class="${d.name===today?'today':''}"><h3 style="font-size:14px;display:flex;justify-content:space-between">${d.name}${d.name===today?'<span class="chip on" style="font-size:9px;padding:1px 7px">сегодня</span>':''}</h3><ul>${d.entries.map(e=>{const m=match(e.title);return`<li><b>${esc(e.time)}</b>${m?`<a href="#/title/${m.id}">${esc(e.title)}</a>`:`<span class="muted">${esc(e.title)}</span>`}</li>`}).join('')}</ul></div>`).join('')}</div><p class="tiny muted" style="margin-top:12px">Сайт-источник не разрешает загрузку из браузера, поэтому здесь снимок на момент сборки файла. Живое расписание — по ссылке выше или в серверной версии.</p>`:empty('Снимок расписания не встроен','Файл собран без доступа к сайту StudioBand.','<a class="btn pri" href="https://www.studiobandoz.ru/raspisanie.html" target="_blank" rel="noopener noreferrer">Открыть расписание</a>')}</div>`;
+  schedAuto();cleanup=()=>{clearInterval(cdRefresh);cdRefresh=null}}
+
+function pageProfile(tab){
+  setNav('profile');tab=tab||'history';const T=[['history','История'],['lists','Списки'],['marks','Закладки'],['notes','Уведомления'],['settings','Настройки']];
+  const tl=id=>ALL.find(t=>t.id===id)||extra.get(id);
+  let body='';
+  if(tab==='history'){const H=histList();body=`<div class="row between"><h2 style="font-size:18px">⏱ Продолжить просмотр</h2>${H.length?'<button class="btn sm ghost" data-clr="hist">🗑 Очистить историю</button>':''}</div>${H.length?`<div class="grid w" style="margin-top:14px">${H.map(h=>`<div class="item"><a href="#/watch/${h.id}/${h.ep}"><img referrerpolicy="no-referrer" src="${esc(h.poster)}" alt=""></a><span class="t"><a href="#/watch/${h.id}/${h.ep}"><b>${esc(h.title)}</b></a><small>Серия ${h.ep}</small><div class="prog"><i style="width:${Math.min(100,h.pos/Math.max(1,h.dur)*100)}%"></i></div><small>${fmt(h.pos)} / ${fmt(h.dur)} · ${ago(h.at)}</small></span><button class="btn sm ghost" data-delh="${esc(hkey(h.id,h.ep))}" aria-label="Удалить">🗑</button></div>`).join('')}</div>`:empty('История пуста','Начните любую серию — позиция сохранится автоматически.','<a class="btn pri" href="#/catalog">Открыть каталог</a>')}`}
+  if(tab==='lists'){body=[['watching','Смотрю сейчас'],['favorite','Избранное'],['planned','В планах'],['dropped','Брошено']].map(([k,l])=>{const L=Object.entries(S.lists).filter(([,v])=>v===k).map(([i])=>tl(+i)).filter(Boolean);return`<h2 style="font-size:16px;padding-bottom:8px;border-bottom:1px solid var(--line);margin:24px 0 14px">${l} <span class="chip">${L.length}</span></h2>${L.length?`<div class="grid">${L.map(t=>card(t)).join('')}</div>`:'<p class="muted sm">Пусто — добавьте тайтл на его странице.</p>'}`}).join('')}
+  if(tab==='marks'){body=`<h2 style="font-size:18px">🔖 Закладки моментов</h2>${S.marks.length?`<div class="grid w" style="margin-top:14px">${[...S.marks].sort((a,b)=>b.at-a.at).map(m=>`<div class="item"><b style="font-family:var(--fd);font-size:20px;color:var(--accent)">${fmt(m.t)}</b><span class="t"><a href="#/watch/${m.tid}/${m.ep}"><b>${esc(m.title)} · серия ${m.ep}</b></a><small>${ago(m.at)}</small></span><button class="btn sm ghost" data-delm="${m.id}" aria-label="Удалить">🗑</button></div>`).join('')}</div>`:'<p class="muted sm" style="margin-top:14px">Закладок нет. В плеере нажмите <b>B</b> — момент сохранится и появится меткой на таймлайне.</p>'}`}
+  if(tab==='notes'){body=`<div class="row between"><h2 style="font-size:18px">🔔 Уведомления о новых сериях</h2>${S.notes.length?'<button class="btn sm ghost" data-readall>Прочитать все</button>':''}</div>${S.notes.length?`<div class="list" style="margin-top:14px">${S.notes.map(n=>`<a class="item" href="${esc(n.link||'#')}" style="${n.read?'':'border-color:var(--accent);background:var(--asoft)'}"><span class="t"><b>${esc(n.title)}</b><small>${esc(n.body)} · ${ago(n.at)}</small></span></a>`).join('')}</div>`:'<p class="muted sm" style="margin-top:14px">Уведомлений нет. Откройте страницу тайтла и нажмите «О новых сериях» — при следующей загрузке каталога мы сверим число серий.</p>'}`}
+  if(tab==='settings')body=settingsHtml();
+  app.innerHTML=`<div class="wrap" style="padding-top:36px"><div class="panel row" style="gap:16px">${av(S.name||'Гость',64,'var(--accent)')}<div style="flex:1"><h1 style="font-size:26px">${esc(S.name||'Гость')}</h1><small class="muted">Профиль хранится только в этом браузере</small></div><div class="row" style="gap:20px;text-align:center">${[[Object.keys(S.hist).length,'в истории'],[S.marks.length,'закладок'],[Object.keys(S.lists).length,'в списках'],[S.notes.filter(n=>!n.read).length,'новых']].map(([a,b])=>`<div><b style="font-family:var(--fd);font-size:20px;display:block">${a}</b><small class="muted tiny" style="text-transform:uppercase">${b}</small></div>`).join('')}</div></div>
+  <nav class="tabs" style="margin-top:22px" aria-label="Разделы профиля">${T.map(([k,l])=>`<button class="${tab===k?'on':''}" data-tab="${k}">${l}</button>`).join('')}</nav><div style="margin-top:22px">${body}</div></div>`;
+  app.onclick=e=>{const b=e.target.closest('[data-tab]');if(b){location.hash='#/profile/'+b.dataset.tab;return}
+    if(e.target.closest('[data-clr]')){S.hist={};save('hist');pageProfile(tab);toast('История очищена');return}
+    const dh=e.target.closest('[data-delh]');if(dh){delete S.hist[dh.dataset.delh];save('hist');pageProfile(tab);return}
+    const dm=e.target.closest('[data-delm]');if(dm){S.marks=S.marks.filter(m=>m.id!==dm.dataset.delm);save('marks');pageProfile(tab);return}
+    if(e.target.closest('[data-readall]')){S.notes.forEach(n=>n.read=true);save('notes');badge();pageProfile(tab);return}
+    settingsClick(e)};
+  if(tab==='notes'&&S.notes.some(n=>!n.read)){setTimeout(()=>{S.notes.forEach(n=>n.read=true);save('notes');badge()},1500)}
+  if(tab==='settings')settingsBind();
+}
+function settingsHtml(){const P=S.prefs;const tg=(k,l)=>`<button class="btn" data-pt="${k}" role="switch" aria-checked="${P[k]}" style="justify-content:space-between;width:100%;${P[k]?'border-color:var(--accent);color:var(--accent)':''}">${l}<b>${P[k]?'вкл':'выкл'}</b></button>`;
+  const opts=(k,arr)=>`<div class="row" style="gap:6px">${arr.map(([v,l])=>`<button class="chip ${String(P[k])===String(v)?'on':''}" data-po="${k}" data-v="${v}">${l}</button>`).join('')}</div>`;
+  return`<div class="grid w" style="align-items:start">
+  <div class="panel list"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">Аккаунт и тема</h3><label class="f"><span>Ник <small>виден в чате комнат</small></span><input class="inp" id="sname" maxlength="24" value="${esc(S.name)}" placeholder="midnight_viewer"></label><div class="row" style="gap:6px"><button class="chip ${S.theme==='dark'?'on':''}" data-theme="dark">Тёмная</button><button class="chip ${S.theme==='light'?'on':''}" data-theme="light">Светлая</button></div></div>
+  <div class="panel list"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">Авто-продолжение</h3>${tg('autoPlay','Запускать следующую серию')}<label class="f"><span>Задержка <small>${P.autoDelay} сек (0–30)</small></span><input type="range" min="0" max="30" value="${P.autoDelay}" id="sdelay" aria-label="Задержка авто-продолжения"></label></div>
+  <div class="panel list"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">Пропуск опенинга и эндинга</h3>${tg('skipIntro','Пропускать опенинг')}${tg('skipOutro','Пропускать эндинг')}<p class="tiny muted" style="margin:0">Диапазон 5–90 секунд настраивается в плеере (⚙) для каждой серии.</p></div>
+  <div class="panel list"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">Качество и скорость</h3>${opts('quality',[['auto','Авто'],['2160','4K'],['1080','1080p'],['720','720p'],['480','480p'],['360','360p']])}${opts('rate',[[.5,'0.5x'],[.75,'0.75x'],[1,'1x'],[1.25,'1.25x'],[1.5,'1.5x'],[2,'2x']])}</div>
+  <div class="panel list"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">Субтитры</h3>${opts('subLang',[['','Выкл'],['ru','Русские'],['en','English'],['ja','日本語']])}${opts('subPos',[['top','Сверху'],['middle','По центру'],['bottom','Снизу']])}<label class="f"><span>Размер <small>${P.subSize}%</small></span><input type="range" min="60" max="200" step="10" value="${P.subSize}" id="ssize"></label></div>
+  <div class="panel list"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">Прочее</h3>${tg('hotkeys','Горячие клавиши')}</div>
+  <div class="panel list" style="grid-column:1/-1"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">📡 Свой HLS-источник</h3><p class="sm muted" style="margin:0">Адрес вашего лицензионного HLS (S3 + CDN), подстановки <code>{id}</code> (id в Shikimori) и <code>{episode}</code>. Пока поле пустое — играет тестовый ролик с пометкой «демо-поток».</p><input class="inp" id="stpl" value="${esc(S.tpl)}" placeholder="https://cdn.example.com/hls/{id}/{episode}/master.m3u8"><div class="row"><button class="btn sm pri" id="stplsave">Сохранить</button><span class="tiny muted">Сервер должен отдавать заголовок CORS (Access-Control-Allow-Origin).</span></div></div>
+  <div class="panel list" style="grid-column:1/-1"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">🎬 Kodik — реальный плеер с озвучками</h3><p class="sm muted" style="margin:0">Работает «из коробки»: при первом обращении AniHub автоматически получает <b>публичный токен</b> из открытого репозитория <a href="https://github.com/YaNesyTortiK/AnimeParsers" target="_blank" rel="noopener">AnimeParsers</a>, проверяет его и кэширует в браузере. Свой токен партнёра можно указать ниже — он получит приоритет. Сейчас используется: <b>${S.kodikToken?'ваш личный токен':(LS.get('kodikPub','')?'публичный токен (кэш)':'встроенный запасной токен')}</b></p>
+  <div class="row" style="gap:10px;align-items:flex-end"><label class="f" style="flex:2;min-width:220px"><span>Свой API-токен (необязательно)</span><input class="inp" id="ktok" value="${esc(S.kodikToken)}" placeholder="токен партнёра kodik-api.com"></label>
+  <label class="f" style="flex:1;min-width:120px"><span>Качество</span><select class="inp" id="kq">${['360','480','720','1080'].map(q=>`<option ${S.kodikQ===q?'selected':''}>${q}</option>`).join('')}</select></label>
+  <label class="f" style="flex:1;min-width:140px"><span>Домен плеера</span><select class="inp" id="kdom">${['kodik.info','kodik.cc','aniqit.com'].map(d=>`<option ${S.kodikDomain===d?'selected':''}>${d}</option>`).join('')}</select></label></div>
+  <div class="row"><button class="btn sm pri" id="ktoksave">Сохранить Kodik</button><button class="btn sm" id="ktoktest">Проверить API</button><button class="btn sm" id="ktokpub">🌐 Обновить публичный токен</button>${S.kodikToken||LS.get('kodikPub','')?'<button class="btn sm ghost" id="ktokclear">Удалить токены</button>':''}</div></div>
+  <div class="panel list" style="grid-column:1/-1"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">🎙 AniLibria — официальные русские озвучки</h3><p class="sm muted" style="margin:0">Работает без токенов и настроек: релизы ищутся по названию тайтла в открытой базе <a href="https://anilibria.top" target="__blank" rel="noopener">AniLibria</a>, серия играется прямым потоком в плеере AniHub. Доступны качество 480/720/1080 (⚙ → Качество), реальные таймкоды опенинга/эндинга от студии и список серий самой озвучки. На странице серии — кнопка «🎙 AniLibria». Если прокси <code>kodik_proxy.py</code> запущен, он используется как запасной канал для API.</p></div>
+  <div class="panel list" style="grid-column:1/-1"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">🔗 Embed-плееры по тайтлам</h3><p class="sm muted">Строки вида <code>21=https://example.com/embed/{episode}</code> — для любого сервиса, отдающего страницу для &lt;iframe&gt;. На странице серии — кнопка «🔗 Embed».</p><textarea class="inp" id="kembed" rows="4" placeholder="21=https://…">${esc(Object.entries(S.embeds).map(([k,v])=>k+'='+v).join('\n'))}</textarea><button class="btn sm" id="kembedsave">Сохранить список</button></div>
+  <div class="panel list"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">GIF в чате</h3><p class="sm muted" style="margin:0">Ключ Giphy нужен для реального поиска GIF. Без него работают встроенные стикеры.</p><input class="inp" id="sgiphy" value="${esc(S.giphy)}" placeholder="GIPHY API key"><button class="btn sm" id="sgiphysave">Сохранить ключ</button></div>
+  <div class="panel list"><h3 style="font-size:12px;color:var(--muted);text-transform:uppercase">Данные</h3><button class="btn" id="exp">⬇ Экспортировать (JSON)</button><label class="btn" style="cursor:pointer">⬆ Импортировать<input type="file" id="imp" accept="application/json" hidden></label><button class="btn" id="refresh">↻ Обновить каталог</button><button class="btn dng" id="wipe">Сбросить всё</button></div></div>`}
+function settingsClick(e){const P=S.prefs,t=e.target;
+  const pt=t.closest('[data-pt]');if(pt){P[pt.dataset.pt]=!P[pt.dataset.pt];save('prefs');pageProfile('settings');return}
+  const po=t.closest('[data-po]');if(po){let v=po.dataset.v;if(['rate','subSize'].includes(po.dataset.po))v=+v;P[po.dataset.po]=v;save('prefs');pageProfile('settings');return}
+  const th=t.closest('[data-theme]');if(th){setTheme(th.dataset.theme);pageProfile('settings');return}
+  if(t.closest('#stplsave')){const v=$('#stpl').value.trim();if(v&&!/^https?:\/\//i.test(v)){toast('Адрес должен начинаться с http(s)://','','err');return}S.tpl=v;save('tpl');toast(v?'Источник видео сохранён':'Вернулся тестовый ролик','','ok');return}
+  if(t.closest('#ktoksave')){S.kodikToken=$('#ktok').value.trim();S.kodikQ=$('#kq').value;S.kodikDomain=$('#kdom').value;save('kodikToken','kodikQ','kodikDomain');LS.set('kodicache',null);toast('Настройки Kodik сохранены','Кэш поиска очищен','ok');pageProfile('settings');return}
+  if(t.closest('#ktokclear')){S.kodikToken='';save('kodikToken');LS.set('kodikPub','');toast('Токены удалены','При следующем обращении получите публичный заново','ok');pageProfile('settings');return}
+  if(t.closest('#ktokpub')){const b=t.closest('#ktokpub');b.disabled=true;const old=b.textContent;b.textContent='Получаем…';fetchPublicToken().then(()=>{toast('Публичный токен обновлён','Рабочий токен найден и закэширован','ok');pageProfile('settings')}).catch(e=>{toast('Не удалось получить токен',String(e.message||e),'err');b.disabled=false;b.textContent=old});return}
+  if(t.closest('#ktoktest')){kodikTest();return}
+  if(t.closest('#kembedsave')){const map={};for(const line of $('#kembed').value.split('\n')){const i=line.indexOf('=');if(i>3&&/^https?:\/\//i.test(line.slice(i+1).trim()))map[line.slice(0,i).trim()]=line.slice(i+1).trim()}S.embeds=map;save('embeds');toast('Embed-список сохранён','Тайтлов: '+Object.keys(map).length,'ok');return}
+  if(t.closest('#sgiphysave')){S.giphy=$('#sgiphy').value.trim();save('giphy');toast('Ключ сохранён','','ok');return}
+  if(t.closest('#exp')){const data={};for(const k of Object.keys(localStorage))if(k.startsWith('ah:')&&!['ah:cache','ah:rooms'].includes(k))data[k]=localStorage.getItem(k);const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,1)],{type:'application/json'}));a.download='anihub-backup.json';a.click();return}
+  if(t.closest('#refresh')){LS.set('cache',null);LS.set('kodicache',null);catalogState='idle';ensureCatalog(true).then(()=>{toast('Каталог обновлён',`${ALL.length} тайтлов`,'ok');router()});return}
+  if(t.closest('#wipe')){if(confirm('Удалить историю, списки, закладки и настройки в этом браузере?')){Object.keys(localStorage).filter(k=>k.startsWith('ah:')).forEach(k=>localStorage.removeItem(k));location.hash='#/';location.reload()}}}
+async function kodikTest(){const field=$('#ktok')?$('#ktok').value.trim():'';toast('Проверяем Kodik API…');try{await ensureKodikToken();const tok=field||kodikTok();const j=await kodikApiGet(`${KODIK_API}/search?token=${encodeURIComponent(tok)}&shikimori_id=21&with_material_data=true`);if(j.error)throw new Error(j.error);toast('Kodik API доступен',j.total?`Тестовый поиск («Ван-Пис»): материалов найдено ${j.total}`:'Ответ получен, но тестовый тайтл не найден','ok')}catch(e){toast('Kodik API недоступен',String(e.message||e),'err')}}
+function settingsBind(){const P=S.prefs;$('#sname').onchange=e=>{S.name=e.target.value.trim().slice(0,24);save('name');toast('Ник сохранён','','ok')};$('#sdelay').onchange=e=>{P.autoDelay=+e.target.value;save('prefs');pageProfile('settings')};$('#ssize').onchange=e=>{P.subSize=+e.target.value;save('prefs');pageProfile('settings')};
+  $('#imp').onchange=async e=>{try{const d=JSON.parse(await e.target.files[0].text());for(const[k,v]of Object.entries(d))if(k.startsWith('ah:'))localStorage.setItem(k,v);toast('Данные импортированы','Страница перезагрузится','ok');setTimeout(()=>location.reload(),800)}catch{toast('Не удалось прочитать файл','','err')}}}
+function setTheme(th){S.theme=th;save('theme');document.documentElement.dataset.theme=th;$('#theme').textContent=th==='dark'?'☀':'🌙'}
+
+/* ---------- стриминг ---------- */
+function pageStreaming(qs){
+  setNav('streaming');const P=new URLSearchParams(qs||'');const rooms=Object.entries(R.all()).sort((a,b)=>b[1].created-a[1].created);const live=rooms.filter(([,r])=>r.status==='live'),ended=rooms.filter(([,r])=>r.status!=='live');let tab='live';
+  const draw=()=>{const L=tab==='live'?live:ended;$('#rl').innerHTML=L.length?`<div class="grid w">${L.map(([c,r])=>{const ow=Object.values(r.members).find(m=>m.role==='streamer');const on=Object.keys(r.members).filter(i=>isOnline(c,i)).length;return`<a class="panel" href="#/room/${c}" style="display:block;padding:0;overflow:hidden"><div style="position:relative;aspect-ratio:16/9;background:#000"><img referrerpolicy="no-referrer" src="${esc(r.cover||'')}" alt="" style="width:100%;height:100%;object-fit:cover;opacity:.65" onerror="this.remove()"><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9),transparent 60%)"></div><div class="row" style="position:absolute;top:10px;left:10px;gap:6px">${r.status==='live'?'<span style="background:var(--live);color:#fff;border-radius:7px;padding:3px 8px;font-family:var(--fd);font-size:10px;font-weight:800;text-transform:uppercase">● live</span>':'<span style="background:rgba(0,0,0,.7);color:#ccc;border-radius:7px;padding:3px 8px;font-size:10px;font-weight:800;text-transform:uppercase">завершён</span>'}<span style="background:rgba(0,0,0,.7);color:#fff;border-radius:7px;padding:3px 8px;font-size:10px;font-weight:700">👥 ${Math.max(on,1)}</span></div><span style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.7);color:#fff;border-radius:7px;padding:3px 8px;font-family:var(--fd);font-size:10px;letter-spacing:.2em">${c}</span><div style="position:absolute;left:0;right:0;bottom:0;padding:12px;color:#fff"><b style="font-family:var(--fd);font-size:14px;display:block">${esc(r.title)}</b><small style="color:rgba(255,255,255,.65)">${esc(r.titleName||'Свой источник')}${r.ep&&r.titleName?' · серия '+r.ep:''}</small></div></div><div class="row between" style="padding:10px 14px"><span class="row" style="gap:8px">${av(ow?.name||'?',26)}<b style="font-size:12px">${esc(ow?.name||'—')}</b></span><small class="muted tiny">${ago(r.created)}</small></div></a>`}).join('')}</div>`:empty(tab==='live'?'Сейчас никто не стримит':'Завершённых комнат нет','Создайте комнату — выберите тайтл и серию, задайте slow mode и пригласите друзей по коду.','<button class="btn pri" data-create>＋ Создать комнату</button>')};
+  app.innerHTML=`<div class="wrap"><div class="pagehead" style="display:grid;gap:30px;grid-template-columns:1.2fr .8fr"><div><div class="eyebrow" style="color:var(--live)">раздел 02 · стриминг</div><h1>Смотрим <span style="color:var(--accent)">вместе</span></h1><p>Комната создаётся за секунду: выбираете тайтл и серию — получаете код-приглашение. Плеер синхронизируется у всех участников, чат фильтруется автоматически, а модераторы видны по тегу рядом с ником.</p><div class="row" style="margin-top:20px"><button class="btn pri lg" data-create>＋ Создать стрим</button></div><p class="warn" style="margin-top:18px;max-width:none"><b>Как работают комнаты в этом файле.</b> Участники — это вкладки и окна одного браузера (синхронизация идёт через BroadcastChannel и localStorage). Чтобы звать друзей с других устройств, разверните серверную версию AniHub — интерфейс и роли те же.</p></div>
+  <form class="panel" id="jf" style="align-self:start"><h2 style="font-size:13px;text-transform:uppercase">🔑 Войти по коду комнаты</h2><p class="sm muted">Код выдаётся владельцу при создании комнаты.</p><input class="inp code" id="jc" maxlength="8" placeholder="A1B2C3" aria-label="Код комнаты"><button class="btn pri lg" style="width:100%;margin-top:12px">Присоединиться</button></form></div>
+  <div class="row between" style="margin-top:30px;border-bottom:1px solid var(--line);padding-bottom:10px"><div class="row" style="gap:4px"><button class="chip on" data-tb="live">В эфире · ${live.length}</button><button class="chip" data-tb="ended">Завершённые · ${ended.length}</button></div></div><div id="rl" style="margin-top:18px"></div></div>`;draw();
+  app.onclick=e=>{const tb=e.target.closest('[data-tb]');if(tb){tab=tb.dataset.tb;$$('[data-tb]').forEach(x=>x.classList.toggle('on',x===tb));draw();return}if(e.target.closest('[data-create]'))createRoom()};
+  $('#jf').onsubmit=async ev=>{ev.preventDefault();const c=$('#jc').value.trim().toUpperCase();if(c.length<4)return toast('Некорректный код','Код комнаты состоит из 6 символов','err');if(!R.get(c))return toast('Комната не найдена','Проверьте код. Комнаты видны только в этом браузере.','err');location.hash='#/room/'+c};
+  if(P.get('create')==='1')setTimeout(()=>createRoom(+P.get('title')||0,+P.get('ep')||1),50);
+}
+async function createRoom(titleId,ep){
+  if(!(await ensureName()))return;const opts=[...ALL].sort((a,b)=>a.title.localeCompare(b.title,'ru')).map(t=>`<option value="${t.id}" ${t.id===titleId?'selected':''}>${esc(t.title)}</option>`).join('');
+  const d=ask('Создать комнату просмотра',`<div class="row" style="gap:6px"><button class="chip on" data-mode="cat">Тайтл из каталога</button><button class="chip" data-mode="url">Свой источник (HLS / MP4)</button></div><div id="mcat" class="row" style="gap:10px;align-items:flex-end"><label class="f" style="flex:1"><span>Тайтл</span><select class="inp" id="rt">${opts}</select></label><label class="f" style="width:90px"><span>Серия</span><input class="inp" type="number" min="1" id="re" value="${ep||1}"></label></div><label class="f" id="murl" hidden><span>Ссылка на поток <small>.m3u8 или .mp4</small></span><input class="inp" id="ru" placeholder="https://example.com/stream.m3u8"></label><label class="f"><span>Название комнаты</span><input class="inp" id="rn" maxlength="90"></label><label class="f"><span>Описание <small>необязательно</small></span><textarea class="inp" id="rd" rows="2" maxlength="400" placeholder="Правила комнаты, чего ждать"></textarea></label><label class="f"><span>Медленный режим <small id="rsv">0 сек</small></span><input type="range" min="0" max="60" step="5" value="0" id="rs"></label><label class="row sm" style="font-weight:700"><input type="checkbox" id="rso"> Чат только для подписчиков</label><div id="rerr" class="err" hidden></div><button class="btn pri lg" id="rok">＋ Создать комнату</button>`);
+  let mode='cat';const sync=()=>{const t=ALL.find(x=>x.id===+d.m.querySelector('#rt').value);if(t&&!d.m.querySelector('#rn').dataset.dirty)d.m.querySelector('#rn').value=`Смотрим «${t.title}» вместе`};sync();
+  d.m.querySelector('#rt').onchange=sync;d.m.querySelector('#rn').oninput=e=>e.target.dataset.dirty=1;d.m.querySelector('#rs').oninput=e=>d.m.querySelector('#rsv').textContent=e.target.value+' сек';
+  d.m.addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;mode=b.dataset.mode;$$('[data-mode]',d.m).forEach(x=>x.classList.toggle('on',x===b));d.m.querySelector('#mcat').hidden=mode!=='cat';d.m.querySelector('#murl').hidden=mode!=='url'});
+  d.m.querySelector('#rok').onclick=()=>{const err=d.m.querySelector('#rerr'),title=d.m.querySelector('#rn').value.trim();err.hidden=true;if(title.length<3){err.hidden=false;err.textContent='Название комнаты: минимум 3 символа';return}
+    const cu=d.m.querySelector('#ru').value.trim();if(mode==='url'&&!/^https?:\/\//i.test(cu)){err.hidden=false;err.textContent='Ссылка должна начинаться с http(s)://';return}
+    const t=mode==='cat'?ALL.find(x=>x.id===+d.m.querySelector('#rt').value):null,epn=Math.max(1,Math.min(t?.aired||1,+d.m.querySelector('#re').value||1));
+    const all=R.all();let code;do code=rnd(6);while(all[code]);
+    all[code]={title,desc:d.m.querySelector('#rd').value.trim(),hostId:ME.id,titleId:t?.id||null,titleName:t?.title||null,cover:t?.banner||t?.poster||null,ep:t?epn:null,custom:mode==='url'?cu:null,status:'live',slow:+d.m.querySelector('#rs').value,subsOnly:d.m.querySelector('#rso').checked,syncLocked:true,filter:true,pinned:null,created:Date.now(),members:{[ME.id]:{name:S.name,role:'streamer',banned:false,mutedUntil:0,last:0,joined:Date.now()}},msgs:[],log:[]};
+    R.put(all);d.close(true);toast('Комната создана','Код приглашения: '+code,'ok');location.hash='#/room/'+code};
+  await d.pr}
+
+async function pageRoom(code){
+  setNav('streaming');code=code.toUpperCase();const r0=R.get(code);const my=nav;
+  if(!r0){app.innerHTML=`<div class="wrap" style="padding-top:60px">${empty('Комната не найдена','Комнаты этого файла видны только в браузере, где они созданы. Проверьте код.','<a class="btn pri" href="#/streaming">К списку комнат</a>')}</div>`;return}
+  if(!(await ensureName())){location.hash='#/streaming';return}
+  if(my!==nav)return;
+  const r1=joinRoom(code);if(r1.members[ME.id]?.banned){app.innerHTML=`<div class="wrap" style="padding-top:60px">${empty('Вы заблокированы','Модератор закрыл вам доступ в эту комнату.','<a class="btn pri" href="#/streaming">К списку комнат</a>')}</div>`;return}
+  const title=r1.titleId?await getTitle(r1.titleId):null;if(my!==nav)return;const eps=title?episodes(title):[],ep=title?eps.find(e=>e.n===r1.ep)||eps[0]:null;
+  const media=r1.custom?customMedia(r1.custom):title&&ep?mediaFor(title,ep.n):null;
+  let gifOpen=false,emojiFor=null,tab='members',err='';const stickBottom=()=>{const m=$('.msgs');return !m||m.scrollHeight-m.scrollTop-m.clientHeight<160};
+  const me=()=>R.get(code)?.members[ME.id]||{role:'viewer'};const role=()=>me().role;const mgr=()=>role()==='streamer'||role()==='moderator';const host=()=>role()==='streamer';
+  app.innerHTML=`<div class="wrap" style="max-width:1700px"><header id="rh" style="padding-top:20px"></header><div class="room"><div style="min-width:0"><div id="pl"></div><div id="rdsc"></div><div style="margin-top:22px"><div class="tabs"><button data-rt="members" class="on">👥 Участники</button><button data-rt="settings">⚙ Комната</button><button data-rt="log">📜 Журнал</button><button data-rt="about">🛡 Роли</button></div><div id="rtab" style="padding-top:16px"></div></div><div id="media" style="margin-top:16px"></div></div><div class="chat" id="chat"></div></div></div>`;
+  const hdr=()=>{const r=R.get(code);if(!r)return;const on=Object.keys(r.members).filter(i=>isOnline(code,i)).length,ow=Object.values(r.members).find(m=>m.role==='streamer'),mr=ROLE[role()]||ROLE.viewer;
+    $('#rh').innerHTML=`<div class="row between" style="align-items:flex-start;gap:14px"><div><div class="row" style="gap:8px">${r.status==='live'?'<span style="background:var(--live);color:#fff;border-radius:7px;padding:3px 8px;font-family:var(--fd);font-size:10px;font-weight:800;text-transform:uppercase">● live</span>':'<span class="chip">завершён</span>'}<span class="chip" style="letter-spacing:.2em;font-family:var(--fd)">${code}</span><span class="muted sm">👥 ${on} онлайн</span><span class="tag" style="color:${mr.c};border-color:${mr.c}66;background:${mr.c}22;text-transform:none">ваша роль: ${mr.tag||'зритель'}</span></div><h1 style="font-size:clamp(1.4rem,3vw,2.1rem);margin-top:8px">${esc(r.title)}</h1><div class="row muted sm" style="margin-top:6px;gap:12px">${av(ow?.name||'?',18,ROLE.streamer.c)}<b style="color:var(--ink)">${esc(ow?.name||'')}</b>${tag('streamer')}<span>создан ${ago(r.created)}</span>${r.titleId?`<a href="#/title/${r.titleId}" style="color:var(--accent);font-weight:700">${esc(r.titleName)} · серия ${r.ep}</a>`:''}</div></div>
+    <div class="row"><button class="btn sm" data-inv>🔗 Пригласить</button><button class="btn sm" data-code>⧉ Код</button><button class="btn sm ${$('#media').innerHTML?'pri':''}" data-av>🎥 Голос / видео</button>${host()&&r.status==='live'?'<button class="btn sm dng" data-end>✕ Завершить</button>':''}</div></div>`;
+    $('#rdsc').innerHTML=r.desc?`<p class="panel sm muted" style="margin:12px 0 0">${esc(r.desc)}</p>`:''};
+  let ctl=null;const canCtl=()=>!R.get(code).syncLocked||mgr();
+  if(media){ctl=mountPlayer($('#pl'),{title:r1.titleName||r1.title,sub:ep?`Серия ${ep.n}${epSuffix(ep)}`:'Пользовательский источник',media,dur:ep?.dur||0,ranges:ep?{intro:S.ovr[hkey(title.id,ep.n)]?.intro||ep.intro,outro:S.ovr[hkey(title.id,ep.n)]?.outro||ep.outro}:{intro:[0,0],outro:[0,0]},next:null,noHist:true,
+    badge:'<span style="background:var(--live)!important;color:#fff">● совместный просмотр</span>',canControl:canCtl,onSync:st=>bc?.postMessage({t:'sync',code,uid:ME.id,name:S.name,st}),onRanges:()=>{},onReset:()=>{}});
+    if(bc)bc.postMessage({t:'ask',code,uid:ME.id})}else $('#pl').innerHTML=empty('Источник не выбран','Владелец ещё не привязал серию.');
+  if(media&&media.demo)$('#rdsc').insertAdjacentHTML('beforebegin',`<p class="warn" style="margin:12px 0 0"><b>Демонстрационный видеопоток.</b> Подключите свой лицензионный HLS в Профиль → Настройки — и в комнате заиграют настоящие серии.</p>`);
+  const hb=setInterval(()=>{bc?.postMessage({t:'hb',code,uid:ME.id});online.set(code+ME.id,Date.now());hdr();if(tab==='members')renderTab()},4000);bc?.postMessage({t:'hb',code,uid:ME.id});
+  const onBc=e=>{const d=e.data;if(!d||d.code!==code||d.uid===ME.id)return;if(d.t==='hb'){online.set(code+d.uid,Date.now())}if(d.t==='sync'&&ctl)ctl.apply(d.st);if(d.t==='ask'&&ctl&&host())bc.postMessage({t:'sync',code,uid:ME.id,name:S.name,st:ctl.state()})};
+  bc?.addEventListener('message',onBc);
+  const msgHtml=(m,r)=>{if(m.sys)return`<div class="sysm">🛡 ${esc(m.body)} <time style="float:right">${ago(m.at)}</time></div>`;if(m.del)return`<div class="muted tiny" style="font-style:italic;padding:2px 8px">сообщение удалено модератором · ${esc(m.name)}</div>`;
+    const c=ROLE[m.role]||ROLE.viewer,mine=m.uid===ME.id,pin=r.pinned===m.id,rx=Object.entries(m.react||{}).filter(([,a])=>a.length);
+    return`<div class="msg ${pin?'pin':''}" data-m="${m.id}" style="${mine?`border-left:2px solid ${c.c}`:''}">${av(m.name,30,c.tag?c.c:'')}<div class="b"><div><span class="nm" style="color:${c.c}">${esc(m.name)}</span>${tag(m.role)} <time>${ago(m.at)}</time>${m.flags?.length?` <span class="mode a" style="font-size:9px">${m.flags.join(', ')}</span>`:''}</div>${m.gif?`<img class="gif" loading="lazy" src="${esc(m.gif)}" alt="${esc(m.body)}"><small class="muted tiny">${esc(m.body)}</small>`:`<p>${esc(m.body)}</p>`}${rx.length?`<div class="rx">${rx.map(([e,a])=>`<button data-rx="${m.id}" data-e="${e}" class="${a.includes(ME.id)?'me':''}">${e} <b>${a.length}</b></button>`).join('')}</div>`:''}</div><div class="act"><button data-emo="${m.id}" aria-label="Реакция">☺</button>${mgr()?`<button data-pin="${m.id}" aria-label="Закрепить">📌</button>`:''}${(mgr()&&!mine)||mine?`<button data-del="${m.id}" aria-label="Удалить">🗑</button>`:''}</div>${emojiFor===m.id?`<div class="emo">${['❤️','😂','🔥','👏','😮','😢','🍥','👍'].map(e=>`<button data-rx="${m.id}" data-e="${e}">${e}</button>`).join('')}</div>`:''}</div>`};
+  function chat(full){const r=R.get(code);if(!r)return;const st=stickBottom();const mem=r.members[ME.id];const muted=mem?.mutedUntil>Date.now(),banned=mem?.banned,priv=['streamer','moderator','vip'].includes(mem?.role);
+    const canChat=r.status==='live'&&!banned&&!muted&&(!r.subsOnly||priv||mem?.role==='sub');const reason=banned?'Вы заблокированы в этой комнате.':muted?`Мут активен ещё ${Math.ceil((mem.mutedUntil-Date.now())/1000)} сек.`:r.status!=='live'?'Стрим завершён — чат закрыт.':r.subsOnly&&!canChat?'Чат в режиме «только подписчики». Получите роль Sub у владельца.':'';
+    const pm=r.msgs.find(m=>m.id===r.pinned&&!m.del);
+    if(full||!$('#chat .msgs')){$('#chat').innerHTML=`<div class="hd"><div class="row" style="gap:8px"><h3>Чат комнаты</h3><span class="chip" style="font-size:10px"><span class="dot" style="width:6px;height:6px"></span> ${Object.keys(r.members).filter(i=>isOnline(code,i)).length}</span></div><div class="row" style="gap:4px">${r.filter?'<span class="mode g">🛡 авто-фильтр</span>':''}${r.slow>0?`<span class="mode a">slow ${r.slow}s</span>`:''}${r.subsOnly?'<span class="mode b">только подписчики</span>':''}</div></div><div id="pinned"></div><div class="msgs" id="msgs" aria-live="polite"></div><form class="cform" id="cf">${reason?`<p class="sm muted" style="margin:0;background:var(--panel2);padding:7px 10px;border-radius:9px">${reason}</p>`:''}<div id="cerr"></div><div style="position:relative" class="in"><div class="box"><button type="button" class="btn sm ghost" id="gifb" aria-label="GIF">GIF</button><input id="ci" maxlength="500" autocomplete="off" aria-label="Текст сообщения" placeholder="${canChat?(r.slow>0?`Сообщение (slow mode ${r.slow}s)…`:'Написать в чат…'):'Чат недоступен'}" ${canChat?'':'disabled'}><small class="muted tiny" id="cc">0/500</small></div><button class="btn pri" id="cs" ${canChat?'':'disabled'} aria-label="Отправить">➤</button></div></form>`;bindChat()}
+    $('#pinned').innerHTML=pm?`<div class="row" style="padding:8px 14px;background:var(--asoft);border-bottom:1px solid var(--line);gap:8px;flex-wrap:nowrap">📌<div style="min-width:0;flex:1"><b class="tiny" style="color:var(--accent);text-transform:uppercase">Закреплено · ${esc(pm.name)}</b><div class="sm" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(pm.body)}</div></div>${mgr()?`<button class="btn sm ghost" data-pin="${pm.id}">✕</button>`:''}</div>`:'';
+    $('#msgs').innerHTML=r.msgs.length?r.msgs.slice(-120).map(m=>msgHtml(m,r)).join(''):'<p class="muted sm" style="text-align:center;padding:30px 10px">Сообщений пока нет. Начните разговор — модераторы увидят всё в реальном времени.</p>';if(st||full)$('#msgs').scrollTop=1e9;
+    const sb=$('#cs');if(sb){if(canChat){const priv2=['streamer','moderator','vip'].includes(mem?.role);let cool=0;if(r.slow>0&&!priv2&&mem?.last)cool=Math.max(0,Math.ceil(r.slow-(Date.now()-mem.last)/1e3));sb.dataset.off='';sb.textContent=cool>0?cool+'s':'➤';sb.disabled=cool>0}else{sb.dataset.off='1';sb.textContent='➤';sb.disabled=true}}}
+  function bindChat(){const ci=$('#ci');if(!ci)return;ci.oninput=()=>{$('#cc').textContent=ci.value.length+'/500'};
+    $('#cf').onsubmit=ev=>{ev.preventDefault();send({body:ci.value})};$('#gifb').onclick=gifPick}
+  function showErr(t){const e=$('#cerr');if(e)e.innerHTML=t?`<p class="err" role="alert" style="margin:0">${esc(t)}</p>`:''}
+  function send(p){const r=R.get(code),mem=r.members[ME.id];if(!mem||mem.banned)return;if(mem.mutedUntil>Date.now())return showErr(`Вы в муте ещё ${Math.ceil((mem.mutedUntil-Date.now())/1000)} сек`);
+    const priv=['streamer','moderator','vip'].includes(mem.role);const recent=r.msgs.filter(m=>m.uid===ME.id).slice(-3).map(m=>m.body).reverse();
+    const v=moderate(p.gif?(p.body||'GIF').replace(/https?:\/\/\S+/gi,''):p.body,{filter:r.filter,slow:r.slow,subsOnly:r.subsOnly,priv,isSub:mem.role==='sub'||priv,last:mem.last,recent});if(!v.ok)return showErr(v.reason);showErr('');
+    mutate(code,x=>{x.msgs.push({id:uid(),uid:ME.id,name:S.name,role:mem.role,body:v.text.slice(0,500),gif:p.gif||null,flags:v.flags,react:{},at:Date.now()});x.msgs=x.msgs.slice(-300);x.members[ME.id].last=Date.now()});const i=$('#ci');if(i)i.value='';$('#cc')&&($('#cc').textContent='0/500');chat()}
+  async function gifPick(){const d=ask('GIF',`<input class="inp" id="gq" value="anime" placeholder="Поиск GIF…" aria-label="Поиск GIF"><div class="row" style="gap:4px">${['anime','смех','вау','грусть','танец','кот','реакция','победа'].map(s=>`<button class="chip" data-s="${s}">${s}</button>`).join('')}</div><div class="gifs" id="gg"><span class="spinner"></span></div><p class="tiny muted" id="gp" style="margin:0"></p>`,true);let tm;const run=async()=>{const q=d.m.querySelector('#gq').value;const{items,provider}=await findGifs(q);d.m.querySelector('#gp').textContent=provider==='local'?'Внешний API не подключён — показаны встроенные стикеры. Ключ Giphy — в Профиль → Настройки.':'Источник: Giphy';d.m.querySelector('#gg').innerHTML=items.map((g,i)=>`<button data-g="${i}" title="${esc(g.title)}"><img loading="lazy" src="${esc(g.url)}" alt="${esc(g.title)}"></button>`).join('');d.m._g=items};d.m.querySelector('#gq').oninput=()=>{clearTimeout(tm);tm=setTimeout(run,260)};d.m.addEventListener('click',e=>{const s=e.target.closest('[data-s]');if(s){d.m.querySelector('#gq').value=s.dataset.s;run()}const g=e.target.closest('[data-g]');if(g){const it=d.m._g[+g.dataset.g];d.close(true);send({gif:it.url,body:it.title})}});run();await d.pr}
+  $('#chat').addEventListener('click',e=>{const t=e.target,r=R.get(code);const rx=t.closest('[data-rx]');if(rx){mutate(code,x=>{const m=x.msgs.find(z=>z.id===rx.dataset.rx);if(!m)return;m.react=m.react||{};const a=m.react[rx.dataset.e]=m.react[rx.dataset.e]||[];const i=a.indexOf(ME.id);i>=0?a.splice(i,1):a.push(ME.id)});emojiFor=null;chat();return}
+    const em=t.closest('[data-emo]');if(em){emojiFor=emojiFor===em.dataset.emo?null:em.dataset.emo;chat();return}
+    const pn=t.closest('[data-pin]');if(pn&&mgr()){mutate(code,x=>{const id=pn.dataset.pin;x.pinned=x.pinned===id?null:id;const m=x.msgs.find(z=>z.id===id);logMod(x,'pin',m?.name,x.pinned?'Закреплено':'Откреплено')});chat();return}
+    const dl=t.closest('[data-del]');if(dl){const m=r.msgs.find(z=>z.id===dl.dataset.del);if(!m)return;const mine=m.uid===ME.id;if(!mine&&!(mgr()&&(role()==='streamer'||ROLE[role()].rank<ROLE[m.role].rank)))return toast('Недостаточно прав','Модератор не может удалить сообщение равного или старшего по рангу','err');mutate(code,x=>{const z=x.msgs.find(q=>q.id===m.id);z.del=true;z.body='';z.gif=null;if(!mine)logMod(x,'delete_message',m.name,'Удалено модератором')});chat()}});
+  const mod=(target,action,extra={})=>{const r=R.get(code),tm=r.members[target];if(!tm)return;const a=me();if(target===ME.id)return toast('Нельзя применить действие к себе','','err');if(tm.role==='streamer')return toast('Нельзя применять санкции к владельцу','','err');if(role()!=='streamer'&&ROLE[a.role].rank>=ROLE[tm.role].rank)return toast('Недостаточно прав','Ваш ранг недостаточно высок для этого участника','err');
+    mutate(code,x=>{const m=x.members[target];if(action==='mute'){m.mutedUntil=Date.now()+10*6e4;sysMsg(x,`${m.name} получает мут на 10 мин. Причина: ${$('#mreason')?.value||'не указана'}`)}if(action==='unmute'){m.mutedUntil=0;sysMsg(x,`Мут с ${m.name} снят`)}if(action==='ban'){m.banned=true;sysMsg(x,`${m.name} заблокирован(а) в комнате. Причина: ${$('#mreason')?.value||'не указана'}`)}if(action==='unban'){m.banned=false;sysMsg(x,`${m.name} снова может заходить в комнату`)}if(action==='role'){if(role()!=='streamer')return;const rk=extra.role;m.role=m.role===rk?'viewer':rk;sysMsg(x,`${m.name}: роль → ${ROLE[m.role].tag||'Зритель'}`)}logMod(x,action,m.name,$('#mreason')?.value||extra.role||'')});chat();renderTab()};
+  const sw=(on,l,a)=>`<button class="btn" data-sw="${a}" style="justify-content:space-between;width:100%;text-align:left;${on?'border-color:var(--accent)':''}">${l}<b>${on?'вкл':'выкл'}</b></button>`;
+  function renderTab(){const r=R.get(code);if(!r)return;const box=$('#rtab');if(!box)return;
+    if(tab==='members'){const mem=Object.entries(r.members).map(([id,m])=>({id,...m,on:isOnline(code,id)})).sort((a,b)=>ROLE[a.role].rank-ROLE[b.role].rank||a.name.localeCompare(b.name));
+      box.innerHTML=`${mgr()?`<div class="panel" style="margin-bottom:14px"><b class="tiny muted" style="letter-spacing:.14em;text-transform:uppercase">Панель модерации</b><input class="inp" id="mreason" placeholder="Причина (видно в логе и в чате)" style="margin:10px 0" aria-label="Причина"><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px"><button class="btn sm ${r.slow>0?'dng':''}" data-sw="slow">Slow ${r.slow>0?`on ${r.slow}s`:'off'}</button><button class="btn sm" data-sw="slow5">Slow +5s</button><button class="btn sm ${r.subsOnly?'dng':''}" data-sw="subs">Subs only ${r.subsOnly?'on':'off'}</button><button class="btn sm ${r.syncLocked?'dng':''}" data-sw="sync">Sync lock ${r.syncLocked?'on':'off'}</button></div></div>`:''}<div class="mem">${mem.map(m=>{const c=ROLE[m.role],canAct=mgr()&&m.id!==ME.id&&m.role!=='streamer'&&(role()==='streamer'||ROLE[role()].rank<ROLE[m.role].rank);const B=(a,l,col,x='')=>`<button style="color:${col};border-color:${col}55;background:${col}14" data-mod="${a}" data-id="${m.id}" ${x}>${l}</button>`;const roleBtn=rk=>B('role',(m.role===rk?'−':'+')+ROLE[rk].tag,ROLE[rk].c,`data-role="${rk}"`);return`<div class="m ${m.id===ME.id?'me':''}"><div class="row" style="gap:8px;flex-wrap:nowrap"><span style="position:relative">${av(m.name,28,c.c)}<i style="position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border-radius:50%;border:2px solid var(--panel);background:${m.on?'#34d399':'var(--line)'}"></i></span><div style="min-width:0;flex:1"><b style="font-size:12px">${esc(m.name)}</b> ${tag(m.role)}<div class="tiny muted">${m.mutedUntil>Date.now()?'<span style="color:#f59e0b">мут активен</span> ':''}${m.banned?'<span style="color:var(--live)">забанен</span>':m.on?'в сети':'не в сети'}</div></div></div>${canAct?`<div class="acts">${host()?roleBtn('moderator')+roleBtn('vip')+roleBtn('sub'):''}${B('mute','mute 10м','#ffc531')}${B('unmute','unmute','#9b99a7')}${B('ban','ban','#ff3b52')}${B('unban','unban','#9b99a7')}</div>`:''}</div>`}).join('')}</div>`}
+    if(tab==='settings'){if(!mgr()){box.innerHTML=empty('Настройки доступны модерации','Роль Streamer или Moderator может менять параметры комнаты.');return}
+      box.innerHTML=`<div class="panel grid w" style="align-items:start"><div class="list"><label class="f"><span>Название комнаты</span><input class="inp" id="st" maxlength="90" value="${esc(r.title)}"></label><label class="f"><span>Описание</span><textarea class="inp" id="sd" rows="3" maxlength="400">${esc(r.desc)}</textarea></label><button class="btn sm pri" id="ssv">Сохранить</button></div><div class="list">${sw(r.subsOnly,'Чат только для подписчиков','subs')}${sw(r.syncLocked,'Плеером управляет только модерация','sync')}${sw(r.filter,'Авто-фильтр (мат, капс, ссылки, спам)','filter')}<div class="row" style="gap:6px"><span class="tiny muted" style="width:100%">Медленный режим</span>${[0,5,10,30,60].map(n=>`<button class="chip ${r.slow===n?'on':''}" data-slow="${n}">${n?n+' сек':'выкл'}</button>`).join('')}</div>${r.titleId?`<label class="f"><span>Серия для всех</span><div class="row"><input class="inp" type="number" min="1" style="width:100px" id="sep" value="${r.ep}"><button class="btn sm" id="sepb">Переключить</button></div></label>`:''}</div></div>`}
+    if(tab==='log'){box.innerHTML=r.log.length?`<div class="list">${r.log.map(l=>`<div class="item" style="padding:8px 12px"><span class="t"><b>${esc(l.action)}${l.target?' → '+esc(l.target):''}</b><small>${esc(l.by)} · ${ago(l.at)}${l.reason?' · '+esc(l.reason):''}</small></span></div>`).join('')}</div>`:'<p class="muted sm">Действий модерации пока не было.</p>'}
+    if(tab==='about'){box.innerHTML=`<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr))">${Object.entries(ROLE).map(([k,m])=>`<div class="panel" style="padding:12px">${m.tag?tag(k):'<span class="tag" style="color:var(--muted);border-color:var(--line)">—</span>'}<b style="display:block;margin-top:8px;font-size:13px">${m.label}</b><p class="tiny muted" style="margin:4px 0 0">${{streamer:'Полный контроль: роли, бан, мут, slow mode, закреп, завершение стрима.',moderator:'Удаляет сообщения, мутит и банит зрителей, включает slow mode, закрепляет.',vip:'Обходит авто-фильтр и ссылки, пишет при «только подписчики».',sub:'Пишет в чат при subs-only и обходит медленный режим.',viewer:'Чат с авто-фильтром, реакции, совместный плеер.'}[k]}</p></div>`).join('')}</div>`}}
+  $('#rtab').parentElement.addEventListener('click',e=>{const tb=e.target.closest('[data-rt]');if(tb){tab=tb.dataset.tb;$$('[data-rt]').forEach(x=>x.classList.toggle('on',x===tb));renderTab();return}
+    const md=e.target.closest('[data-mod]');if(md)return mod(md.dataset.id,md.dataset.mod,{role:md.dataset.role});
+    const swb=e.target.closest('[data-sw]');if(swb&&mgr()){const a=swb.dataset.sw;mutate(code,x=>{if(a==='slow'){x.slow=x.slow>0?0:10;sysMsg(x,x.slow?`Включён медленный режим: ${x.slow} сек между сообщениями`:'Медленный режим выключен');logMod(x,'slow_mode','',String(x.slow))}if(a==='slow5'){x.slow=Math.min(120,x.slow+5);sysMsg(x,`Медленный режим: ${x.slow} сек`);logMod(x,'slow_mode','',String(x.slow))}if(a==='subs'){x.subsOnly=!x.subsOnly;sysMsg(x,x.subsOnly?'Чат переведён в режим «только подписчики»':'Чат снова открыт для всех');logMod(x,'sub_mode','',String(x.subsOnly))}if(a==='sync'){x.syncLocked=!x.syncLocked;sysMsg(x,x.syncLocked?'Синхронизация плеера: управление только у стримера и модераторов':'Синхронизация плеера: управлять может любой зритель');logMod(x,'sync','',String(x.syncLocked))}if(a==='filter'){x.filter=!x.filter;logMod(x,'filter','',String(x.filter))}});chat(true);renderTab();ctl?.refreshSync();return}
+    const sl=e.target.closest('[data-slow]');if(sl&&mgr()){mutate(code,x=>{x.slow=+sl.dataset.slow;sysMsg(x,x.slow?`Включён медленный режим: ${x.slow} сек между сообщениями`:'Медленный режим выключен');logMod(x,'slow_mode','',String(x.slow))});chat(true);renderTab();return}
+    if(e.target.closest('#ssv')){mutate(code,x=>{x.title=$('#st').value.trim().slice(0,90)||x.title;x.desc=$('#sd').value.trim().slice(0,400)});toast('Настройки сохранены','','ok');hdr();$('#rdsc').innerHTML=R.get(code).desc?`<p class="panel sm muted" style="margin:12px 0 0">${esc(R.get(code).desc)}</p>`:''}
+    if(e.target.closest('#sepb')){const n=Math.max(1,Math.min(title?.aired||1,+$('#sep').value||1));mutate(code,x=>{x.ep=n});router()}});
+  $('#rh').addEventListener('click',async e=>{const t=e.target;if(t.closest('[data-inv]')){const u=location.href.split('#')[0]+'#/room/'+code;try{await navigator.clipboard.writeText(u);toast('Ссылка скопирована',u,'ok')}catch{toast('Скопируйте вручную',u)}}
+    if(t.closest('[data-code]')){try{await navigator.clipboard.writeText(code);toast('Код скопирован',code,'ok')}catch{toast('Код комнаты',code)}}
+    if(t.closest('[data-end]')&&confirm('Завершить стрим для всех участников?')){mutate(code,x=>{x.status='ended';x.ended=Date.now();sysMsg(x,'Стрим завершён владельцем')});hdr();chat(true)}
+    if(t.closest('[data-av]'))avPanel()});
+  let stream=null;function avPanel(){const b=$('#media');if(b.innerHTML){stream?.getTracks().forEach(x=>x.stop());stream=null;b.innerHTML='';hdr();return}
+    b.innerHTML=`<section class="panel"><div class="row between"><b class="tiny muted" style="letter-spacing:.14em;text-transform:uppercase">🎥 Голос и видео · WebRTC getUserMedia</b></div><div class="grid w" style="margin-top:12px;align-items:start;grid-template-columns:260px 1fr"><div style="position:relative;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden"><video id="lv" muted playsinline style="width:100%;height:100%;object-fit:cover"></video></div><div class="list"><div class="row"><button class="btn sm" id="mic">🎤 Включить микрофон</button><button class="btn sm" id="cam">📷 Включить камеру</button><button class="btn sm ghost" id="stp">Остановить</button></div><div class="prog" style="height:8px"><i id="lvl" style="width:0"></i></div><p class="tiny muted" style="margin:0">Локальный захват работает сразу. Для соединения участников между устройствами нужен signaling-сервер (в серверной версии — тот же realtime-канал).</p></div></div></section>`;hdr();
+    const on=async k=>{try{stream?.getTracks().forEach(x=>x.stop());stream=await navigator.mediaDevices.getUserMedia({audio:k==='a',video:k==='v'});const v=$('#lv');v.srcObject=stream;v.play().catch(()=>{});if(k==='a'){const c=new AudioContext(),s=c.createMediaStreamSource(stream),an=c.createAnalyser();an.fftSize=256;s.connect(an);const d=new Uint8Array(an.frequencyBinCount);const tk=()=>{an.getByteFrequencyData(d);const l=$('#lvl');if(l)l.style.width=Math.min(100,d.reduce((a,x)=>a+x,0)/d.length/128*100)+'%';if(stream&&document.body.contains(b))requestAnimationFrame(tk)};tk()}}catch{toast('Нет доступа к устройствам','Браузер запретил микрофон/камеру','err')}};
+    $('#mic').onclick=()=>on('a');$('#cam').onclick=()=>on('v');$('#stp').onclick=()=>{stream?.getTracks().forEach(x=>x.stop());stream=null}}
+  const onStore=e=>{if(e.key!=='ah:rooms')return;const r=R.get(code);if(!r)return;if(r.ep!==r1.ep&&r.titleId){router();return}if(r.members[ME.id]?.banned)return router();hdr();chat();renderTab();ctl?.refreshSync()};window.addEventListener('storage',onStore);
+  const tick=setInterval(()=>{const r=R.get(code);if(!r)return;const mem=r.members[ME.id],sb=$('#cs');if(!sb||sb.dataset.off==='1')return;const priv=['streamer','moderator','vip'].includes(mem?.role);let cool=0;if(r.slow>0&&!priv&&mem?.last)cool=Math.max(0,Math.ceil(r.slow-(Date.now()-mem.last)/1e3));sb.textContent=cool>0?cool+'s':'➤';sb.disabled=cool>0},1000);
+  hdr();chat(true);renderTab();
+  roomUnsub=()=>{clearInterval(hb);clearInterval(tick);bc?.removeEventListener('message',onBc);window.removeEventListener('storage',onStore);stream?.getTracks().forEach(x=>x.stop());ctl?.destroy()}
+}
+
+/* ------------------------------ роутер и шапка ------------------------------ */
+function router(){
+  nav++;watchSrc=null;cleanup?.();cleanup=null;roomUnsub?.();roomUnsub=null;app.onclick=null;window.scrollTo(0,0);$('#nav').classList.remove('open');
+  const raw=location.hash.replace(/^#/,'')||'/',[path,qs]=raw.split('?'),seg=path.split('/').filter(Boolean);
+  const r=seg[0]||'';document.title='AniHub — аниме без рекламы: просмотр и совместный стриминг';
+  if(r==='streaming'&&!seg[1]){return needCatalog(()=>pageStreaming(qs))}
+  if(r==='room')return needCatalog(()=>pageRoom(seg[1]||''));
+  if(r==='profile')return needCatalog(()=>pageProfile(seg[1]));
+  if(r==='title')return needCatalog(()=>pageTitle(seg[1]));
+  if(r==='watch')return needCatalog(()=>pageWatch(seg[1],seg[2]));
+  if(r==='schedule')return needCatalog(pageSchedule);
+  if(r==='catalog')return needCatalog(()=>pageCatalog(qs));
+  needCatalog(pageHome);
+}
+document.addEventListener('click',e=>{if(e.target.closest('[data-retry]')){catalogState='idle';router()}});
+window.addEventListener('hashchange',router);
+$('#theme').onclick=()=>setTheme(S.theme==='dark'?'light':'dark');$('#burger').onclick=()=>$('#nav').classList.toggle('open');
+setTheme(S.theme);$('#bd')&&($('#bd').textContent=BUILD);badge();
+const gs=$('#gs'),gsr=$('#gsr');let gt,gseq=0;
+gs.addEventListener('input',()=>{clearTimeout(gt);const q=gs.value.trim();if(!q){gsr.hidden=true;return}gt=setTimeout(async()=>{const seq=++gseq,l=q.toLowerCase();let hits=ALL.filter(t=>[t.title,t.alt,t.studio,...t.genres].join(' ').toLowerCase().includes(l)).sort((a,b)=>b.score-a.score).slice(0,6);
+  const draw=h=>{gsr.hidden=false;gsr.innerHTML=h.length?h.map(t=>`<a href="#/title/${t.id}"><img referrerpolicy="no-referrer" src="${esc(t.poster)}" alt=""><span><b>${esc(t.title)}</b><small>${esc(t.alt)} · ${t.year||''}${t.score?' · ★ '+t.score.toFixed(1):''}</small></span></a>`).join('')+`<a href="#/catalog?q=${encodeURIComponent(q)}"><span style="color:var(--accent);font-weight:700;font-size:12px">Все результаты в каталоге →</span></a>`:'<p>Ищем…</p>'};draw(hits);
+  if(hits.length<4&&q.length>=3){try{const d=await gql(`{ animes(search:${JSON.stringify(q)}, limit:6, kind:"tv", censored:true){ ${FIELDS} } }`);if(seq!==gseq)return;const more=(await normMany(d.animes||[])).filter(t=>t.aired>0&&!hits.some(h=>h.id===t.id));more.forEach(t=>extra.set(t.id,t));hits=[...hits,...more].slice(0,7);draw(hits);if(!hits.length)gsr.innerHTML='<p>Ничего не найдено. Попробуйте «Фрирен» или «Madhouse».</p>'}catch{if(!hits.length)gsr.innerHTML='<p>Ничего не найдено.</p>'}}},220)});
+document.addEventListener('mousedown',e=>{if(!e.target.closest('.sbox'))gsr.hidden=true});gsr.addEventListener('click',()=>{gsr.hidden=true;gs.value=''});
+document.addEventListener('keydown',e=>{if(e.key==='/'&&!['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)){e.preventDefault();gs.focus()}if(e.key==='Escape')gsr.hidden=true});
+router();
+})();
+</script>
+</body>
+</html>
