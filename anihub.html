@@ -784,6 +784,9 @@ ${IN_FRAME&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0
   const kt=$('#ktrans');if(kt)kt.onchange=e=>{const i=+e.target.value;S.kodicsel[t.id]=i;S.dubpref=(kodik.data.results[i]||{}).translation||'';save('kodicsel');save('dubpref');toast('Озвучка запомнена',S.dubpref+' — будет первой на всех тайтлах');router()};
   let ctl=null;
   if(embedUrl){ctl=mountEmbedPlayer($('#pl'),{title:t.title,sub:`${ep.season>1?`Сезон ${ep.season} · `:''}Серия ${ep.n}${epSuffix(ep)}`,url:embedUrl,badge:used==='kodik'?'● Kodik':'● Embed'})}
+  else if(used==='demo'&&S.sourceMode==='auto'){$('#pl').innerHTML=empty('Чистые источники не нашлись','Kodik и AniLibria не ответили для этой серии. Можно повторить поиск — или включить демо-ролик, чтобы проверить плеер.','<span class="row" style="gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn pri" data-try>🔄 Искать ещё раз</button><button class="btn ghost" data-demo>▶ Включить демо</button></span>');
+    const bt=$('#pl').querySelector('[data-try]'),bd=$('#pl').querySelector('[data-demo]');
+    if(bt)bt.onclick=()=>router();if(bd)bd.onclick=()=>{S.sourceMode='demo';save('sourceMode');router()}}
   else{const ksk=kodikDirect&&Array.isArray(kodikDirect.skip)?kodikDirect.skip:[];
     const lsk=libMedia?[libMedia.opening,libMedia.ending]:[];
     let ranges={intro:S.ovr[key]?.intro||ksk[0]||lsk[0]||ep.intro,outro:S.ovr[key]?.outro||ksk[1]||lsk[1]||ep.outro};
@@ -914,10 +917,40 @@ async function pageRoom(code){
     <div class="row"><button class="btn sm" data-inv>🔗 Пригласить</button><button class="btn sm" data-code>⧉ Код</button><button class="btn sm ${$('#media').innerHTML?'pri':''}" data-av>🎥 Голос / видео</button>${host()&&r.status==='live'?'<button class="btn sm dng" data-end>✕ Завершить</button>':''}</div></div>`;
     $('#rdsc').innerHTML=r.desc?`<p class="panel sm muted" style="margin:12px 0 0">${esc(r.desc)}</p>`:''};
   let ctl=null;const canCtl=()=>!R.get(code).syncLocked||mgr();
-  if(media){ctl=mountPlayer($('#pl'),{title:r1.titleName||r1.title,sub:ep?`Серия ${ep.n}${epSuffix(ep)}`:'Пользовательский источник',media,dur:ep?.dur||0,ranges:ep?{intro:S.ovr[hkey(title.id,ep.n)]?.intro||ep.intro,outro:S.ovr[hkey(title.id,ep.n)]?.outro||ep.outro}:{intro:[0,0],outro:[0,0]},next:null,noHist:true,
-    badge:'<span style="background:var(--live)!important;color:#fff">● совместный просмотр</span>',canControl:canCtl,onSync:st=>bc?.postMessage({t:'sync',code,uid:ME.id,name:S.name,st}),onRanges:()=>{},onReset:()=>{}});
-    if(bc)bc.postMessage({t:'ask',code,uid:ME.id})}else $('#pl').innerHTML=empty('Источник не выбран','Владелец ещё не привязал серию.');
-  if(media&&media.demo)$('#rdsc').insertAdjacentHTML('beforebegin',`<p class="warn" style="margin:12px 0 0"><b>Демонстрационный видеопоток.</b> Подключите свой лицензионный HLS в Профиль → Настройки — и в комнате заиграют настоящие серии.</p>`);
+  const ranges0=ep?{intro:S.ovr[hkey(title.id,ep.n)]?.intro||ep.intro,outro:S.ovr[hkey(title.id,ep.n)]?.outro||ep.outro}:{intro:[0,0],outro:[0,0]};
+  const mountWith=(m,bg)=>{ctl=mountPlayer($('#pl'),{title:r1.titleName||r1.title,sub:ep?`Серия ${ep.n}${epSuffix(ep)}`:'Пользовательский источник',media:m,dur:ep?.dur||0,ranges:ep?ranges0:{intro:[0,0],outro:[0,0]},next:null,noHist:true,
+    badge:bg||'<span style="background:var(--live)!important;color:#fff">● совместный просмотр</span>',canControl:canCtl,onSync:st=>bc?.postMessage({t:'sync',code,uid:ME.id,name:S.name,st}),onRanges:()=>{},onReset:()=>{}});
+    if(bc)bc.postMessage({t:'ask',code,uid:ME.id})};
+  if(media&&!media.demo)mountWith(media);
+  else if(media){$('#pl').innerHTML=empty('Ищем настоящий источник…','Пробуем Kodik и AniLibria. Если не найдём — предложим включить демо вручную.','')}
+  else $('#pl').innerHTML=empty('Источник не выбран','Владелец ещё не привязал серию.');
+  /* В комнате тоже играем настоящее аниме: если владелец не задал свой источник,
+     тихо резолвим Kodik/AniLibria и подменяем демо-ролик, не ломая синхронизацию */
+  if(media&&media.demo&&title&&ep&&!r1.custom)(async()=>{
+    const order=resolveOrder(title);
+    const libP=order.includes('libria')?libriaResolve(title).catch(()=>null):null;
+    let kdir=null,lib=null;
+    if(order.includes('kodik')){
+      let data=null;try{data=await withTimeout(kodikFetch(title),6000,'таймаут')}catch{}
+      if(data&&data.total>0&&data.results.length&&nav===my){
+        const kres=data.results[Math.min(S.kodicsel[title.id]!=null?S.kodicsel[title.id]:kodikPick(data),data.results.length-1)];
+        const kall=kodikSeasons(kres).flatMap(x=>x.eps);
+        const ke=kall.find(e=>e.n===ep.n)||kall[0];
+        if(ke&&await hasProxy()){const mm=String(ke.link||'').match(/\/(seria|serial|video|season|movie)\/(\d+)\/([a-f0-9]+)/i);
+          if(mm){try{const r2=await withTimeout(fetch(location.origin+`/kodik/resolve?id=${mm[2]}&hash=${mm[3]}&type=${mm[1]}`),25000,'таймаут');if(r2.ok)kdir=await r2.json()}catch{}}}}}
+    if(nav!==my)return;lib=libP?await libP:null;if(nav!==my)return;
+    let nm=null,bg=null;
+    if(kdir&&kdir.links){nm=kodikDirectMedia(kdir);bg='<span style="color:var(--cyan)">● Kodik · прямой поток · совместный просмотр</span>'}
+    else if(lib&&lib.episodes.length){const lm=libriaMedia(lib.episodes.find(e=>e.ordinal===ep.n)||lib.episodes[0]);if(lm){nm=lm;bg='<span style="color:var(--accent)">● AniLibria · совместный просмотр</span>'}}
+    if(!nm){$('#pl').innerHTML=empty('Настоящий источник не нашёлся','Kodik и AniLibria не ответили для этой серии. Повторите поиск — или включите демо-ролик для проверки плеера.','<span class="row" style="gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn pri" data-try>🔄 Искать ещё раз</button><button class="btn ghost" data-demo>▶ Включить демо</button></span>');
+      const bt=$('#pl').querySelector('[data-try]'),bd=$('#pl').querySelector('[data-demo]');
+      if(bt)bt.onclick=()=>router();if(bd)bd.onclick=()=>mountWith(media);
+      return}
+    try{ctl&&ctl.destroy&&ctl.destroy()}catch{}
+    mountWith(nm,bg);
+    const dw=$('#demowarn');dw&&dw.remove();
+  })().catch(()=>{});
+  if(media&&media.demo)$('#rdsc').insertAdjacentHTML('beforebegin',`<p class="warn" id="demowarn" style="margin:12px 0 0"><b>Демонстрационный видеопоток.</b> Подключите свой лицензионный HLS в Профиль → Настройки — и в комнате заиграют настоящие серии.</p>`);
   const hb=setInterval(()=>{bc?.postMessage({t:'hb',code,uid:ME.id});online.set(code+ME.id,Date.now());hdr();if(tab==='members')renderTab()},4000);bc?.postMessage({t:'hb',code,uid:ME.id});
   const onBc=e=>{const d=e.data;if(!d||d.code!==code||d.uid===ME.id)return;if(d.t==='hb'){online.set(code+d.uid,Date.now())}if(d.t==='sync'&&ctl)ctl.apply(d.st);if(d.t==='ask'&&ctl&&host())bc.postMessage({t:'sync',code,uid:ME.id,name:S.name,st:ctl.state()})};
   bc?.addEventListener('message',onBc);
@@ -1000,5 +1033,6 @@ document.addEventListener('keydown',e=>{if(e.key==='/'&&!['INPUT','TEXTAREA','SE
 router();
 })();
 </script>
-</body>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a487843a58b98b93',t:'MTc5MTY1NTE0MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
