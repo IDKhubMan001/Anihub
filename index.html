@@ -179,9 +179,36 @@ const p2=n=>String(n).padStart(2,'0');
 const fmt=s=>{s=Math.max(0,Math.floor(s||0));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return h?`${h}:${p2(m)}:${p2(x)}`:`${m}:${p2(x)}`};
 const compact=n=>n>=1e6?(n/1e6).toFixed(1).replace('.0','')+'M':n>=1e3?(n/1e3).toFixed(1).replace('.0','')+'K':String(n);
 const ago=t=>{const d=(Date.now()-t)/1e3;return d<60?'только что':d<3600?Math.floor(d/60)+' мин назад':d<86400?Math.floor(d/3600)+' ч назад':Math.floor(d/86400)+' дн назад'};
-const LS={get(k,d){try{const v=localStorage.getItem('ah:'+k);return v==null?d:JSON.parse(v)}catch{return d}},set(k,v){try{localStorage.setItem('ah:'+k,JSON.stringify(v))}catch{}}};
-const LS_OK=(()=>{try{localStorage.setItem('__ah','1');localStorage.removeItem('__ah');return true}catch{return false}})();
-if(!LS_OK)setTimeout(()=>toast('Здесь история не сохраняется','Встроенный предпросмотр блокирует хранилище: позиции серий живут до перезагрузки. Откройте сайт через python3 kodik_proxy.py (или файл напрямую) — тогда история и «продолжить с минуты» будут работать.'),900);
+/* ---- LS с запасным хранилищем: если localStorage заблокирован (песочницы, приватные режимы),
+        статусы/история/аватар пишутся в IndexedDB + в память. Мигает плашкой только если заблокировано ОБА. ---- */
+const _mem=new Map();
+let _idbOpen=null;const _idb=(()=>{const open=()=>_idbOpen||(_idbOpen=new Promise(res=>{try{const rq=indexedDB.open('anihub',1);
+ rq.onupgradeneeded=()=>rq.result.createObjectStore('kv');
+ rq.onsuccess=()=>res(rq.result);rq.onerror=()=>res(null);setTimeout(()=>res(null),3000)}catch{res(null)}}));return{
+  async get(k){const db=await open();if(!db)return _mem.get(k);return new Promise(res=>{try{const t=db.transaction('kv').objectStore('kv').get(k);t.onsuccess=()=>res(t.result);t.onerror=()=>res(_mem.get(k))}catch{res(_mem.get(k))}})},
+  async set(k,v){_mem.set(k,v);const db=await open();if(!db)return;try{const t=db.transaction('kv','readwrite').objectStore('kv').put(v,k);t.onerror=()=>{}}catch{}}}})();
+const LS={get(k,d){try{const v=localStorage.getItem('ah:'+k);if(v!=null)return JSON.parse(v)}catch{}return _mem.has(k)?_mem.get(k):d},
+ set(k,v){_mem.set(k,v);try{localStorage.setItem('ah:'+k,JSON.stringify(v))}catch{} _idb.set(k,v)}};
+const LS_OK=(()=>{try{localStorage.setItem('__ah','1');localStorage.removeItem('__ah');return true}catch{return false}})();const IDB_OK='indexedDB' in window;
+(async()=>{if(LS_OK)return;
+ try{const dbp=await _idbOpen;if(!dbp)return;
+  const keys=await new Promise(res=>{try{const t=dbp.transaction('kv').objectStore('kv').getAllKeys();t.onsuccess=()=>res(t.result||[]);t.onerror=()=>res([])}catch{res([])}});
+  for(const k of keys){if(_mem.has(k))continue;const v=await new Promise(res=>{const t=dbp.transaction('kv').objectStore('kv').get(k);t.onsuccess=()=>res(t.result);t.onerror=()=>res(undefined)});if(v!==undefined)_mem.set(k,v)}
+  /* восстанавливаем ВСЁ живое состояние: статусы, историю, позиции — а не только ник */
+  const STK=['hist','lists','marks','ovr','notes','subs','aired','prefs','kodicsel','kodikSeason','embeds','sourceMode','dubpref','avamap','name','avatar','theme'];
+  let rerender=false;
+  for(const k of STK){if(!_mem.has(k))continue;const v=_mem.get(k);
+    try{if(JSON.stringify(S[k])!==JSON.stringify(v)){S[k]=v;rerender=true}}catch(e){S[k]=v;rerender=true}}
+  try{if(S.theme==='dark'||S.theme==='light')setTheme(S.theme)}catch(e){}
+  try{badge()}catch(e){}
+  try{if(rerender&&!location.hash.startsWith('#/watch/'))router()}catch(e){}
+  }catch{}})();
+if(!IDB_OK&&!LS_OK)setTimeout(()=>{if(document.getElementById('lsban'))return;
+ const b=document.createElement('div');b.id='lsban';
+ b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:300;background:#7c2d12;color:#fff;padding:8px 14px;font-size:12px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;box-shadow:0 4px 20px rgba(0,0,0,.4)';
+ b.innerHTML='<b>⚠ Хранилище полностью недоступно.</b><span style="opacity:.9">Браузер заблокировал и localStorage, и IndexedDB: данные живут до перезагрузки. Откройте файл напрямую или через python3 kodik_proxy.py.</span><button class="btn sm" style="background:rgba(255,255,255,.15);color:#fff;border:0;padding:3px 10px" id="lsbx">Понятно</button>';
+ document.body.append(b);
+ document.getElementById('lsbx').onclick=()=>b.remove()},700);
 /* внешний прокси: страницу можно хостить на GitHub Pages, а потоки брать с домашнего прокси */
 let PB_BASE='';try{const qp=new URLSearchParams(location.search).get('proxy');if(qp){PB_BASE=qp.replace(/\/+$/,'');LS.set('proxybase',PB_BASE)}else PB_BASE=LS.get('proxybase','')||''}catch{}
 const PB=()=>PB_BASE||location.origin;
@@ -559,7 +586,7 @@ function mountPlayer(box,o){
     const m={' ':toggle,k:toggle,K:toggle,ArrowRight:()=>seek(v.currentTime+5),ArrowLeft:()=>seek(v.currentTime-5),l:()=>seek(v.currentTime+10),L:()=>seek(v.currentTime+10),j:()=>seek(v.currentTime-10),J:()=>seek(v.currentTime-10),ArrowUp:()=>{P.volume=Math.min(1,v.volume+.1);v.volume=P.volume;save('prefs')},ArrowDown:()=>{P.volume=Math.max(0,v.volume-.1);v.volume=P.volume;save('prefs')},m:()=>{v.muted=!v.muted},M:()=>{v.muted=!v.muted},f:fs,F:fs,s:skipIntro,S:skipIntro,e:skipOutro,E:skipOutro,b:addMark,B:addMark,c:()=>setPref('subLang',P.subLang?'':(subsT[0]?.lang||'')),C:()=>setPref('subLang',P.subLang?'':(subsT[0]?.lang||'')),n:()=>o.next&&(location.hash=o.next.url),N:()=>o.next&&(location.hash=o.next.url),p:()=>o.prev&&(location.hash=o.prev.url),P:()=>o.prev&&(location.hash=o.prev.url),'[':()=>setPref('rate',Math.max(.5,+(P.rate-.25).toFixed(2))),']':()=>setPref('rate',Math.min(2,+(P.rate+.25).toFixed(2)))}[k];
     if(m){if(k.startsWith('Arrow')||k===' ')e.preventDefault();m();wake()}else if(/^[0-9]$/.test(k))seek(dur*(+k/10))};
   window.addEventListener('keydown',key);
-  const unload=()=>saveHist();window.addEventListener('beforeunload',unload);
+  const unload=()=>saveHist();window.addEventListener('beforeunload',unload);document.addEventListener('visibilitychange',()=>{if(document.hidden&&!dead)saveHist()});
   $('[data-c=cc]',box).classList.toggle('on',!!P.subLang);syLabel();paintMarks();loadSubs();load();
   return{video:v,
     apply(st){if(!st)return;applying=true;if(Math.abs(v.currentTime-st.t)>2.5)v.currentTime=st.t;if(Math.abs(v.playbackRate-st.rate)>.05)v.playbackRate=st.rate;if(st.playing&&v.paused)v.play().catch(()=>{});if(!st.playing&&!v.paused)v.pause();setTimeout(()=>applying=false,500)},
@@ -850,7 +877,7 @@ async function pageTitle(id){
   const eps=episodes(t),kind=S.lists[t.id],sub=S.subs.includes(t.id),next=t.next&&t.next>Date.now()-6*36e5?t.next:null;
   const rel=ALL.filter(x=>x.id!==t.id&&x.genres.some(g=>t.genres.includes(g))).sort((a,b)=>b.score-a.score).slice(0,6);
   const rooms=Object.entries(R.all()).filter(([,r])=>r.titleId===t.id).slice(0,3);
-  const LISTS=[['favorite','♥ Избранное'],['watching','▶ Смотрю сейчас'],['planned','🔖 В планах']];
+  const LISTS=[['favorite','♥ Избранное'],['watching','▶ Смотрю сейчас'],['planned','🔖 В планах'],['dropped','💤 Брошено']];
   const srcBadges=[S.embeds[t.id]?'🔗 Embed':'',S.tpl?'📡 HLS':'','🎬 Kodik'].filter(Boolean);
   app.innerHTML=`<section class="tbanner"><div class="bg" style="background-image:url('${esc(t.banner||t.poster)}')"></div><div class="wrap in"><div class="poster"><img referrerpolicy="no-referrer" src="${esc(t.poster)}" alt="Постер ${esc(t.title)}"></div><div style="min-width:0;flex:1">
   <div class="eyebrow" style="color:${t.accent}">${esc(t.studio)} · ${t.year||'—'} · ${t.age}</div><h1 style="margin-top:8px">${esc(t.title)}</h1><div style="color:rgba(255,255,255,.6);font-size:14px;margin-top:4px">${esc(t.alt)}</div>
@@ -999,6 +1026,7 @@ async function pageWatch(id,epn){
   else if(used==='libria'&&lib){eps=lib.episodes.map(e=>({n:e.ordinal,title:e.name&&!/^серия\s*\d+$/i.test(e.name)?e.name:'',dur:Math.max(120,(e.duration>600?e.duration:(e.duration||0)*60)||(t.dur||24)*60)}))}
   else eps=episodes(t);
   watchSrc=used;
+  if(!S.lists[t.id]){S.lists[t.id]='watching';save('lists')}
   const ep=eps.find(e=>e.n===qE)||eps[0];
   const ek=e=>hkey(t.id,e.season>1?e.season+'x'+e.n:e.n);
   const key=ek(ep),hist=S.hist[key];
@@ -1007,15 +1035,14 @@ async function pageWatch(id,epn){
     if(!nx&&kodikSeasonsAll[si+1]&&kodikSeasonsAll[si+1].eps[0]){const e=kodikSeasonsAll[si+1].eps[0];nx={...e,dur:(t.dur||24)*60,_u:`#/watch/${t.id}/${e.season}x${e.n}`}}
     if(!pv&&si>0&&kodikSeasonsAll[si-1]&&kodikSeasonsAll[si-1].eps.length){const e=kodikSeasonsAll[si-1].eps[kodikSeasonsAll[si-1].eps.length-1];pv={...e,dur:(t.dur||24)*60,_u:`#/watch/${t.id}/${e.season}x${e.n}`}}}
   /* Kodik: рядом работает прокси — достаём прямой m3u8 и играем в своём плеере (без зависающего iframe) */
-  let kodikDirect=null,noProxy=false;
+  let kodikDirect=null,noProxy=false,bgResolveM=null;
   if(used==='kodik'&&ep.link){
     const m=String(ep.link).match(/\/(seria|serial|video|season|movie)\/(\d+)\/([a-f0-9]+)/i);
     if(m&&await hasProxy()){
       try{const r=await withTimeout(fetch(PB()+`/kodik/resolve?id=${m[2]}&hash=${m[3]}&type=${m[1]}`),25000,'таймаут');
         if(r.ok){const j=await r.json();if(j&&j.links)kodikDirect=j}}catch{}
       if(my!==nav)return}
-    else if(m){noProxy=true;
-      try{const j=await withTimeout(browserResolve(m[1],m[2],m[3]),32000,'таймаут');if(my!==nav)return;if(j&&j.links)kodikDirect=j}catch{}}
+    else if(m){noProxy=true;bgResolveM=m}
   }
   let libMedia=null;
   if(used==='libria'&&lib){libMedia=libriaMedia(lib.episodes.find(e=>e.ordinal===ep.n)||lib.episodes[0]);if(!libMedia){libErr='AniLibria: у серии нет прямых ссылок';used='demo'}}
@@ -1029,7 +1056,7 @@ async function pageWatch(id,epn){
   <div style="padding-top:0;display:grid;gap:16px"><div style="min-width:0"><div id="pl"></div>
   ${used==='demo'?`<p class="warn" style="margin:12px 0 0"><b>Демонстрационный видеопоток.</b> Реальный материал для этого тайтла не найден. Попробуйте нажать «🎬 Kodik» ещё раз, обновить публичный токен (Профиль → Настройки → Kodik) или подключить свой источник: лицензионный HLS либо любой embed.${FRAME_HINT?'<br><b style="color:var(--accent)">'+FRAME_HINT+'</b>':''}</p>`:''}
 ${IN_FRAME&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0"><b>Предпросмотр может блокировать встроенный плеер.</b> Если видео ниже не запускается — откройте этот файл напрямую в браузере или воспользуйтесь ссылкой «в новой вкладке» под плеером.</p>`:''}
-  ${!IN_FRAME&&noProxy&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0"><b>Прямой чистый поток недоступен — не запущен локальный прокси.</b> Сейчас играет встроенный плеер Kodik: в нём бывает реклама и он может не работать. Запуск без рекламы: положите <b>kodik_proxy.py</b> рядом с этим файлом → в терминале <b>python3 kodik_proxy.py</b> → откройте <b>http://localhost:8080</b> (сам файл по двойному клику не даёт прямых потоков).</p>`:''}
+  ${!IN_FRAME&&noProxy&&used==='kodik'&&!kodikDirect?`<p class="warn" id="npxwarn" style="margin:12px 0 0"><b>Прямой чистый поток недоступен — не запущен локальный прокси.</b> Сейчас играет встроенный плеер Kodik: в нём бывает реклама и он может не работать. Запуск без рекламы: положите <b>kodik_proxy.py</b> рядом с этим файлом → в терминале <b>python3 kodik_proxy.py</b> → откройте <b>http://localhost:8080</b> (сам файл по двойному клику не даёт прямых потоков).</p>`:''}
   ${used==='demo'&&kodikErr?`<p class="warn" style="margin:12px 0 0">${esc(kodikErr)}</p>`:''}
   ${used==='demo'&&libErr?`<p class="warn" style="margin:12px 0 0">${esc(libErr)}</p>`:''}
   <div class="panel" style="margin-top:14px"><h2 style="font-size:20px">Серия ${ep.n}${esc(epSuffix(ep))}</h2><p class="muted sm" style="margin:6px 0 0">${esc(t.desc.slice(0,300))}${t.desc.length>300?'…':''}</p><div class="row" style="margin-top:12px;gap:14px;font-size:11px;color:var(--muted)"><span>★ ${t.score.toFixed(1)}</span><span>${esc(t.studio)}</span><span>${t.year}</span><span>${statusLabel(t.status)}</span>${used!=='kodik'&&used!=='embed'?`<span>${fmt(ep.dur)}</span>`:''}</div>${hist&&used==='demo'?`<p class="sm muted" style="margin:10px 0 0;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--bg2)">${hist.done?'Серия досмотрена — таймстемп сохранён в истории.':`Сохранённая позиция: ${fmt(hist.pos)} из ${fmt(hist.dur)}.`}</p>`:''}<div class="row" style="margin-top:12px"><a class="btn sm" href="#/title/${t.id}">К тайтлу</a><a class="btn sm" href="#/streaming?create=1&title=${t.id}&ep=${ep.n}">● Создать комнату</a>${used==='demo'?`<span class="tiny muted">Настройки пропуска опенинга/эндинга — в плеере, кнопка ⚙.</span>`:''}</div></div></div>
@@ -1043,7 +1070,19 @@ ${IN_FRAME&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0
   const ss=$('#ssn');if(ss)ss.onchange=e=>{S.kodikSeason[t.id]=+e.target.value;save('kodikseason');const L=(kodikSeasonsAll.find(x=>x.season===+e.target.value)||{eps:[]}).eps;if(L.some(x=>x.n===qE))router();else location.hash='#/watch/'+t.id+'/'+(+e.target.value)+'x'+((L[0]||{}).n||1)};
   const kt=$('#ktrans');if(kt)kt.onchange=e=>{const i=+e.target.value;S.kodicsel[t.id]=i;S.dubpref=(kodik.data.results[i]||{}).translation||'';save('kodicsel');save('dubpref');toast('Озвучка запомнена',S.dubpref+' — будет первой на всех тайтлах');router()};
   let ctl=null;
-  if(embedUrl){ctl=mountEmbedPlayer($('#pl'),{title:t.title,sub:`${ep.season>1?`Сезон ${ep.season} · `:''}Серия ${ep.n}${epSuffix(ep)}`,url:embedUrl,badge:used==='kodik'?'● Kodik':'● Embed'})}
+  if(embedUrl){ctl=mountEmbedPlayer($('#pl'),{title:t.title,sub:`${ep.season>1?`Сезон ${ep.season} · `:''}Серия ${ep.n}${epSuffix(ep)}`,url:embedUrl,badge:used==='kodik'?'● Kodik':'● Embed'});
+    /* чистый поток добываем в фоне: страница не ждёт, подмена тихая */
+    if(bgResolveM&&used==='kodik')(async()=>{try{
+      const j=await withTimeout(browserResolve(bgResolveM[1],bgResolveM[2],bgResolveM[3]),16000,'таймаут');
+      if(nav!==my||!j||!j.links)return;kodikDirect=j;
+      try{ctl&&ctl.destroy&&ctl.destroy()}catch(e){}
+      ctl=mountPlayer($('#pl'),{title:t.title,sub:`${ep.season>1?`Сезон ${ep.season} · `:''}Серия ${ep.n}${epSuffix(ep)}`,media:kodikDirectMedia(j),dur:ep.dur,
+        ranges:{intro:S.ovr[key]?.intro||ep.intro||[0,0],outro:S.ovr[key]?.outro||ep.outro||[0,0]},resume:hist&&!hist.done?hist.pos:0,autoStart:true,
+        next:nx?{n:nx.n,url:nx._u||`#/watch/${t.id}/${nx.n}`,suffix:epSuffix(nx)}:null,prev:pv?{n:pv.n,url:pv._u||`#/watch/${t.id}/${pv.n}`}:null,
+        meta:{id:t.id,ep:ep.season>1?ep.season+'x'+ep.n:ep.n,title:t.title,poster:t.poster},badge:'<span style="color:var(--cyan)">● Kodik · прямой поток</span>'});
+      const w=document.getElementById('npxwarn');w&&w.remove();
+      const st=document.querySelector('#srcbar small.muted');if(st)st.textContent='Kodik: прямой поток готов — в родном плеере, без рекламы.';
+      toast('Чистый поток получен','Kodik-resolve из браузера готов — играем без рекламы','ok')}catch(e){}})()}
   else if(used==='demo'&&S.sourceMode==='auto'){$('#pl').innerHTML=empty('Чистые источники не нашлись','Kodik и AniLibria не ответили для этой серии. Можно повторить поиск — или включить демо-ролик, чтобы проверить плеер.','<span class="row" style="gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn pri" data-try>🔄 Искать ещё раз</button><button class="btn ghost" data-demo>▶ Включить демо</button></span>');
     const bt=$('#pl').querySelector('[data-try]'),bd=$('#pl').querySelector('[data-demo]');
     if(bt)bt.onclick=()=>router();if(bd)bd.onclick=()=>{S.sourceMode='demo';save('sourceMode');router()}}
@@ -1134,6 +1173,8 @@ function settingsClick(e){const P=S.prefs,t=e.target;
   if(t.closest('#wipe')){if(confirm('Удалить историю, списки, закладки и настройки в этом браузере?')){Object.keys(localStorage).filter(k=>k.startsWith('ah:')).forEach(k=>localStorage.removeItem(k));location.hash='#/';location.reload()}}}
 async function kodikTest(){const field=$('#ktok')?$('#ktok').value.trim():'';toast('Проверяем Kodik API…');try{await ensureKodikToken();const tok=field||kodikTok();const j=await kodikApiGet(`${KODIK_API}/search?token=${encodeURIComponent(tok)}&shikimori_id=21&with_material_data=true`);if(j.error)throw new Error(j.error);toast('Kodik API доступен',j.total?`Тестовый поиск («Ван-Пис»): материалов найдено ${j.total}`:'Ответ получен, но тестовый тайтл не найден','ok')}catch(e){toast('Kodik API недоступен',String(e.message||e),'err')}}
 function setAvatar(d){S.avatar=d;if(S.name){if(d)S.avamap[S.name.toLowerCase()]=d;else delete S.avamap[S.name.toLowerCase()]}save('avatar');save('avamap');
+  if(!LS_OK)toast('Хранилище заблокировано','Аватар проживёт только до перезагрузки: запустите сайт через python3 kodik_proxy.py','','err');
+  else if(d&&!S.name)toast('Аватар сохранён, но…','Задайте ник в поле ниже — без него аватар не виден в комнатах');
   const all=R.all();Object.entries(all).forEach(([c,r])=>{if(r.members&&r.members[ME.id]){r.members[ME.id].avatar=d||'';srvPush(c)}});
   pageProfile('settings');toast(d?'Аватар обновлён':'Аватар убран',d?'Виден всем в комнатах':'','ok')}
 function settingsBind(){const P=S.prefs;
@@ -1333,6 +1374,6 @@ document.addEventListener('keydown',e=>{if(e.key==='/'&&!['INPUT','TEXTAREA','SE
 router();
 })();
 </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a49563dd8aceeffb',t:'MTc5MTgwMDYxNg=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
-</body>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a49eb5778f360287',t:'MTc5MTg5ODMzMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
