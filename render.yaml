@@ -1,0 +1,10 @@
+# Render deploy: Web Service → этот репозиторий → настройки подхватятся отсюда
+services:
+  - type: web
+    name: anihub-rooms
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
