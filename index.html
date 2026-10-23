@@ -185,7 +185,7 @@ footer.foot{margin-top:90px;border-top:1px solid var(--line);background:var(--bg
 <script>/* APP */
 (()=>{
 'use strict';
-const BUILD='2026-10-23 v17.8 · полный перевод длинных текстов интерфейса';
+const BUILD='2026-10-23 v17.9 · любое аниме в комнатах, мгновенный старт эфира, источник догоняет зрителей';
 const STUDIO_SNAPSHOT={"date":"10.10.2026","days":[{"name":"Понедельник","entries":[{"time":"16:10","title":"Я влюбился в тебя, когда ты бежала в лунной ночи"},{"time":"16:30","title":"Тайная битва за престол сильнейшего принца-дуралея"},{"time":"18:10","title":"Разгневанная леди поклялась отомстить"},{"time":"18:15","title":"Мир танцует"},{"time":"18:30","title":"Аккуратная и симпатичная девочка в моей новой школе"},{"time":"18:40","title":"Рыцарь-скелет вступает в параллельный мир 2"},{"time":"18:55","title":"Необъятный океан 3"},{"time":"20:20","title":"Игра лжецов"},{"time":"21:15","title":"Отверженная святая и её гастрономическое путешествие в другом мире"}]},{"name":"Вторник","entries":[{"time":"13:10","title":"Призрак в доспехах"},{"time":"17:10","title":"Забывчивая святая дева неосознанно изливает свою силу"},{"time":"22:55","title":"Непревзойдённый"},{"time":"19:15","title":"Истинные чудотворные рыцари 2"},{"time":"22:05","title":"Красная река"},{"time":"23:00","title":"Виктория с множеством козырей"}]},{"name":"Среда","entries":[{"time":"15:45","title":"Клеватесс 2"},{"time":"17:05","title":"Военная хроника маленькой девочки 2"},{"time":"18:00","title":"Мир отомэ-игр — это тяжелый мир для мобов 2"},{"time":"18:10","title":"Героиня? Святая? Нет, я всемогущая горничная!"},{"time":"19:45","title":"Для тебя во всём цвету 2"},{"time":"20:10","title":"Крестьянин 999-го уровня"},{"time":"20:20","title":"Тройной шторм"},{"time":"20:40","title":"Старик из деревни становится Святым мечом"}]},{"name":"Четверг","entries":[{"time":"09:45","title":"Для тебя во всём цвету 2"},{"time":"16:15","title":"Дара из Рэйвы"},{"time":"16:30","title":"Бродячие псы: Шуточные истории 2"},{"time":"18:25","title":"Ура мечте! Бесконечная мечта"},{"time":"18:45","title":"Пыль Мёбиуса"},{"time":"19:45","title":"Табакошка"},{"time":"19:50","title":"Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры"},{"time":"20:00","title":"Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга"},{"time":"21:05","title":"Монстрик Карамелька"}]},{"name":"Пятница","entries":[{"time":"18:20","title":"Прошло десять лет с момента, как я стал легендой"},{"time":"18:30","title":"О моём перерождении в слизь 4"},{"time":"19:00","title":"Население приграничного владения начинается с нуля"},{"time":"19:10","title":"Нарисуй это, потом умри"},{"time":"20:10","title":"Пожалуйста, простите моих младших братьев"},{"time":"20:15","title":"Адский режим 2"},{"time":"20:45","title":"Юный лорд — мастер побега 2"},{"time":"22:10","title":"Слёзы Бога"}]},{"name":"Суббота","entries":[{"time":"13:10","title":"Добро пожаловать в ад, Ирума! 4"},{"time":"14:10","title":"Власть книжного червя 4"},{"time":"16:45","title":"Чёрный факел"},{"time":"17:55","title":"Рекомендация старшеклассника Ивамото"},{"time":"20:15","title":"Шатёр чародея"},{"time":"20:35","title":"Шоу для взрослых: Цирк «Подсолнух»"},{"time":"20:40","title":"Следующий герцог, который скажет: «Я не хочу любить тебя», будет любить тебя по какой-то причине"},{"time":"20:50","title":"Невеста демона"},{"time":"20:55","title":"Лиричная волшебница Наноха: Опередители — Огненный выстрел возмездия"},{"time":"21:00","title":"Кот и дракон"},{"time":"21:10","title":"Ханаори хочет драться даже после перерождения"},{"time":"21:40","title":"Забота об одарённой девушке"},{"time":"22:30","title":"Мао"},{"time":"22:50","title":"Цугаи загробного мира"}]},{"name":"Воскресенье","entries":[{"time":"10:10","title":"Компания «Маги-Люмьер» 2"},{"time":"11:55","title":"Вперёд, отряд мистики!"},{"time":"12:00","title":"Прощай, Лара"},{"time":"12:10","title":"Ты и я полные противоположности"},{"time":"12:20","title":"Железный котелок Жана!"},{"time":"16:25","title":"Самый сильный в мире заступник"},{"time":"17:40","title":"История электричества в двадцатом веке"},{"time":"17:50","title":"Сто девушек 3"},{"time":"18:40","title":"Дигимоны: Битбрейк"},{"time":"18:50","title":"Реинкарнация безработного 3"},{"time":"19:20","title":"Чёрная кошка и класс ведьм"},{"time":"19:40","title":"Хоть я и бездарная злодейка"},{"time":"20:10","title":"Лазурный путь: Малый вперёд! 2"}]}]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -248,7 +248,7 @@ function noteToast(n){const el=document.createElement('div');el.className='toast
   el.onclick=()=>{el.remove();if(n.link)location.hash=n.link};$('#toasts').append(el);setTimeout(()=>el.remove(),12000)}
 function toast(title,desc,tone){const el=document.createElement('div');el.className='toast '+(tone||'');el.innerHTML=`<b>${esc(title)}</b>${desc?`<small>${esc(desc)}</small>`:''}`;$('#toasts').append(el);setTimeout(()=>el.remove(),4200)}
 let modalLast=null,modalCloseFn=null;
-function modal(title,body,wide){return new Promise(res=>{const m=document.createElement('div');m.className='mback';m.innerHTML=`<div class="modal ${wide?'w':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="mh"><h3>${esc(title)}</h3><button class="btn sm ghost" data-x aria-label="Закрыть">✕</button></div><div class="mb">${body}</div></div>`;const close=v=>{m.remove();document.removeEventListener('keydown',k);res(v)};const k=e=>{if(e.key==='Escape')close(null)};document.addEventListener('keydown',k);m.addEventListener('click',e=>{if(e.target===m||e.target.closest('[data-x]'))close(null)});document.body.append(m);modalLast=m;modalCloseFn=close;const fIn=m.querySelector('input,select,textarea');if(!fIn)fIn&&0;if(fIn&&matchMedia('(pointer:fine)').matches)fIn.focus()})}
+function modal(title,body,wide){return new Promise(res=>{const m=document.createElement('div');m.className='mback';m.innerHTML=`<div class="modal ${wide?'w':''}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="mh"><h3>${esc(title)}</h3><button class="btn sm ghost" data-x aria-label="Закрыть">✕</button></div><div class="mb">${body}</div></div>`;const close=v=>{m.remove();document.removeEventListener('keydown',k);res(v)};const k=e=>{if(e.key==='Escape')close(null)};document.addEventListener('keydown',k);m.addEventListener('click',e=>{if(e.target===m||e.target.closest('[data-x]'))close(null)});document.body.append(m);modalLast=m;modalCloseFn=close;const fIn=m.querySelector('input,select,textarea');if(!fIn)fIn&&0;if(fIn&&typeof matchMedia==='function'&&matchMedia('(pointer:fine)').matches)fIn.focus()})}
 const ask=(title,body,wide)=>{const pr=modal(title,body,wide);return{get m(){return modalLast},close:v=>modalCloseFn&&modalCloseFn(v),pr}};
 
 /* ------------------------ данные: Shikimori + AniList ------------------------ */
@@ -812,7 +812,7 @@ const cloud={conns:{},rev:{},pushT:{},hosting:{},libP:null};
 let HUB=null;
 async function hubOk(){if(HUB!==null)return HUB;try{const r=await fetch(PB()+'/api/rooms');HUB=r.ok}catch{HUB=false}return HUB}
 async function cloudLib(){if(cloud.libP)return cloud.libP;cloud.libP=new Promise((res,rej)=>{if(window.Peer)return res(window.Peer);const sc=document.createElement('script');sc.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';sc.onload=()=>res(window.Peer);sc.onerror=()=>rej(new Error('PeerJS не загрузился'));document.head.appendChild(sc)});return cloud.libP}
-function roomHook(code){const h=srv.hooks[code];if(h){try{h.hdr();h.chat();h.renderTab()}catch{}}}
+function roomHook(code){const h=srv.hooks[code];if(h){try{h.hdr();h.chat();h.renderTab()}catch{}try{h.src&&h.src()}catch{}}}
 function cloudApply(code,data,rev){if((rev||0)<(cloud.rev[code]||0))return;cloud.rev[code]=rev||1;const all=R.all();all[code]=data;R.put(all);try{learnAvatars(data)}catch{};roomHook(code)}
 function cloudSend(code,m){(cloud.conns[code]||[]).forEach(c=>{try{c.send(m)}catch{}})}
 function cloudState(code){const r=R.get(code);if(!r)return;const m={type:'state',data:r,rev:(cloud.rev[code]||0)+1,uid:ME.id};cloud.rev[code]=m.rev;cloudSend(code,m)}
@@ -1497,14 +1497,22 @@ async function createRoom(titleId,ep){
   d.m.addEventListener('click',e=>{if(!e.target.closest('#re')&&!e.target.closest('#red'))red.style.display='none';if(!e.target.closest('#rtq')&&!e.target.closest('#rtd'))rtd.style.display='none'});
   const drawL=list=>{if(!list.length){rtd.innerHTML='<div class="tiny muted" style="padding:10px 12px">Ничего не нашлось. Попробуйте название латиницей — например «Frieren» или «Dan Da Dan».</div>'}else{rtd.innerHTML=list.map(x=>`<div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--line)" data-pid="${x.id}"><b style="font-size:13px">${esc(x.title)}</b> <span class="muted tiny">${x.year||''} · ${x.aired||0} сер.${x.src==='anilist'?' · AniList':''}</span></div>`).join('')}rtd.style.display='block';
     rtd.querySelectorAll('[data-pid]').forEach(el=>el.onclick=()=>{const tt=roomPick[+el.dataset.pid];rtq.value=tt.title;rtq.dataset.id=tt.id;rtd.style.display='none';sync();if(red.style.display==='block')drawEp()})};
-  let tmq;rtq.oninput=()=>{clearTimeout(tmq);tmq=setTimeout(async()=>{const v=rtq.value.trim().toLowerCase();rtq.dataset.id='';if(v.length<2){rtd.style.display='none';return}
-    let list=ALL.filter(x=>x.title.toLowerCase().includes(v)||(x.alt||'').toLowerCase().includes(v)).slice(0,8);
-    if(!list.length){rtd.innerHTML='<div class="tiny muted" style="padding:10px 12px">Ищем «'+esc(rtq.value.trim())+'» во всех базах…</div>';rtd.style.display='block'}
-    if(list.length<5){try{const dd=await anilistQ(`query($s:String){Page(perPage:10){media(type:ANIME,search:$s,sort:SEARCH_MATCH,isAdult:false){${ANI_FIELDS}}}}`,{s:rtq.value.trim()});
-      (dd.Page?.media||[]).map(normAni).filter(Boolean).forEach(x=>{roomPick[x.id]=x;extra.set(x.id,x)});
-      const have=new Set(list.map(x=>x.id));Object.values(roomPick).forEach(x=>{if(!have.has(x.id)&&((x.title||'').toLowerCase().includes(v)||(x.alt||'').toLowerCase().includes(v)))list.push(x)});
-      list=list.slice(0,12)}catch{}}
-    drawL(list)},450)};
+  let tmq,rtqSeq=0;rtq.oninput=()=>{clearTimeout(tmq);tmq=setTimeout(async()=>{const v=rtq.value.trim(),q=v.toLowerCase(),seq=++rtqSeq;rtq.dataset.id='';if(v.length<2){rtd.style.display='none';return}
+    let list=ALL.filter(x=>x.title.toLowerCase().includes(q)||(x.alt||'').toLowerCase().includes(q)).slice(0,8);
+    const seen=new Set(list.map(x=>x.id));
+    if(!list.length){rtd.innerHTML='<div class="tiny muted" style="padding:10px 12px">Ищем «'+esc(v)+'» во всех базах…</div>';rtd.style.display='block'}
+    /* Shikimori: ищет и по русским названиям, и по латинице — любое аниме, не только из каталога */
+    try{const dd=await gql(`{ animes(search:${JSON.stringify(v)}, limit:8, kind:"tv", censored:true){ ${FIELDS} } }`);
+      if(seq!==rtqSeq)return;
+      const more=(await normMany(dd.animes||[])).filter(Boolean);
+      if(seq!==rtqSeq)return;
+      more.forEach(x=>{if(!seen.has(x.id)){seen.add(x.id);roomPick[x.id]=x;extra.set(x.id,x);list.push(x)}})}catch{}
+    /* AniList как запасной, если Shikimori почти ничего не дал */
+    if(list.length<3){try{const dd=await anilistQ(`query($s:String){Page(perPage:10){media(type:ANIME,search:$s,sort:SEARCH_MATCH,isAdult:false){${ANI_FIELDS}}}}`,{s:v});
+      if(seq!==rtqSeq)return;
+      (dd.Page?.media||[]).forEach(m=>{const x=normAni(m);if(x&&!seen.has(x.id)){seen.add(x.id);roomPick[x.id]=x;extra.set(x.id,x);list.push(x)}})}catch{}}
+    if(seq!==rtqSeq)return;
+    drawL(list.slice(0,14))},450)};
   M.querySelector('#rn').oninput=e=>e.target.dataset.dirty=1;M.querySelector('#rs').oninput=e=>M.querySelector('#rsv').textContent=e.target.value+' сек';
   d.m.addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;mode=b.dataset.mode;$$('[data-mode]',d.m).forEach(x=>x.classList.toggle('on',x===b));M.querySelector('#mcat').hidden=mode!=='cat';M.querySelector('#murl').hidden=mode!=='url'});
   M.querySelector('#rok').onclick=()=>{const err=M.querySelector('#rerr'),title=M.querySelector('#rn').value.trim();err.hidden=true;if(title.length<3){err.hidden=false;err.textContent='Название комнаты: минимум 3 символа';return}
@@ -1717,7 +1725,7 @@ const hdr=()=>{const r=R.get(code);if(!r)return;const on=Object.keys(r.members).
     if(r1.hostId===ME.id&&m&&m.sources&&m.sources[0]&&m.sources[0].url){const u=m.sources[0].url;
       const k=m.kodikDirect?'kodik':(bg&&String(bg).includes('AniLibria'))?'libria':m.demo?'demo':(r1.custom&&u===r1.custom)?'custom':'demo';
       const sj=JSON.stringify({k:k,url:u});if((R.get(code).srcj||'')!==sj)mutate(code,x=>{x.srcj=sj;x.src={k:k,url:u}})}};
-  if(media&&(!media.demo||media.srcRoom)){mountWith(media);syncStart();if(r1.status==='ended'&&r1.rec&&r1.rec.t>0)attachEndCap(r1.rec.t)}
+  if(media&&(!media.demo||media.srcRoom||amHost)){mountWith(media);syncStart();if(r1.status==='ended'&&r1.rec&&r1.rec.t>0)attachEndCap(r1.rec.t)}
   else if(media){$('#pl').innerHTML=empty('Ищем настоящий источник…','Пробуем Kodik и AniLibria. Если не найдём — предложим включить демо вручную.','')}
   else $('#pl').innerHTML=empty('Источник не выбран','Владелец ещё не привязал серию.');
   /* В комнате тоже играем настоящее аниме: если владелец не задал свой источник,
@@ -1738,7 +1746,7 @@ const hdr=()=>{const r=R.get(code);if(!r)return;const on=Object.keys(r.members).
     let nm=null,bg=null;
     if(kdir&&kdir.links){nm=kodikDirectMedia(kdir);bg='<span style="color:var(--cyan)">● Kodik · прямой поток · совместный просмотр</span>'}
     else if(lib&&lib.episodes.length){const lm=libriaMedia(lib.episodes.find(e=>e.ordinal===ep.n)||lib.episodes[0]);if(lm){nm=lm;bg='<span style="color:var(--accent)">● AniLibria · совместный просмотр</span>'}}
-    if(!nm){$('#pl').innerHTML=empty('Настоящий источник не нашёлся','Для совместного просмотра нужен прямой поток: Kodik — только с запущенным kodik_proxy.py, AniLibria — у этого тайтла не нашлось серий. В одиночном просмотре Kodik работает без прокси. Или включите демо-ролик.','<span class="row" style="gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn pri" data-try>🔄 Искать ещё раз</button><button class="btn ghost" data-demo>▶ Включить демо</button></span>');
+    if(!nm&&!ctl){$('#pl').innerHTML=empty('Настоящий источник не нашёлся','Для совместного просмотра нужен прямой поток: Kodik — только с запущенным kodik_proxy.py, AniLibria — у этого тайтла не нашлось серий. В одиночном просмотре Kodik работает без прокси. Или включите демо-ролик.','<span class="row" style="gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn pri" data-try>🔄 Искать ещё раз</button><button class="btn ghost" data-demo>▶ Включить демо</button></span>');
       const bt=$('#pl').querySelector('[data-try]'),bd=$('#pl').querySelector('[data-demo]');
       if(bt)bt.onclick=()=>router();if(bd)bd.onclick=()=>mountWith(media);
       return}
@@ -1751,7 +1759,16 @@ const hdr=()=>{const r=R.get(code);if(!r)return;const on=Object.keys(r.members).
   const hb=setInterval(()=>{bc?.postMessage({t:'hb',code,uid:ME.id});online.set(code+ME.id,Date.now());if(hubCache)srvAct(code,'hb',{uid:ME.id});else cloudSend(code,{type:'hb',uid:ME.id});hdr();if(tab==='members')renderTab()},4000);bc?.postMessage({t:'hb',code,uid:ME.id});
   let hubCache=false;hasProxy().then(h=>{hubCache=h||!!SRVB});
   (async()=>{await roomsBase();if(SRVB||((await hasProxy())&&(await hubOk())))srvPoll(code)})();
-  srv.hooks[code]={hdr,chat,renderTab,apply:applySync,sync:applySync,state:()=>ctl&&ctl.state&&ctl.state()};
+  let lastSrcj=JSON.stringify(r1.src||null);
+  const srcWatch=()=>{const rr=R.get(code);if(!rr||rr.hostId===ME.id)return;const sj=JSON.stringify(rr.src||null);if(sj===lastSrcj)return;lastSrcj=sj;
+    (async()=>{const s2=rr.src;if(!s2||!s2.url)return;let mm=null;
+      if(s2.k==='custom')mm=customMedia(s2.url);
+      else if(s2.k==='libria')mm={demo:false,sources:[{quality:'auto',label:'AniLibria · комната',type:'hls',url:s2.url}],audios:[{id:'main',label:'Озвучка',lang:'ru'}],subs:[]};
+      else if(s2.k==='kodik'&&await hasProxy())mm=kodikDirectMedia({links:{'720':s2.url},max:'720'});
+      else if(s2.k==='demo')mm={demo:true,sources:[{quality:'auto',label:'Поток комнаты',type:/\.mp4/i.test(s2.url)?'mp4':'hls',url:s2.url}],audios:[{id:'ru-dub',label:'🇷🇺 Русская озвучка',lang:'ru',url:s2.url},{id:'ja-orig',label:'🇯🇵 Оригинал · 日本語 (демо)',lang:'ja',url:HLS_POOL[(hue(code)+2)%4]},{id:'en-dub',label:'🇬🇧 English dub (демо)',lang:'en',url:MP4_POOL[hue(code)%2]}],subs:[]};
+      if(!mm)return;mm.srcRoom=true;try{ctl&&ctl.destroy&&ctl.destroy()}catch{}
+      $('#pl').innerHTML='';mountWith(mm);syncStart()})()};
+  srv.hooks[code]={hdr,chat,renderTab,apply:applySync,sync:applySync,state:()=>ctl&&ctl.state&&ctl.state(),src:srcWatch};
   const onBc=e=>{const d=e.data;if(!d||d.code!==code||d.uid===ME.id)return;if(d.t==='hb'){online.set(code+d.uid,Date.now())}if(d.t==='sync'&&ctl)ctl.apply(d.st);if(d.t==='ask'&&ctl&&host())bc.postMessage({t:'sync',code,uid:ME.id,name:S.name,st:ctl.state()})};
   bc?.addEventListener('message',onBc);
   const msgHtml=(m,r)=>{if(m.sys)return`<div class="sysm">🛡 ${esc(m.body)} <time style="float:right">${ago(m.at)}</time></div>`;if(m.del)return`<div class="muted tiny" style="font-style:italic;padding:2px 8px">сообщение удалено модератором · ${esc(m.name)}</div>`;
