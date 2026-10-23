@@ -30,7 +30,27 @@ const io = new Server(server, {
 
 /* ------------------------------ REST ------------------------------ */
 let KA = 0;   // счётчик keep-alive пингов с сайтов
-app.get('/api/ping', (q, r) => { KA++; r.json({ ok: true, ts: Date.now(), up: Math.round(process.uptime()), ka: KA, service: 'anihub-rooms' }); });
+app.get('/api/ping', (q, r) => {
+  KA++;
+  if (q.query.pretty !== undefined || /text\/html/.test(String(q.headers.accept || ''))) {
+    const up = process.uptime();
+    const hh = Math.floor(up / 3600), mm = Math.floor(up % 3600 / 60), ss = Math.round(up % 60);
+    const mins = KA < 60 ? `${KA} пинг(ов)` : `${(KA / 60).toFixed(1)} пинг/мин`;
+    r.type('html').send(
+`<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AniHub · сервер жив</title>
+<body style="margin:0;min-height:100vh;display:grid;place-items:center;background:#07060d;color:#f6f4fb;font-family:'Segoe UI',system-ui,sans-serif">
+<div style="text-align:center;padding:30px">
+<div style="font-size:64px;line-height:1">🟢</div>
+<h1 style="margin:14px 0 4px;font-size:22px">Сервер комнат работает</h1>
+<p style="margin:0;color:#a29dbb">Аптайм: <b style="color:#f6f4fb">${hh ? hh + ' ч ' : ''}${mm} мин ${ss} с</b></p>
+<p style="margin:6px 0 0;color:#a29dbb">Keep-alive пингов с сайтов: <b style="color:#6ee7ff">${KA}</b></p>
+<p style="margin:18px 0 0;font-size:12px;color:#6f6a84">anihub-rooms · API: <code style="color:#6ee7ff">/api/ping</code> · <code style="color:#6ee7ff">/api/rooms</code></p>
+</div>`);
+    return;
+  }
+  r.json({ ok: true, ts: Date.now(), up: Math.round(process.uptime()), ka: KA, service: 'anihub-rooms' });
+});
 app.get('/api/health', (q, r) => r.json({ ok: true }));
 app.get('/', (q, r) => r.json({ ok: true, service: 'anihub-rooms', hint: 'GET /api/ping' }));
 
