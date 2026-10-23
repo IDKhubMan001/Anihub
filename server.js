@@ -29,7 +29,8 @@ const io = new Server(server, {
 });
 
 /* ------------------------------ REST ------------------------------ */
-app.get('/api/ping', (q, r) => r.json({ ok: true, ts: Date.now(), service: 'anihub-rooms' }));
+let KA = 0;   // счётчик keep-alive пингов с сайтов
+app.get('/api/ping', (q, r) => { KA++; r.json({ ok: true, ts: Date.now(), up: Math.round(process.uptime()), ka: KA, service: 'anihub-rooms' }); });
 app.get('/api/health', (q, r) => r.json({ ok: true }));
 app.get('/', (q, r) => r.json({ ok: true, service: 'anihub-rooms', hint: 'GET /api/ping' }));
 
