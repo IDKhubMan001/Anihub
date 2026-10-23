@@ -180,7 +180,7 @@ function members(code) {
   const r = rooms.get(code);
   if (!r) return [];
   return [...r.values()].map(m => ({
-    sid: m.sid, uid: m.uid, name: m.name, screen: m.screen, cam: m.cam
+    sid: m.sid, uid: m.uid, name: m.name, screen: m.screen, cam: m.cam, mic: m.mic
   }));
 }
 function broadcastMembers(code) {
@@ -213,6 +213,7 @@ io.on('connection', s => {
     if (!m) return;
     m.screen = !!(p && p.screen);
     m.cam = !!(p && p.cam);
+    m.mic = !!(p && p.mic);
     m.seen = Date.now();
     broadcastMembers(code);
   });
