@@ -183,7 +183,7 @@ footer.foot{margin-top:90px;border-top:1px solid var(--line);background:var(--bg
 <script>/* APP */
 (()=>{
 'use strict';
-const BUILD='2026-10-22 v17.1 · эфир как на твиче';
+const BUILD='2026-10-22 v17.2 · эфиры живут на сервере';
 const STUDIO_SNAPSHOT={"date":"10.10.2026","days":[{"name":"Понедельник","entries":[{"time":"16:10","title":"Я влюбился в тебя, когда ты бежала в лунной ночи"},{"time":"16:30","title":"Тайная битва за престол сильнейшего принца-дуралея"},{"time":"18:10","title":"Разгневанная леди поклялась отомстить"},{"time":"18:15","title":"Мир танцует"},{"time":"18:30","title":"Аккуратная и симпатичная девочка в моей новой школе"},{"time":"18:40","title":"Рыцарь-скелет вступает в параллельный мир 2"},{"time":"18:55","title":"Необъятный океан 3"},{"time":"20:20","title":"Игра лжецов"},{"time":"21:15","title":"Отверженная святая и её гастрономическое путешествие в другом мире"}]},{"name":"Вторник","entries":[{"time":"13:10","title":"Призрак в доспехах"},{"time":"17:10","title":"Забывчивая святая дева неосознанно изливает свою силу"},{"time":"22:55","title":"Непревзойдённый"},{"time":"19:15","title":"Истинные чудотворные рыцари 2"},{"time":"22:05","title":"Красная река"},{"time":"23:00","title":"Виктория с множеством козырей"}]},{"name":"Среда","entries":[{"time":"15:45","title":"Клеватесс 2"},{"time":"17:05","title":"Военная хроника маленькой девочки 2"},{"time":"18:00","title":"Мир отомэ-игр — это тяжелый мир для мобов 2"},{"time":"18:10","title":"Героиня? Святая? Нет, я всемогущая горничная!"},{"time":"19:45","title":"Для тебя во всём цвету 2"},{"time":"20:10","title":"Крестьянин 999-го уровня"},{"time":"20:20","title":"Тройной шторм"},{"time":"20:40","title":"Старик из деревни становится Святым мечом"}]},{"name":"Четверг","entries":[{"time":"09:45","title":"Для тебя во всём цвету 2"},{"time":"16:15","title":"Дара из Рэйвы"},{"time":"16:30","title":"Бродячие псы: Шуточные истории 2"},{"time":"18:25","title":"Ура мечте! Бесконечная мечта"},{"time":"18:45","title":"Пыль Мёбиуса"},{"time":"19:45","title":"Табакошка"},{"time":"19:50","title":"Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры"},{"time":"20:00","title":"Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга"},{"time":"21:05","title":"Монстрик Карамелька"}]},{"name":"Пятница","entries":[{"time":"18:20","title":"Прошло десять лет с момента, как я стал легендой"},{"time":"18:30","title":"О моём перерождении в слизь 4"},{"time":"19:00","title":"Население приграничного владения начинается с нуля"},{"time":"19:10","title":"Нарисуй это, потом умри"},{"time":"20:10","title":"Пожалуйста, простите моих младших братьев"},{"time":"20:15","title":"Адский режим 2"},{"time":"20:45","title":"Юный лорд — мастер побега 2"},{"time":"22:10","title":"Слёзы Бога"}]},{"name":"Суббота","entries":[{"time":"13:10","title":"Добро пожаловать в ад, Ирума! 4"},{"time":"14:10","title":"Власть книжного червя 4"},{"time":"16:45","title":"Чёрный факел"},{"time":"17:55","title":"Рекомендация старшеклассника Ивамото"},{"time":"20:15","title":"Шатёр чародея"},{"time":"20:35","title":"Шоу для взрослых: Цирк «Подсолнух»"},{"time":"20:40","title":"Следующий герцог, который скажет: «Я не хочу любить тебя», будет любить тебя по какой-то причине"},{"time":"20:50","title":"Невеста демона"},{"time":"20:55","title":"Лиричная волшебница Наноха: Опередители — Огненный выстрел возмездия"},{"time":"21:00","title":"Кот и дракон"},{"time":"21:10","title":"Ханаори хочет драться даже после перерождения"},{"time":"21:40","title":"Забота об одарённой девушке"},{"time":"22:30","title":"Мао"},{"time":"22:50","title":"Цугаи загробного мира"}]},{"name":"Воскресенье","entries":[{"time":"10:10","title":"Компания «Маги-Люмьер» 2"},{"time":"11:55","title":"Вперёд, отряд мистики!"},{"time":"12:00","title":"Прощай, Лара"},{"time":"12:10","title":"Ты и я полные противоположности"},{"time":"12:20","title":"Железный котелок Жана!"},{"time":"16:25","title":"Самый сильный в мире заступник"},{"time":"17:40","title":"История электричества в двадцатом веке"},{"time":"17:50","title":"Сто девушек 3"},{"time":"18:40","title":"Дигимоны: Битбрейк"},{"time":"18:50","title":"Реинкарнация безработного 3"},{"time":"19:20","title":"Чёрная кошка и класс ведьм"},{"time":"19:40","title":"Хоть я и бездарная злодейка"},{"time":"20:10","title":"Лазурный путь: Малый вперёд! 2"}]}]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -751,11 +751,18 @@ function ioGet(base){if(__ioSock&&__ioBase===base)return Promise.resolve(__ioSoc
     sk.once('connect',()=>{__ioSock=sk;__ioBase=base;res(sk)});
     sk.once('connect_error',e=>{try{sk.disconnect()}catch{}
       if(__ioSock===sk){__ioSock=null;__ioBase=''}rej(e)})})}
-async function srvAct(code,act,p){try{const r=await withTimeout(fetch(location.origin+'/api/room/'+code,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({act},p||{}))}),8000,'srv');return r.ok?await r.json():null}catch{return null}}
+/* --- v17.2: сервер — единый источник правды по эфирам --- */
+let SRVB='',SRVCODES=null;
+async function roomsBase(){if(SRVB)return SRVB;
+  const cands=[];try{const l=(localStorage.getItem('ah:roomSrv')||'').replace(/\/+$/,'');if(l)cands.push(l)}catch{}
+  if(typeof ANIHUB_ROOMS_SRV==='string'&&ANIHUB_ROOMS_SRV)cands.push(ANIHUB_ROOMS_SRV.replace(/\/+$/,''));
+  for(const b of cands){if(await srvPing(b,6000)){SRVB=b;break}}
+  return SRVB}
+async function srvAct(code,act,p){try{const r=await withTimeout(fetch((SRVB||location.origin)+'/api/room/'+code,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({act},p||{}))}),8000,'srv');return r.ok?await r.json():null}catch{return null}}
 function srvPush(code){clearTimeout(srv.pushT[code]);srv.pushT[code]=setTimeout(async()=>{
-  if(await hasProxy()){const r=R.get(code);if(r)srvAct(code,'put',{data:r})}
+  if(SRVB||await hasProxy()){const r=R.get(code);if(r)srvAct(code,'put',{data:r})}
   else cloudState(code)},250)}
-function srvPullRoom(code){return (async()=>{try{const r=await withTimeout(fetch(location.origin+'/api/room/'+code),9000,'srv');if(!r.ok)return null;const j=await r.json();const all=R.all();all[code]=j.data;R.put(all);srv.rev[code]=j.rev;Object.entries(j.hb||{}).forEach(([u,t])=>online.set(code+u,t*1000));return j.data}catch{return null}})()}
+function srvPullRoom(code){return (async()=>{try{const r=await withTimeout(fetch((SRVB||location.origin)+'/api/room/'+code),9000,'srv');if(!r.ok)return null;const j=await r.json();const all=R.all();all[code]=j.data;R.put(all);srv.rev[code]=j.rev;Object.entries(j.hb||{}).forEach(([u,t])=>online.set(code+u,t*1000));return j.data}catch{return null}})()}
 function srvApply(code,j){
   srv.rev[code]=j.rev;
   if(j.hb)Object.entries(j.hb).forEach(([u,t])=>online.set(code+u,t*1000));
@@ -772,7 +779,7 @@ async function srvPoll(code){
   for(;;){
     if(!location.hash.startsWith('#/room/'+code))return;
     const since=srv.rev[code]||0;
-    try{const r=await withTimeout(fetch(location.origin+'/api/room/'+code+'?since='+since),26000,'srv');
+    try{const r=await withTimeout(fetch((SRVB||location.origin)+'/api/room/'+code+'?since='+since),26000,'srv');
       if(r.status===404){await new Promise(x=>setTimeout(x,4000));continue}
       if(r.ok){const j=await r.json();if(!location.hash.startsWith('#/room/'+code))return;srvApply(code,j)}}
     catch{}
@@ -1317,18 +1324,24 @@ function setTheme(th){S.theme=th;save('theme');document.documentElement.dataset.
 let __ahCreateFired='';
 function pageStreaming(qs){
   setNav('streaming');const P=new URLSearchParams(qs||'');const rooms=Object.entries(R.all()).sort((a,b)=>b[1].created-a[1].created);const live=rooms.filter(([,r])=>r.status==='live'),ended=rooms.filter(([,r])=>r.status!=='live');let tab='live';
-  const draw=()=>{const L=tab==='live'?live:ended;$('#rl').innerHTML=L.length?`<div class="grid w">${L.map(([c,r])=>{const ow=Object.values(r.members).find(m=>m.role==='streamer');const on=Object.keys(r.members).filter(i=>isOnline(c,i)).length;return`<a class="panel" href="#/room/${c}" style="display:block;padding:0;overflow:hidden"><div style="position:relative;aspect-ratio:16/9;background:#000"><img referrerpolicy="no-referrer" src="${esc(r.cover||'')}" alt="" style="width:100%;height:100%;object-fit:cover;opacity:.65" onerror="this.remove()"><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9),transparent 60%)"></div><div class="row" style="position:absolute;top:10px;left:10px;gap:6px">${r.status==='live'?'<span style="background:var(--live);color:#fff;border-radius:7px;padding:3px 8px;font-family:var(--fd);font-size:10px;font-weight:800;text-transform:uppercase">● live</span>':'<span style="background:rgba(0,0,0,.7);color:#ccc;border-radius:7px;padding:3px 8px;font-size:10px;font-weight:800;text-transform:uppercase">завершён</span>'}<span style="background:rgba(0,0,0,.7);color:#fff;border-radius:7px;padding:3px 8px;font-size:10px;font-weight:700">👥 ${Math.max(on,1)}</span></div><span style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.7);color:#fff;border-radius:7px;padding:3px 8px;font-family:var(--fd);font-size:10px;letter-spacing:.2em">${c}</span><div style="position:absolute;left:0;right:0;bottom:0;padding:12px;color:#fff"><b style="font-family:var(--fd);font-size:14px;display:block">${esc(r.title)}</b><small style="color:rgba(255,255,255,.65)">${esc(r.titleName||'Свой источник')}${r.ep&&r.titleName?' · серия '+r.ep:''}</small></div></div><div class="row between" style="padding:10px 14px"><span class="row" style="gap:8px">${av(ow?.name||'?',26)}<b style="font-size:12px">${esc(ow?.name||'—')}</b></span><small class="muted tiny">${ago(r.created)}</small></div></a>`}).join('')}</div>`:empty(tab==='live'?'Сейчас никто не стримит':'Завершённых комнат нет','Создайте комнату — выберите тайтл и серию, задайте slow mode и пригласите друзей по коду.','<button class="btn pri" data-create>＋ Создать комнату</button>')};
+  const draw=()=>{const L=tab==='live'?live:ended;$('#rl').innerHTML=L.length?`<div class="grid w">${L.map(([c,r])=>{const ow=Object.values(r.members).find(m=>m.role==='streamer');const on=Object.keys(r.members).filter(i=>isOnline(c,i)).length;return`<a class="panel" href="#/room/${c}" style="display:block;padding:0;overflow:hidden"><div style="position:relative;aspect-ratio:16/9;background:#000"><img referrerpolicy="no-referrer" src="${esc(r.cover||'')}" alt="" style="width:100%;height:100%;object-fit:cover;opacity:.65" onerror="this.remove()"><div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.9),transparent 60%)"></div><div class="row" style="position:absolute;top:10px;left:10px;gap:6px">${r.status==='live'?'<span style="background:var(--live);color:#fff;border-radius:7px;padding:3px 8px;font-family:var(--fd);font-size:10px;font-weight:800;text-transform:uppercase">● live</span>':'<span style="background:rgba(0,0,0,.7);color:#ccc;border-radius:7px;padding:3px 8px;font-size:10px;font-weight:800;text-transform:uppercase">завершён</span>'}<span style="background:rgba(0,0,0,.7);color:#fff;border-radius:7px;padding:3px 8px;font-size:10px;font-weight:700">👥 ${Math.max(on,1)}</span>${SRVCODES&&!SRVCODES.has(c)?'<span style="background:rgba(0,0,0,.7);color:#ffd166;border-radius:7px;padding:3px 8px;font-size:10px;font-weight:700">только у вас</span>':''}</div><span style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,.7);color:#fff;border-radius:7px;padding:3px 8px;font-family:var(--fd);font-size:10px;letter-spacing:.2em">${c}</span><div style="position:absolute;left:0;right:0;bottom:0;padding:12px;color:#fff"><b style="font-family:var(--fd);font-size:14px;display:block">${esc(r.title)}</b><small style="color:rgba(255,255,255,.65)">${esc(r.titleName||'Свой источник')}${r.ep&&r.titleName?' · серия '+r.ep:''}</small></div></div><div class="row between" style="padding:10px 14px"><span class="row" style="gap:8px">${av(ow?.name||'?',26)}<b style="font-size:12px">${esc(ow?.name||'—')}</b></span><small class="muted tiny">${ago(r.created)}</small></div></a>`}).join('')}</div>`:empty(tab==='live'?'Сейчас никто не стримит':'Завершённых комнат нет','Создайте комнату — выберите тайтл и серию, задайте slow mode и пригласите друзей по коду.','<button class="btn pri" data-create>＋ Создать комнату</button>')};
   app.innerHTML=`<div class="wrap"><div class="pagehead" style="display:grid;gap:30px;grid-template-columns:1.2fr .8fr"><div><div class="eyebrow" style="color:var(--live)">раздел 02 · стриминг</div><h1>Смотрим <span style="color:var(--accent)">вместе</span></h1><p>Комната создаётся за секунду: выбираете тайтл и серию — получаете код-приглашение. Плеер синхронизируется у всех участников, чат фильтруется автоматически, а модераторы видны по тегу рядом с ником.</p><div class="row" style="margin-top:20px"><button class="btn pri lg" data-create>＋ Создать стрим</button></div><p class="warn" style="margin-top:18px;max-width:none"><b>Как работают комнаты в этом файле.</b> Участники — это вкладки и окна одного браузера (синхронизация идёт через BroadcastChannel и localStorage). Чтобы звать друзей с других устройств, разверните серверную версию AniHub — интерфейс и роли те же.</p></div>
   <form class="panel" id="jf" style="align-self:start"><h2 style="font-size:13px;text-transform:uppercase">🔑 Войти по коду комнаты</h2><p class="sm muted">Код выдаётся владельцу при создании комнаты.</p><input class="inp code" id="jc" maxlength="8" placeholder="A1B2C3" aria-label="Код комнаты"><button class="btn pri lg" style="width:100%;margin-top:12px">Присоединиться</button></form></div>
   <div class="row between" style="margin-top:30px;border-bottom:1px solid var(--line);padding-bottom:10px"><div class="row" style="gap:4px"><button class="chip on" data-tb="live">В эфире · ${live.length}</button><button class="chip" data-tb="ended">Завершённые · ${ended.length}</button></div></div><div id="rl" style="margin-top:18px"></div></div>`;draw();
   app.onclick=e=>{const tb=e.target.closest('[data-tb]');if(tb){tab=tb.dataset.tb;$$('[data-tb]').forEach(x=>x.classList.toggle('on',x===tb));draw();return}if(e.target.closest('[data-create]'))createRoom()};
-  $('#jf').onsubmit=async ev=>{ev.preventDefault();const c=$('#jc').value.trim().toUpperCase();if(c.length<4)return toast('Некорректный код','Код комнаты состоит из 6 символов','err');if(!R.get(c)){const jd=await srvPullRoom(c);if(!jd&&await hasProxy())return toast('Комната не найдена','Проверьте код. Комната доступна, пока запущен сервер у владельца.')}location.hash='#/room/'+c};
-  const srvRefresh=setInterval(async()=>{if(!(await hasProxy())||!(await hubOk()))return;try{const r=await withTimeout(fetch(PB()+'/api/rooms'),8000,'srv');if(!r.ok)return;const j=await r.json();let ch=false;const all=R.all();
+  $('#jf').onsubmit=async ev=>{ev.preventDefault();const c=$('#jc').value.trim().toUpperCase();if(c.length<4)return toast('Некорректный код','Код комнаты состоит из 6 символов','err');if(!R.get(c)){const jd=await srvPullRoom(c);if(!jd&&SRVB)return toast('Эфира нет на сервере','Раз его нет на сервере — его нет ни у кого. Проверьте код.','err');if(!jd&&await hasProxy())return toast('Комната не найдена','Проверьте код. Комната доступна, пока запущен сервер у владельца.')}location.hash='#/room/'+c};
+  const oldHub=async()=>{if(!(await hasProxy())||!(await hubOk()))return;try{const r=await withTimeout(fetch(PB()+'/api/rooms'),8000,'srv');if(!r.ok)return;const j=await r.json();let ch=false;const all=R.all();
     Object.entries(j.rooms||{}).forEach(([c,x])=>{srv.rev[c]=Math.max(srv.rev[c]||0,x.rev||0);if(!all[c]&&x.data){all[c]=x.data;ch=true}});
-    if(ch){R.put(all);pageStreaming(qs)}}catch{}},5000);
-  (async()=>{if(!(await hasProxy())||!(await hubOk()))return;try{const r=await withTimeout(fetch(PB()+'/api/rooms'),8000,'srv');if(!r.ok)return;const j=await r.json();let ch=false;const all=R.all();
-    Object.entries(j.rooms||{}).forEach(([c,x])=>{srv.rev[c]=Math.max(srv.rev[c]||0,x.rev||0);if(!all[c]&&x.data){all[c]=x.data;ch=true}});
-    if(ch){R.put(all);pageStreaming(qs)}}catch{}})();
+    if(ch){R.put(all);pageStreaming(qs)}}catch{}};
+  const pullRooms=async()=>{try{
+    if(SRVB){const r=await withTimeout(fetch(SRVB+'/api/rooms'),8000,'srv');if(!r.ok)return;const j=await r.json();let ch=false;const all=R.all();const onSrv=new Set();
+      Object.entries(j.rooms||{}).forEach(([c,x])=>{onSrv.add(c);srv.rev[c]=Math.max(srv.rev[c]||0,x.rev||0);if(x.data&&JSON.stringify(all[c])!==JSON.stringify(x.data)){all[c]=x.data;ch=true}});
+      Object.keys(all).forEach(c=>{if(!onSrv.has(c)&&all[c]&&all[c].hostId!==ME.id){delete all[c];ch=true}});
+      SRVCODES=onSrv;
+      if(ch){R.put(all);pageStreaming(qs)}return}
+    SRVCODES=null;await oldHub()}catch{}};
+  roomsBase().then(pullRooms);
+  const srvRefresh=setInterval(pullRooms,5000);
   cleanup=()=>clearInterval(srvRefresh);
   if(P.get('create')==='1'&&__ahCreateFired!==location.hash){__ahCreateFired=location.hash;setTimeout(()=>createRoom(+P.get('title')||0,+P.get('ep')||1),50);}
 }
@@ -1368,15 +1381,23 @@ async function createRoom(titleId,ep){
     const epn=Math.max(1,Math.min(t?.aired||1,+M.querySelector('#re').value||1));
     const all=R.all();let code;do code=rnd(6);while(all[code]);
     all[code]={title,desc:M.querySelector('#rd').value.trim(),hostId:ME.id,titleId:t?.id||null,titleName:t?.title||null,cover:t?.banner||t?.poster||null,ep:t?epn:null,custom:mode==='url'?cu:null,status:'live',slow:+M.querySelector('#rs').value,subsOnly:M.querySelector('#rso').checked,syncLocked:true,filter:true,pinned:null,created:Date.now(),members:{[ME.id]:{name:S.name,role:'streamer',banned:false,mutedUntil:0,last:0,joined:Date.now()}},msgs:[],log:[]};
-    R.put(all);(async()=>{if(await hasProxy())srvAct(code,'put',{data:all[code]});else{cloud.rev[code]=1;cloudHost(code)}})();d.close(true);toast('Комната создана','Код приглашения: '+code,'ok');location.hash='#/room/'+code};
+    R.put(all);(async()=>{await roomsBase();if(SRVB||await hasProxy())srvAct(code,'put',{data:all[code]});else{cloud.rev[code]=1;cloudHost(code)}})();d.close(true);toast('Комната создана','Код приглашения: '+code,'ok');location.hash='#/room/'+code};
   await d.pr}
 
 async function pageRoom(code){
   setNav('streaming');code=code.toUpperCase();const my=nav;
-  let r0=R.get(code);
-  if(!r0&&!(await hasProxy())){const ok=await cloudJoin(code);if(my!==nav)return;
+  const SRV=await roomsBase();if(my!==nav)return;SRVB=SRV;
+  const mineR=R.get(code);const mine=!!mineR&&mineR.hostId===ME.id;
+  let r0=null;
+  if(SRV){const jd=await srvPullRoom(code);if(my!==nav)return;
+    if(jd)r0=jd;
+    else if(mine){r0=mineR;try{srvAct(code,'put',{data:mineR})}catch{}}
+    else{try{const all0=R.all();if(all0[code]){delete all0[code];R.put(all0)}}catch{}
+      app.innerHTML=`<div class="wrap" style="padding-top:60px">${empty('Эфира нет на сервере','Раз его нет на сервере — его нет ни у кого. Проверьте код или создайте новый эфир.','<a class="btn pri" href="#/streaming">К списку комнат</a>')}</div>`;return}}
+  if(!r0)r0=mineR||null;
+  if(!r0&&!SRV&&!(await hasProxy())){const ok=await cloudJoin(code);if(my!==nav)return;
     if(ok){toast('Подключаемся к ведущему (P2P)','Получаем состояние комнаты…');await new Promise(x=>setTimeout(x,1800));if(my!==nav)return;r0=R.get(code)}}
-  if(!r0){const jd=await srvPullRoom(code);if(my!==nav)return;if(jd)r0=R.get(code)}
+  if(!r0&&!SRV){const jd=await srvPullRoom(code);if(my!==nav)return;if(jd)r0=R.get(code)}
   if(!r0){app.innerHTML=`<div class="wrap" style="padding-top:60px">${empty('Комната не найдена','Проверьте код. В P2P-режиме (GitHub Pages, без прокси) комната доступна, пока страница ведущего открыта.','<a class="btn pri" href="#/streaming">К списку комнат</a>')}</div>`;return}
   if(!(await ensureName())){location.hash='#/streaming';return}
   if(my!==nav)return;
@@ -1551,7 +1572,7 @@ const hdr=()=>{const r=R.get(code);if(!r)return;const on=Object.keys(r.members).
   })().catch(()=>{});
   if(media&&media.demo)$('#rdsc').insertAdjacentHTML('beforebegin',`<p class="warn" id="demowarn" style="margin:12px 0 0"><b>Демонстрационный видеопоток.</b> Подключите свой лицензионный HLS в Профиль → Настройки — и в комнате заиграют настоящие серии.</p>`);
   const hb=setInterval(()=>{bc?.postMessage({t:'hb',code,uid:ME.id});online.set(code+ME.id,Date.now());if(hubCache)srvAct(code,'hb',{uid:ME.id});else cloudSend(code,{type:'hb',uid:ME.id});hdr();if(tab==='members')renderTab()},4000);bc?.postMessage({t:'hb',code,uid:ME.id});
-  let hubCache=false;hasProxy().then(h=>{hubCache=h});
+  let hubCache=false;hasProxy().then(h=>{hubCache=h||!!SRVB});
   (async()=>{if(await hasProxy()&&await hubOk())srvPoll(code)})();
   srv.hooks[code]={hdr,chat,renderTab,apply:applySync,sync:applySync,state:()=>ctl&&ctl.state&&ctl.state()};
   const onBc=e=>{const d=e.data;if(!d||d.code!==code||d.uid===ME.id)return;if(d.t==='hb'){online.set(code+d.uid,Date.now())}if(d.t==='sync'&&ctl)ctl.apply(d.st);if(d.t==='ask'&&ctl&&host())bc.postMessage({t:'sync',code,uid:ME.id,name:S.name,st:ctl.state()})};
