@@ -156,6 +156,101 @@ setInterval(() => {
   }
 }, 1800000);
 
+/* ==================== комментарии к тайтлам (v17.5) ====================
+   tid → {rev, list:[{id,uid,name,text,at,parent,parentName,likes,dislikes}]}
+   Живут в памяти инстанса; дополнительно сохраняем в comments.json,
+   если диск доступен (на Render-диске переживут рестарт сервиса). */
+const fs = require('fs');
+const commentsState = new Map();
+const cmtWaiters = new Map();
+try {
+  const j = JSON.parse(fs.readFileSync('comments.json', 'utf8'));
+  for (const [k, v] of Object.entries(j || {})) commentsState.set(k, v);
+  console.log('comments loaded:', commentsState.size, 'тайтлов');
+} catch {}
+let cmtSaveT = null;
+function cmtSave() {
+  clearTimeout(cmtSaveT);
+  cmtSaveT = setTimeout(() => {
+    try { fs.writeFileSync('comments.json', JSON.stringify(Object.fromEntries(commentsState))); } catch {}
+  }, 3000);
+}
+function cmtNotify(tid) {
+  const set = cmtWaiters.get(tid);
+  if (set) { const fns = [...set]; set.clear(); for (const fn of fns) { try { fn(); } catch {} } }
+}
+const tidOk = t => String(t || '').replace(/[^A-Za-z0-9_:\-]/g, '').slice(0, 64);
+const cmtClean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, n);
+
+/* GET: без ?since — текущий список сразу; с ?since=N — long-poll до 20с */
+app.get('/api/comments/:tid', (req, res) => {
+  const tid = tidOk(req.params.tid);
+  if (!tid) return res.status(400).json({ error: 'плохой id тайтла' });
+  const s = commentsState.get(tid);
+  const out = () => res.json({ rev: s ? s.rev : 0, list: s ? s.list.slice(-400) : [] });
+  if (req.query.since === undefined) return out();
+  const since = parseInt(req.query.since, 10) || 0;
+  if (s && s.rev > since) return out();
+  const set = cmtWaiters.get(tid) || new Set(); cmtWaiters.set(tid, set);
+  let fired = false;
+  const fire = () => { if (fired) return; fired = true; set.delete(fire); out(); };
+  set.add(fire);
+  setTimeout(fire, 20000);
+});
+
+/* POST: add / vote / del */
+app.post('/api/comments/:tid', (req, res) => {
+  const tid = tidOk(req.params.tid);
+  if (!tid) return res.status(400).json({ error: 'плохой id тайтла' });
+  const b = req.body || {};
+  const act = b.act;
+  const uid = cmtClean(b.uid, 40) || '?';
+  let s = commentsState.get(tid);
+  if (!s) { s = { rev: 0, list: [], at: Date.now() }; commentsState.set(tid, s); }
+  if (act === 'add') {
+    const text = cmtClean(b.text, 1200);
+    if (!text) return res.status(400).json({ error: 'пустой комментарий' });
+    if (s.list.length >= 500) s.list = s.list.slice(-400);
+    let parent = null, parentName = '';
+    if (b.parent) {
+      const p = s.list.find(c => c.id === String(b.parent).slice(0, 24));
+      if (!p) return res.status(404).json({ error: 'комментарий для ответа не найден' });
+      parent = p.parent || p.id;
+      const pp = parent !== p.id ? s.list.find(c => c.id === parent) : null;
+      parentName = cmtClean(pp ? pp.name : p.name, 24) || '?';
+    }
+    const c = {
+      id: Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4),
+      uid, name: cmtClean(b.name, 24) || 'Гость', text,
+      at: Date.now(), parent, parentName, likes: [], dislikes: []
+    };
+    s.list.push(c); s.rev++; s.at = Date.now();
+    cmtNotify(tid); cmtSave();
+    return res.json({ rev: s.rev, id: c.id });
+  }
+  if (act === 'vote') {
+    const c = s.list.find(x => x.id === String(b.cid || '').slice(0, 24));
+    if (!c) return res.status(404).json({ error: 'комментарий не найден' });
+    const v = (b.v === 1 || b.v === '1') ? 1 : (b.v === -1 || b.v === '-1') ? -1 : 0;
+    c.likes = c.likes.filter(u => u !== uid);
+    c.dislikes = c.dislikes.filter(u => u !== uid);
+    if (v === 1) c.likes.push(uid); else if (v === -1) c.dislikes.push(uid);
+    s.rev++; s.at = Date.now();
+    cmtNotify(tid); cmtSave();
+    return res.json({ rev: s.rev });
+  }
+  if (act === 'del') {
+    const c = s.list.find(x => x.id === String(b.cid || '').slice(0, 24));
+    if (!c) return res.status(404).json({ error: 'комментарий не найден' });
+    if (c.uid !== uid) return res.status(403).json({ error: 'можно удалять только свои комментарии' });
+    s.list = s.list.filter(x => x.id !== c.id && x.parent !== c.id);
+    s.rev++; s.at = Date.now();
+    cmtNotify(tid); cmtSave();
+    return res.json({ rev: s.rev });
+  }
+  res.status(400).json({ error: 'неизвестное действие' });
+});
+
 /* ------------------------- комнаты в памяти -----------------------
    rooms: Map<code, Map<sid, {uid,name,screen,cam,joinedAt}>>
    Состояние аниме-комнаты (чат/синхронизация) живёт в клиентах
