@@ -183,7 +183,7 @@ footer.foot{margin-top:90px;border-top:1px solid var(--line);background:var(--bg
 <script>/* APP */
 (()=>{
 'use strict';
-const BUILD='2026-10-22 v17 · комнаты: сервер и экран';
+const BUILD='2026-10-22 v17.1 · эфир как на твиче';
 const STUDIO_SNAPSHOT={"date":"10.10.2026","days":[{"name":"Понедельник","entries":[{"time":"16:10","title":"Я влюбился в тебя, когда ты бежала в лунной ночи"},{"time":"16:30","title":"Тайная битва за престол сильнейшего принца-дуралея"},{"time":"18:10","title":"Разгневанная леди поклялась отомстить"},{"time":"18:15","title":"Мир танцует"},{"time":"18:30","title":"Аккуратная и симпатичная девочка в моей новой школе"},{"time":"18:40","title":"Рыцарь-скелет вступает в параллельный мир 2"},{"time":"18:55","title":"Необъятный океан 3"},{"time":"20:20","title":"Игра лжецов"},{"time":"21:15","title":"Отверженная святая и её гастрономическое путешествие в другом мире"}]},{"name":"Вторник","entries":[{"time":"13:10","title":"Призрак в доспехах"},{"time":"17:10","title":"Забывчивая святая дева неосознанно изливает свою силу"},{"time":"22:55","title":"Непревзойдённый"},{"time":"19:15","title":"Истинные чудотворные рыцари 2"},{"time":"22:05","title":"Красная река"},{"time":"23:00","title":"Виктория с множеством козырей"}]},{"name":"Среда","entries":[{"time":"15:45","title":"Клеватесс 2"},{"time":"17:05","title":"Военная хроника маленькой девочки 2"},{"time":"18:00","title":"Мир отомэ-игр — это тяжелый мир для мобов 2"},{"time":"18:10","title":"Героиня? Святая? Нет, я всемогущая горничная!"},{"time":"19:45","title":"Для тебя во всём цвету 2"},{"time":"20:10","title":"Крестьянин 999-го уровня"},{"time":"20:20","title":"Тройной шторм"},{"time":"20:40","title":"Старик из деревни становится Святым мечом"}]},{"name":"Четверг","entries":[{"time":"09:45","title":"Для тебя во всём цвету 2"},{"time":"16:15","title":"Дара из Рэйвы"},{"time":"16:30","title":"Бродячие псы: Шуточные истории 2"},{"time":"18:25","title":"Ура мечте! Бесконечная мечта"},{"time":"18:45","title":"Пыль Мёбиуса"},{"time":"19:45","title":"Табакошка"},{"time":"19:50","title":"Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры"},{"time":"20:00","title":"Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга"},{"time":"21:05","title":"Монстрик Карамелька"}]},{"name":"Пятница","entries":[{"time":"18:20","title":"Прошло десять лет с момента, как я стал легендой"},{"time":"18:30","title":"О моём перерождении в слизь 4"},{"time":"19:00","title":"Население приграничного владения начинается с нуля"},{"time":"19:10","title":"Нарисуй это, потом умри"},{"time":"20:10","title":"Пожалуйста, простите моих младших братьев"},{"time":"20:15","title":"Адский режим 2"},{"time":"20:45","title":"Юный лорд — мастер побега 2"},{"time":"22:10","title":"Слёзы Бога"}]},{"name":"Суббота","entries":[{"time":"13:10","title":"Добро пожаловать в ад, Ирума! 4"},{"time":"14:10","title":"Власть книжного червя 4"},{"time":"16:45","title":"Чёрный факел"},{"time":"17:55","title":"Рекомендация старшеклассника Ивамото"},{"time":"20:15","title":"Шатёр чародея"},{"time":"20:35","title":"Шоу для взрослых: Цирк «Подсолнух»"},{"time":"20:40","title":"Следующий герцог, который скажет: «Я не хочу любить тебя», будет любить тебя по какой-то причине"},{"time":"20:50","title":"Невеста демона"},{"time":"20:55","title":"Лиричная волшебница Наноха: Опередители — Огненный выстрел возмездия"},{"time":"21:00","title":"Кот и дракон"},{"time":"21:10","title":"Ханаори хочет драться даже после перерождения"},{"time":"21:40","title":"Забота об одарённой девушке"},{"time":"22:30","title":"Мао"},{"time":"22:50","title":"Цугаи загробного мира"}]},{"name":"Воскресенье","entries":[{"time":"10:10","title":"Компания «Маги-Люмьер» 2"},{"time":"11:55","title":"Вперёд, отряд мистики!"},{"time":"12:00","title":"Прощай, Лара"},{"time":"12:10","title":"Ты и я полные противоположности"},{"time":"12:20","title":"Железный котелок Жана!"},{"time":"16:25","title":"Самый сильный в мире заступник"},{"time":"17:40","title":"История электричества в двадцатом веке"},{"time":"17:50","title":"Сто девушек 3"},{"time":"18:40","title":"Дигимоны: Битбрейк"},{"time":"18:50","title":"Реинкарнация безработного 3"},{"time":"19:20","title":"Чёрная кошка и класс ведьм"},{"time":"19:40","title":"Хоть я и бездарная злодейка"},{"time":"20:10","title":"Лазурный путь: Малый вперёд! 2"}]}]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -799,6 +799,7 @@ async function cloudHost(code){
      c.on('open',()=>{try{c.send({type:'state',data:R.get(code),rev:cloud.rev[code]||1,uid:ME.id})}catch{}});
      c.on('data',m=>{if(!m||!m.type)return;
        if(m.type==='state'){cloudApply(code,m.data,m.rev);cloudSend(code,m)}
+       else if(m.type==='ask'){const hh=srv.hooks[code];const st2=hh&&hh.state&&hh.state();if(st2)try{c.send({type:'sync',uid:ME.id,st:st2})}catch{}}
        else if(m.type==='sync'){if(m.uid!==ME.id){const h=srv.hooks[code];h&&m.st&&h.sync(m.st)}cloudSend(code,m)}
        else if(m.type==='hb'){if(m.uid)online.set(code+m.uid,Date.now());cloudSend(code,m)}});
      c.on('close',()=>{cloud.conns[code]=(cloud.conns[code]||[]).filter(x=>x!==c)});
@@ -818,6 +819,7 @@ async function cloudJoin(code){
          else if(m.type==='hb'&&m.uid)online.set(code+m.uid,Date.now())});
        c.on('close',()=>toast('Ведущий отключился','P2P-комната прекратилась; последнее состояние сохранено'));
        try{c.send({type:'hb',uid:ME.id})}catch{}
+       try{c.send({type:'ask',uid:ME.id})}catch{}
        fin(true)});
      c.on('error',()=>{clearTimeout(to);fin(false)})})}
   catch(e){return false}}
@@ -1490,11 +1492,34 @@ const hdr=()=>{const r=R.get(code);if(!r)return;const on=Object.keys(r.members).
     <div class="row"><button class="btn sm" data-inv>🔗 Пригласить</button><button class="btn sm" data-code>⧉ Код</button><button class="btn sm ${ssOn?'dng':''}" data-ss>🖥 ${ssOn?'⏹ Стоп эфир':'Показать экран'}</button>${ssOn?`<button class="btn sm ${ssCamOn?'dng':''}" data-scam>📷 ${ssCamOn?'Убрать камеру':'+ Камера (PiP)'}</button>`:''}<button class="btn sm ${$('#media').innerHTML?'pri':''}" data-av>🎥 Голос / видео</button>${host()&&r.status==='live'?'<button class="btn sm dng" data-end>✕ Завершить</button>':''}</div></div>`;
     $('#rdsc').innerHTML=r.desc?`<p class="panel sm muted" style="margin:12px 0 0">${esc(r.desc)}</p>`:''};
   let ctl=null;const canCtl=()=>!R.get(code).syncLocked||mgr();
+
+  /* --- v17.1: эфир как на твиче --- */
+  let liveSt=null,endCapOn=false,lastPersist=0,lastPT=-1;
+  const fmtT=x=>{x=Math.max(0,Math.round(x||0));return Math.floor(x/60)+':'+String(x%60).padStart(2,'0')};
+  const applySync=st=>{if(!st)return;liveSt=st;try{ctl&&ctl.apply&&ctl.apply(st)}catch(e){}};
+  const attachEndCap=t0=>{if(endCapOn||!(t0>0)||!ctl||!ctl.video)return;endCapOn=true;const v=ctl.video;
+    const on=()=>{if(v.currentTime>t0+0.7){try{v.pause()}catch(e){}try{v.currentTime=t0}catch(e){}toast('Запись эфира закончилась','В записи доступно только то, что успели показать: 0:00–'+fmtT(t0))}};
+    v.addEventListener('timeupdate',on);v.addEventListener('seeked',on)};
+  const pushSync=()=>{const st=ctl&&ctl.state&&ctl.state();if(!st)return;bc?.postMessage({t:'sync',code,uid:ME.id,name:S.name,st});
+    hasProxy().then(hp=>{try{if(hp)srvAct(code,'sync',{st,uid:ME.id,name:S.name});else cloudSend(code,{type:'sync',st,uid:ME.id,name:S.name})}catch(e){}})};
+  const syncStart=()=>{const r=R.get(code);if(!r||!ctl||!ctl.video||r.status!=='live')return;
+    const cand=(r.sync&&r.sync.at>Date.now()-45e3&&r.sync.st)||(r.livePos&&r.livePos.at>Date.now()-120e3?{t:r.livePos.t,playing:true,rate:1}:null);
+    const t0=cand?+cand.t||0:0;if(!(t0>3))return;liveSt=cand;
+    const v=ctl.video;const set=()=>{try{if(Math.abs(v.currentTime-t0)>3)v.currentTime=t0}catch(e){}};
+    (v.readyState>=1?set():v.addEventListener('loadedmetadata',set,{once:true}));
+    if(ROLE[role()].rank>0)toast('Эфир идёт','Вы подключились к текущему моменту — как на твиче','ok')};
+  const liveTick=setInterval(()=>{const r=R.get(code);if(!r||r.status!=='live'||!host()||!ctl||!ctl.state)return;
+    const st=ctl.state();pushSync();
+    if(Math.abs(st.t-lastPT)>4&&Date.now()-lastPersist>20000){lastPT=st.t;lastPersist=Date.now();
+      mutate(code,x=>{x.livePos={t:st.t,at:Date.now()}})}},6000);
+  const viewerTick=setInterval(()=>{const r=R.get(code);if(!r||!ctl||!ctl.video||host())return;
+    if(r.status==='live'&&liveSt&&liveSt.t>0){const v=ctl.video;
+      if(v.currentTime>liveSt.t+8){try{v.currentTime=liveSt.t+0.5}catch(e){}toast('Это прямой эфир','Вперёд текущего момента ведущего перемотать нельзя — как на твиче','')}}},5000);
   const ranges0=ep?{intro:S.ovr[hkey(title.id,ep.n)]?.intro||ep.intro,outro:S.ovr[hkey(title.id,ep.n)]?.outro||ep.outro}:{intro:[0,0],outro:[0,0]};
   const mountWith=(m,bg)=>{ctl=mountPlayer($('#pl'),{title:r1.titleName||r1.title,sub:ep?`Серия ${ep.n}${epSuffix(ep)}`:'Пользовательский источник',media:m,dur:ep?.dur||0,ranges:ep?ranges0:{intro:[0,0],outro:[0,0]},next:null,noHist:true,
-    badge:bg||'<span style="background:var(--live)!important;color:#fff">● совместный просмотр</span>',canControl:canCtl,onSync:async st=>{bc?.postMessage({t:'sync',code,uid:ME.id,name:S.name,st});try{if(await hasProxy())srvAct(code,'sync',{st,uid:ME.id,name:S.name});else cloudSend(code,{type:'sync',st,uid:ME.id,name:S.name})}catch{}},onRanges:()=>{},onReset:()=>{}});
+    badge:bg||(r1.status==='ended'&&r1.rec&&r1.rec.t>0?'<span style="background:var(--muted)!important;color:#fff">▶ запись эфира · 0:00–'+fmtT(r1.rec.t)+'</span>':'<span style="background:var(--live)!important;color:#fff">● прямой эфир</span>'),canControl:canCtl,onSync:async st=>{bc?.postMessage({t:'sync',code,uid:ME.id,name:S.name,st});try{if(await hasProxy())srvAct(code,'sync',{st,uid:ME.id,name:S.name});else cloudSend(code,{type:'sync',st,uid:ME.id,name:S.name})}catch{}},onRanges:()=>{},onReset:()=>{}});
     if(bc)bc.postMessage({t:'ask',code,uid:ME.id})};
-  if(media&&!media.demo)mountWith(media);
+  if(media&&!media.demo){mountWith(media);syncStart();if(r1.status==='ended'&&r1.rec&&r1.rec.t>0)attachEndCap(r1.rec.t)}
   else if(media){$('#pl').innerHTML=empty('Ищем настоящий источник…','Пробуем Kodik и AniLibria. Если не найдём — предложим включить демо вручную.','')}
   else $('#pl').innerHTML=empty('Источник не выбран','Владелец ещё не привязал серию.');
   /* В комнате тоже играем настоящее аниме: если владелец не задал свой источник,
@@ -1521,13 +1546,14 @@ const hdr=()=>{const r=R.get(code);if(!r)return;const on=Object.keys(r.members).
       return}
     try{ctl&&ctl.destroy&&ctl.destroy()}catch{}
     mountWith(nm,bg);
+    syncStart();const rEnd=R.get(code);if(rEnd&&rEnd.status==='ended'&&rEnd.rec&&rEnd.rec.t>0)attachEndCap(rEnd.rec.t);
     const dw=$('#demowarn');dw&&dw.remove();
   })().catch(()=>{});
   if(media&&media.demo)$('#rdsc').insertAdjacentHTML('beforebegin',`<p class="warn" id="demowarn" style="margin:12px 0 0"><b>Демонстрационный видеопоток.</b> Подключите свой лицензионный HLS в Профиль → Настройки — и в комнате заиграют настоящие серии.</p>`);
   const hb=setInterval(()=>{bc?.postMessage({t:'hb',code,uid:ME.id});online.set(code+ME.id,Date.now());if(hubCache)srvAct(code,'hb',{uid:ME.id});else cloudSend(code,{type:'hb',uid:ME.id});hdr();if(tab==='members')renderTab()},4000);bc?.postMessage({t:'hb',code,uid:ME.id});
   let hubCache=false;hasProxy().then(h=>{hubCache=h});
   (async()=>{if(await hasProxy()&&await hubOk())srvPoll(code)})();
-  srv.hooks[code]={hdr,chat,renderTab,apply:st=>ctl&&ctl.apply&&ctl.apply(st)};
+  srv.hooks[code]={hdr,chat,renderTab,apply:applySync,sync:applySync,state:()=>ctl&&ctl.state&&ctl.state()};
   const onBc=e=>{const d=e.data;if(!d||d.code!==code||d.uid===ME.id)return;if(d.t==='hb'){online.set(code+d.uid,Date.now())}if(d.t==='sync'&&ctl)ctl.apply(d.st);if(d.t==='ask'&&ctl&&host())bc.postMessage({t:'sync',code,uid:ME.id,name:S.name,st:ctl.state()})};
   bc?.addEventListener('message',onBc);
   const msgHtml=(m,r)=>{if(m.sys)return`<div class="sysm">🛡 ${esc(m.body)} <time style="float:right">${ago(m.at)}</time></div>`;if(m.del)return`<div class="muted tiny" style="font-style:italic;padding:2px 8px">сообщение удалено модератором · ${esc(m.name)}</div>`;
@@ -1570,16 +1596,16 @@ const hdr=()=>{const r=R.get(code);if(!r)return;const on=Object.keys(r.members).
     if(e.target.closest('#sepb')){const n=Math.max(1,Math.min(title?.aired||1,+$('#sep').value||1));mutate(code,x=>{x.ep=n});router()}});
   $('#rh').addEventListener('click',async e=>{const t=e.target;if(t.closest('[data-inv]')){const u=location.href.split('#')[0]+'#/room/'+code;try{await navigator.clipboard.writeText(u);toast('Ссылка скопирована',u,'ok')}catch{toast('Скопируйте вручную',u)}}
     if(t.closest('[data-code]')){try{await navigator.clipboard.writeText(code);toast('Код скопирован',code,'ok')}catch{toast('Код комнаты',code)}}
-    if(t.closest('[data-end]')&&confirm('Завершить стрим для всех участников?')){mutate(code,x=>{x.status='ended';x.ended=Date.now();sysMsg(x,'Стрим завершён владельцем')});hdr();chat(true)}
+    if(t.closest('[data-end]')&&confirm('Завершить стрим для всех участников?')){const est=ctl&&ctl.state?ctl.state():null;mutate(code,x=>{x.status='ended';x.ended=Date.now();if(est&&est.t>0)x.rec={t:est.t,at:Date.now()};sysMsg(x,'Стрим завершён владельцем'+(est&&est.t>0?' · запись: 0:00–'+fmtT(est.t):''))});hdr();chat(true)}
     if(t.closest('[data-av]'))avPanel();if(t.closest('[data-ss]'))ssToggle();if(t.closest('[data-scam]'))ssCamToggle()});
   let stream=null;function avPanel(){const b=$('#media');if(b.innerHTML){stream?.getTracks().forEach(x=>x.stop());stream=null;b.innerHTML='';hdr();return}
     b.innerHTML=`<section class="panel"><div class="row between"><b class="tiny muted" style="letter-spacing:.14em;text-transform:uppercase">🎥 Голос и видео · WebRTC getUserMedia</b></div><div class="grid w" style="margin-top:12px;align-items:start;grid-template-columns:260px 1fr"><div style="position:relative;aspect-ratio:16/9;background:#000;border-radius:12px;overflow:hidden"><video id="lv" muted playsinline style="width:100%;height:100%;object-fit:cover"></video></div><div class="list"><div class="row"><button class="btn sm" id="mic">🎤 Включить микрофон</button><button class="btn sm" id="cam">📷 Включить камеру</button><button class="btn sm ghost" id="stp">Остановить</button></div><div class="prog" style="height:8px"><i id="lvl" style="width:0"></i></div><p class="tiny muted" style="margin:0">Локальный захват работает сразу. Для соединения участников между устройствами нужен signaling-сервер (в серверной версии — тот же realtime-канал).</p></div></div></section>`;hdr();
     const on=async k=>{try{stream?.getTracks().forEach(x=>x.stop());stream=await navigator.mediaDevices.getUserMedia({audio:k==='a',video:k==='v'});const v=$('#lv');v.srcObject=stream;v.play().catch(()=>{});if(k==='a'){const c=new AudioContext(),s=c.createMediaStreamSource(stream),an=c.createAnalyser();an.fftSize=256;s.connect(an);const d=new Uint8Array(an.frequencyBinCount);const tk=()=>{an.getByteFrequencyData(d);const l=$('#lvl');if(l)l.style.width=Math.min(100,d.reduce((a,x)=>a+x,0)/d.length/128*100)+'%';if(stream&&document.body.contains(b))requestAnimationFrame(tk)};tk()}}catch{toast('Нет доступа к устройствам','Браузер запретил микрофон/камеру','err')}};
     $('#mic').onclick=()=>on('a');$('#cam').onclick=()=>on('v');$('#stp').onclick=()=>{stream?.getTracks().forEach(x=>x.stop());stream=null}}
-  const onStore=e=>{if(e.key!=='ah:rooms')return;const r=R.get(code);if(!r)return;if(r.ep!==r1.ep&&r.titleId){router();return}if(r.members[ME.id]?.banned)return router();hdr();chat();renderTab();ctl?.refreshSync()};window.addEventListener('storage',onStore);
+  const onStore=e=>{if(e.key!=='ah:rooms')return;const r=R.get(code);if(!r)return;if(r.ep!==r1.ep&&r.titleId){router();return}if(r.members[ME.id]?.banned)return router();if(r.status==='ended'&&r.rec&&r.rec.t>0)attachEndCap(r.rec.t);hdr();chat();renderTab();ctl?.refreshSync()};window.addEventListener('storage',onStore);
   const tick=setInterval(()=>{const r=R.get(code);if(!r)return;const mem=r.members[ME.id],sb=$('#cs');if(!sb||sb.dataset.off==='1')return;const priv=['streamer','moderator','vip'].includes(mem?.role);let cool=0;if(r.slow>0&&!priv&&mem?.last)cool=Math.max(0,Math.ceil(r.slow-(Date.now()-mem.last)/1e3));sb.textContent=cool>0?cool+'s':'➤';sb.disabled=cool>0},1000);
   hdr();chat(true);renderTab();
-  roomUnsub=()=>{try{ssTeardown()}catch(e){}clearInterval(hb);clearInterval(tick);bc?.removeEventListener('message',onBc);window.removeEventListener('storage',onStore);stream?.getTracks().forEach(x=>x.stop());ctl?.destroy()}
+  roomUnsub=()=>{try{ssTeardown()}catch(e){}clearInterval(liveTick);clearInterval(viewerTick);clearInterval(hb);clearInterval(tick);bc?.removeEventListener('message',onBc);window.removeEventListener('storage',onStore);stream?.getTracks().forEach(x=>x.stop());ctl?.destroy()}
 }
 
 /* ------------------------------ роутер и шапка ------------------------------ */
