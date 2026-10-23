@@ -251,6 +251,66 @@ app.post('/api/comments/:tid', (req, res) => {
   res.status(400).json({ error: 'неизвестное действие' });
 });
 
+/* ==================== пользователи: занятые ники (v17.6) ====================
+   users: Map<nickLower, {nick, pass(sha256), avatar(dataURL), at}>
+   Пароль хранится хешем; аватар — dataURL до ~150КБ. Персист в users.json. */
+const usersState = new Map();
+try {
+  const j = JSON.parse(fs.readFileSync('users.json', 'utf8'));
+  for (const [k, v] of Object.entries(j || {})) usersState.set(k, v);
+  console.log('users loaded:', usersState.size);
+} catch {}
+let usrSaveT = null;
+function usrSave() {
+  clearTimeout(usrSaveT);
+  usrSaveT = setTimeout(() => {
+    try { fs.writeFileSync('users.json', JSON.stringify(Object.fromEntries(usersState))); } catch {}
+  }, 3000);
+}
+const sha256 = s => require('crypto').createHash('sha256').update('anihub:' + s).digest('hex');
+const NICK_RE = /^[A-Za-zА-Яа-яЁё0-9_\- ]{2,24}$/;
+const nickClean = v => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, '').trim().slice(0, 24);
+const avaOk = v => typeof v === 'string' && v.startsWith('data:image/') && v.length < 150000 ? v : '';
+
+app.get('/api/user/:nick', (req, res) => {
+  const k = nickClean(req.params.nick).toLowerCase();
+  const u = usersState.get(k);
+  res.json({ exists: !!u, nick: u ? u.nick : null, avatar: u ? (u.avatar || '') : '' });
+});
+
+app.post('/api/users', (req, res) => {
+  const b = req.body || {};
+  const act = b.act;
+  const nick = nickClean(b.nick);
+  const pass = String(b.pass == null ? '' : b.pass);
+  if (act === 'claim') {
+    if (!NICK_RE.test(nick) || /^гость$/i.test(nick))
+      return res.status(400).json({ error: 'ник 2–24 символа: буквы, цифры, пробел, _ или -' });
+    if (pass.length < 4) return res.status(400).json({ error: 'пароль минимум 4 символа' });
+    const k = nick.toLowerCase();
+    const u = usersState.get(k);
+    if (u && u.pass !== sha256(pass)) return res.status(409).json({ error: 'ник уже занят' });
+    const avatar = avaOk(b.avatar) || (u ? u.avatar : '');
+    usersState.set(k, { nick, pass: sha256(pass), avatar, at: Date.now() });
+    usrSave();
+    return res.json({ ok: true, nick, avatar, taken: !!u });
+  }
+  if (act === 'login') {
+    const u = usersState.get(nick.toLowerCase());
+    if (!u || u.pass !== sha256(pass)) return res.status(403).json({ error: 'неверный ник или пароль' });
+    return res.json({ ok: true, nick: u.nick, avatar: u.avatar || '' });
+  }
+  if (act === 'setava') {
+    const u = usersState.get(nick.toLowerCase());
+    if (!u || u.pass !== sha256(pass)) return res.status(403).json({ error: 'нет доступа' });
+    u.avatar = avaOk(b.avatar);
+    u.at = Date.now();
+    usrSave();
+    return res.json({ ok: true });
+  }
+  res.status(400).json({ error: 'неизвестное действие' });
+});
+
 /* ------------------------- комнаты в памяти -----------------------
    rooms: Map<code, Map<sid, {uid,name,screen,cam,joinedAt}>>
    Состояние аниме-комнаты (чат/синхронизация) живёт в клиентах
