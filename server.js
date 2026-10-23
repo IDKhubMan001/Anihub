@@ -19,6 +19,17 @@ const { Server } = require('socket.io');
 const app = express();
 /* JSON-body для REST комнат (put/sync/hb) */
 app.use(express.json({ limit: '1mb' }));
+/* CORS для REST: сайт живёт на Pages/file://, сервер — на onrender.com.
+   Без этих заголовков браузер блокирует ответы /api/* → «сервер не отвечает». */
+app.use((q, r, next) => {
+  r.header('Access-Control-Allow-Origin', '*');
+  if (q.method === 'OPTIONS') {
+    r.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    r.header('Access-Control-Allow-Headers', 'Content-Type');
+    return r.sendStatus(204);
+  }
+  next();
+});
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },   // Pages, file://, localhost — всё можно
