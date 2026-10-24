@@ -300,18 +300,82 @@ function repSave() {
     try { fs.writeFileSync('reports.json', JSON.stringify(REPORTS.slice(-500))); } catch {}
   }, 3000);
 }
+
+/* ==================== v17.13: авто-модерация, анти-абьюз жалоб, журнал ==================== */
+const SROOTS = [/пизд/, /бля[дт]/, /хуй/, /ху[яеёю]/, /(^|[^а-я])еб[ауиыё]/, /(за|у|по|вы|на|до|от|раз|об|о|пере|под|въ)е[бб]/, /аху[еёи]/, /оху[еёи]/, /пид[оа][рб]/, /муд[ао]к/, /ганд[оа]н/, /шлюх/, /ублюд/, /манда/];
+const SBAD = new Set(['сука', 'суки', 'сучка', 'бля', 'блять', 'мудак', 'мудила', 'мудаки', 'гандон', 'чмо', 'пидор', 'пидар', 'пидорас', 'долбоёб', 'долбоеб', 'шлюха', 'шлюхи', 'говнюк', 'мразь', 'мразота']);
+function isDirty(t) {
+  const ws = String(t == null ? '' : t).toLowerCase().replace(/ё/g, 'е').split(/[^a-z0-9а-я]+/).filter(Boolean);
+  const flat = ws.join('');
+  for (const r of SROOTS) { r.lastIndex = 0; if (r.test(flat)) return true; }
+  for (const w of ws) if (SBAD.has(w)) return true;
+  return false;
+}
+const MODLOG = [];
+try {
+  const j = JSON.parse(fs.readFileSync('modlog.json', 'utf8'));
+  if (Array.isArray(j)) MODLOG.push(...j.slice(-500));
+  console.log('modlog loaded:', MODLOG.length);
+} catch {}
+let modSaveT = null;
+const modSave = () => { clearTimeout(modSaveT); modSaveT = setTimeout(() => { try { fs.writeFileSync('modlog.json', JSON.stringify(MODLOG.slice(-500))); } catch {} }, 3000); };
+const modLog = e => { MODLOG.push(Object.assign({ at: Date.now() }, e)); if (MODLOG.length > 500) MODLOG.splice(0, MODLOG.length - 500); modSave(); };
+
+const repPairs = new Map();   /* byL|targetL → ts: не чаще 1 жалобы в сутки на пару */
+const repStats = new Map();   /* byL → {bad, bannedUntil, lastBan} */
+const sanctions = new Map();  /* targetL → {just} — обоснованные жалобы на юзера */
+let modDataSaveT = null;
+const modDataSave = () => { clearTimeout(modDataSaveT); modDataSaveT = setTimeout(() => { try { fs.writeFileSync('moderation.json', JSON.stringify({ pairs: Object.fromEntries(repPairs), stats: Object.fromEntries(repStats), sanc: Object.fromEntries(sanctions) })); } catch {} }, 3000); };
+try {
+  const j = JSON.parse(fs.readFileSync('moderation.json', 'utf8'));
+  for (const [k, v] of Object.entries(j.pairs || {})) repPairs.set(k, v);
+  for (const [k, v] of Object.entries(j.stats || {})) repStats.set(k, v);
+  for (const [k, v] of Object.entries(j.sanc || {})) sanctions.set(k, v);
+  console.log('moderation loaded:', repPairs.size, repStats.size, sanctions.size);
+} catch {}
 app.post('/api/reports', (req, res) => {
   const b = req.body || {};
-  const type = ['room', 'user', 'comment'].includes(b.type) ? b.type : 'room';
-  const target = cmtClean(b.target, 40);
+  const type = ['room', 'user', 'comment', 'message'].includes(b.type) ? b.type : 'room';
+  const target = cmtClean(b.target, 60);
   const REASONS = ['Оскорбления', 'Спам', 'Реклама', '18+ контент', 'Нарушение авторских прав', 'Другое'];
   if (!target) return res.status(400).json({ error: 'нет цели жалобы' });
+  const byL = String(cmtClean(b.by, 24) || 'гость').toLowerCase();
+  const st0 = repStats.get(byL);
+  if (st0 && st0.bannedUntil > Date.now()) {
+    return res.status(403).json({ error: 'Отправка жалоб заблокирована ещё ' + Math.ceil((st0.bannedUntil - Date.now()) / 3600e3) + ' ч: слишком много необоснованных жалоб', banned: true });
+  }
+  const targetL = target.toLowerCase();
+  const pairKey = byL + '|' + targetL;
+  const last = repPairs.get(pairKey) || 0;
+  if (Date.now() - last < 86400e3) return res.status(429).json({ error: 'На это вы уже жаловались за сутки — повторная жалоба не отправлена' });
+  repPairs.set(pairKey, Date.now());
   const reason = REASONS.includes(b.reason) ? b.reason : 'Другое';
-  REPORTS.push({ type, target, reason, details: cmtClean(b.details, 300), by: cmtClean(b.by, 24) || 'Гость', at: Date.now() });
+  const justified = (typeof b.evidence === 'string' && b.evidence.trim()) ? isDirty(b.evidence) : null;
+  if (justified === true) {
+    const s2 = sanctions.get(targetL) || { just: 0 };
+    s2.just++;
+    sanctions.set(targetL, s2);
+    modLog({ kind: 'auto_mute', who: targetL, note: 'обоснованная жалоба (' + reason + ') — счёт: ' + s2.just });
+  }
+  if (justified === false) {
+    const st2 = repStats.get(byL) || { bad: 0 };
+    st2.bad++;
+    if (st2.bad > 15) {
+      const days = st2.lastBan ? 14 : 2;
+      st2.lastBan = days;
+      st2.bannedUntil = Date.now() + days * 86400e3;
+      modLog({ kind: 'ban_reports', who: byL, note: 'бан отправки жалоб на ' + days + ' дней: 15+ необоснованных жалоб' });
+    }
+    repStats.set(byL, st2);
+  }
+  REPORTS.push({ type, target, reason, details: cmtClean(b.details, 300), by: cmtClean(b.by, 24) || 'Гость', at: Date.now(), justified });
   if (REPORTS.length > 500) REPORTS.splice(0, REPORTS.length - 500);
   repSave();
-  res.json({ ok: true });
+  modDataSave();
+  modLog({ kind: 'report', who: byL, note: target + ' · ' + reason + (justified === true ? ' · обоснована' : justified === false ? ' · не обоснована' : '') });
+  res.json({ ok: true, justified });
 });
+app.get('/api/modlog', (req, res) => res.json({ count: MODLOG.length, list: MODLOG.slice(-100) }));
 app.get('/api/reports', (req, res) => {
   const t = cmtClean(req.query.target, 40);
   const list = t ? REPORTS.filter(r => r.target === t) : REPORTS;
@@ -356,7 +420,10 @@ app.get('/api/profile/:name', (req, res) => {
   const name = cmtClean(req.params.name, 24);
   const k = name.toLowerCase();
   const prof = PROFILES.get(k) || null;
+  const pub = !prof || prof.pub !== false;
   const reports = REPORTS.filter(r => r.type === 'user' && String(r.target || '').toLowerCase() === 'user:' + k);
+  const summary = {};
+  reports.forEach(r => { summary[r.reason] = (summary[r.reason] || 0) + 1; });
   const msgs = [];
   for (const [code2, rec] of roomsState) {
     const arr = (rec && rec.data && rec.data.msgs) || [];
@@ -366,11 +433,23 @@ app.get('/api/profile/:name', (req, res) => {
     }
   }
   msgs.sort((a, b) => a.at - b.at);
+  const status = [];
+  for (const [code2, rec] of roomsState) {
+    const mems = (rec && rec.data && rec.data.members) || {};
+    for (const id2 of Object.keys(mems)) {
+      const m2 = mems[id2];
+      if (String((m2 && m2.name) || '').toLowerCase() !== k) continue;
+      if (m2.banned) status.push({ room: code2, kind: 'ban' });
+      else if ((m2.mutedUntil || 0) > Date.now()) status.push({ room: code2, kind: 'mute', until: m2.mutedUntil });
+    }
+  }
+  const just = (sanctions.get('user:' + k) || {}).just || 0;
   res.json({
     ok: true, name,
-    prof: prof ? { name: prof.name, hist: prof.hist, lists: prof.lists, pub: prof.pub, at: prof.at } : null,
-    reports: { count: reports.length, list: reports.slice(-10) },
-    msgs: msgs.slice(-30).reverse()
+    prof: prof ? { name: prof.name, hist: pub ? prof.hist : [], lists: pub ? prof.lists : {}, pub: prof.pub !== false, at: prof.at } : null,
+    reports: { count: reports.length, list: reports.slice(-10), summary },
+    msgs: msgs.slice(-30).reverse(),
+    status, punished: just > 10, just
   });
 });
 
