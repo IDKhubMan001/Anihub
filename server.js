@@ -251,6 +251,73 @@ app.post('/api/comments/:tid', (req, res) => {
   res.status(400).json({ error: 'неизвестное действие' });
 });
 
+/* ==================== таймкоды опенинга/эндинга (v17.11) ====================
+   OVR: Map<`${tid}:${ep}`, {intro:[a,b], outro:[a,b], by, at}> — находки сообщества. */
+const ovrState = new Map();
+try {
+  const j = JSON.parse(fs.readFileSync('ovr.json', 'utf8'));
+  for (const [k, v] of Object.entries(j || {})) ovrState.set(k, v);
+  console.log('ovr loaded:', ovrState.size);
+} catch {}
+let ovrSaveT = null;
+function ovrSave() {
+  clearTimeout(ovrSaveT);
+  ovrSaveT = setTimeout(() => {
+    try { fs.writeFileSync('ovr.json', JSON.stringify(Object.fromEntries(ovrState))); } catch {}
+  }, 3000);
+}
+const seg2 = v => (Array.isArray(v) && v.length === 2 && +v[0] >= 0 && +v[1] > +v[0] && +v[1] - +v[0] <= 600 && +v[1] <= 7200) ? [+v[0], +v[1]] : null;
+
+app.get('/api/ovr/:tid/:ep', (req, res) => {
+  const k = tidOk(req.params.tid) + ':' + (parseInt(req.params.ep, 10) || 1);
+  const o = ovrState.get(k);
+  res.json(o ? { intro: o.intro, outro: o.outro, by: o.by, at: o.at } : { intro: null, outro: null });
+});
+app.post('/api/ovr/:tid/:ep', (req, res) => {
+  const k = tidOk(req.params.tid) + ':' + (parseInt(req.params.ep, 10) || 1);
+  const b = req.body || {};
+  const cur = ovrState.get(k) || { intro: null, outro: null };
+  const intro = seg2(b.intro), outro = seg2(b.outro);
+  if (!intro && !outro) return res.status(400).json({ error: 'нет валидных диапазонов' });
+  if (intro) cur.intro = intro;
+  if (outro) cur.outro = outro;
+  cur.by = cmtClean(b.name, 24) || '?';
+  cur.at = Date.now();
+  ovrState.set(k, cur); ovrSave();
+  res.json({ ok: true, intro: cur.intro, outro: cur.outro });
+});
+
+/* ==================== жалобы (v17.11) ==================== */
+const REPORTS = [];
+try {
+  const j = JSON.parse(fs.readFileSync('reports.json', 'utf8'));
+  if (Array.isArray(j)) REPORTS.push(...j.slice(-500));
+} catch {}
+let repSaveT = null;
+function repSave() {
+  clearTimeout(repSaveT);
+  repSaveT = setTimeout(() => {
+    try { fs.writeFileSync('reports.json', JSON.stringify(REPORTS.slice(-500))); } catch {}
+  }, 3000);
+}
+app.post('/api/reports', (req, res) => {
+  const b = req.body || {};
+  const type = ['room', 'user', 'comment'].includes(b.type) ? b.type : 'room';
+  const target = cmtClean(b.target, 40);
+  const REASONS = ['Оскорбления', 'Спам', 'Реклама', '18+ контент', 'Нарушение авторских прав', 'Другое'];
+  if (!target) return res.status(400).json({ error: 'нет цели жалобы' });
+  const reason = REASONS.includes(b.reason) ? b.reason : 'Другое';
+  REPORTS.push({ type, target, reason, details: cmtClean(b.details, 300), by: cmtClean(b.by, 24) || 'Гость', at: Date.now() });
+  if (REPORTS.length > 500) REPORTS.splice(0, REPORTS.length - 500);
+  repSave();
+  res.json({ ok: true });
+});
+app.get('/api/reports', (req, res) => {
+  const t = cmtClean(req.query.target, 40);
+  const list = t ? REPORTS.filter(r => r.target === t) : REPORTS;
+  res.json({ count: list.length, list: list.slice(-20) });
+});
+
 /* ==================== пользователи: занятые ники (v17.6) ====================
    users: Map<nickLower, {nick, pass(sha256), avatar(dataURL), at}>
    Пароль хранится хешем; аватар — dataURL до ~150КБ. Персист в users.json. */
