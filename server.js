@@ -318,6 +318,62 @@ app.get('/api/reports', (req, res) => {
   res.json({ count: list.length, list: list.slice(-20) });
 });
 
+/* ==================== публичные профили (v17.12) ====================
+   PROFILES: Map<nick.toLowerCase(), {name, hist, lists, pub, at}> — история/списки публикует клиент; жалобы и сообщения добираем на сервере. */
+const PROFILES = new Map();
+try {
+  const j = JSON.parse(fs.readFileSync('profiles.json', 'utf8'));
+  for (const [k, v] of Object.entries(j || {})) PROFILES.set(k, v);
+  console.log('profiles loaded:', PROFILES.size);
+} catch {}
+let profSaveT = null;
+function profSave() {
+  clearTimeout(profSaveT);
+  profSaveT = setTimeout(() => {
+    try { fs.writeFileSync('profiles.json', JSON.stringify(Object.fromEntries(PROFILES))); } catch {}
+  }, 3000);
+}
+const HIST_KEYS = ['id', 'ep', 'title', 'poster', 'epTitle', 'pos', 'dur', 'done', 'at'];
+const LIST_KEYS = ['favorite', 'watching', 'planned', 'dropped'];
+app.post('/api/profile/:name', (req, res) => {
+  const name = cmtClean(req.params.name, 24);
+  if (!NICK_RE.test(name)) return res.status(400).json({ error: 'плохой ник' });
+  const b = req.body || {};
+  const hist = Array.isArray(b.hist) ? b.hist.slice(0, 60).map(h => {
+    const o = {};
+    HIST_KEYS.forEach(k => { if (h && h[k] != null) o[k] = (typeof h[k] === 'string') ? String(h[k]).slice(0, 160) : h[k]; });
+    return o;
+  }) : [];
+  const lists0 = (b.lists && typeof b.lists === 'object' && !Array.isArray(b.lists)) ? b.lists : {};
+  const lists = {};
+  for (const [k, v] of Object.entries(lists0).slice(0, 400)) if (LIST_KEYS.includes(v)) lists[String(k).slice(0, 40)] = v;
+  PROFILES.set(name.toLowerCase(), { name, hist, lists, pub: b.pub !== false, at: Date.now() });
+  if (PROFILES.size > 400) PROFILES.delete(PROFILES.keys().next().value);
+  profSave();
+  res.json({ ok: true });
+});
+app.get('/api/profile/:name', (req, res) => {
+  const name = cmtClean(req.params.name, 24);
+  const k = name.toLowerCase();
+  const prof = PROFILES.get(k) || null;
+  const reports = REPORTS.filter(r => r.type === 'user' && String(r.target || '').toLowerCase() === 'user:' + k);
+  const msgs = [];
+  for (const [code2, rec] of roomsState) {
+    const arr = (rec && rec.data && rec.data.msgs) || [];
+    for (const m of arr) {
+      if (!m || m.sys || m.del) continue;
+      if (String(m.name || '').toLowerCase() === k) msgs.push({ room: code2, body: String(m.body || '').slice(0, 300), at: m.at });
+    }
+  }
+  msgs.sort((a, b) => a.at - b.at);
+  res.json({
+    ok: true, name,
+    prof: prof ? { name: prof.name, hist: prof.hist, lists: prof.lists, pub: prof.pub, at: prof.at } : null,
+    reports: { count: reports.length, list: reports.slice(-10) },
+    msgs: msgs.slice(-30).reverse()
+  });
+});
+
 /* ==================== пользователи: занятые ники (v17.6) ====================
    users: Map<nickLower, {nick, pass(sha256), avatar(dataURL), at}>
    Пароль хранится хешем; аватар — dataURL до ~150КБ. Персист в users.json. */
