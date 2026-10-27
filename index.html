@@ -191,7 +191,7 @@ footer.foot{margin-top:90px;border-top:1px solid var(--line);background:var(--bg
 <script>/* APP */
 (()=>{
 'use strict';
-const BUILD='2026-10-27 v17.31 · Kodik-шлюз на сервере Render: прямые потоки студий добываются серверно (без публичных прокси), hls-манифесты проксируются с вырезанием рекламы, фикс нового формата urlParams';
+const BUILD='2026-10-27 v17.32 · прямой поток из файла и с Pages: шлюз Render по умолчанию для всех окружений, проба шлюза с ретраем (холодный старт больше не ломает сессию), резолв 35с, keep-alive шлюза';
 const STUDIO_SNAPSHOT={"date":"10.10.2026","days":[{"name":"Понедельник","entries":[{"time":"16:10","title":"Я влюбился в тебя, когда ты бежала в лунной ночи"},{"time":"16:30","title":"Тайная битва за престол сильнейшего принца-дуралея"},{"time":"18:10","title":"Разгневанная леди поклялась отомстить"},{"time":"18:15","title":"Мир танцует"},{"time":"18:30","title":"Аккуратная и симпатичная девочка в моей новой школе"},{"time":"18:40","title":"Рыцарь-скелет вступает в параллельный мир 2"},{"time":"18:55","title":"Необъятный океан 3"},{"time":"20:20","title":"Игра лжецов"},{"time":"21:15","title":"Отверженная святая и её гастрономическое путешествие в другом мире"}]},{"name":"Вторник","entries":[{"time":"13:10","title":"Призрак в доспехах"},{"time":"17:10","title":"Забывчивая святая дева неосознанно изливает свою силу"},{"time":"22:55","title":"Непревзойдённый"},{"time":"19:15","title":"Истинные чудотворные рыцари 2"},{"time":"22:05","title":"Красная река"},{"time":"23:00","title":"Виктория с множеством козырей"}]},{"name":"Среда","entries":[{"time":"15:45","title":"Клеватесс 2"},{"time":"17:05","title":"Военная хроника маленькой девочки 2"},{"time":"18:00","title":"Мир отомэ-игр — это тяжелый мир для мобов 2"},{"time":"18:10","title":"Героиня? Святая? Нет, я всемогущая горничная!"},{"time":"19:45","title":"Для тебя во всём цвету 2"},{"time":"20:10","title":"Крестьянин 999-го уровня"},{"time":"20:20","title":"Тройной шторм"},{"time":"20:40","title":"Старик из деревни становится Святым мечом"}]},{"name":"Четверг","entries":[{"time":"09:45","title":"Для тебя во всём цвету 2"},{"time":"16:15","title":"Дара из Рэйвы"},{"time":"16:30","title":"Бродячие псы: Шуточные истории 2"},{"time":"18:25","title":"Ура мечте! Бесконечная мечта"},{"time":"18:45","title":"Пыль Мёбиуса"},{"time":"19:45","title":"Табакошка"},{"time":"19:50","title":"Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры"},{"time":"20:00","title":"Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга"},{"time":"21:05","title":"Монстрик Карамелька"}]},{"name":"Пятница","entries":[{"time":"18:20","title":"Прошло десять лет с момента, как я стал легендой"},{"time":"18:30","title":"О моём перерождении в слизь 4"},{"time":"19:00","title":"Население приграничного владения начинается с нуля"},{"time":"19:10","title":"Нарисуй это, потом умри"},{"time":"20:10","title":"Пожалуйста, простите моих младших братьев"},{"time":"20:15","title":"Адский режим 2"},{"time":"20:45","title":"Юный лорд — мастер побега 2"},{"time":"22:10","title":"Слёзы Бога"}]},{"name":"Суббота","entries":[{"time":"13:10","title":"Добро пожаловать в ад, Ирума! 4"},{"time":"14:10","title":"Власть книжного червя 4"},{"time":"16:45","title":"Чёрный факел"},{"time":"17:55","title":"Рекомендация старшеклассника Ивамото"},{"time":"20:15","title":"Шатёр чародея"},{"time":"20:35","title":"Шоу для взрослых: Цирк «Подсолнух»"},{"time":"20:40","title":"Следующий герцог, который скажет: «Я не хочу любить тебя», будет любить тебя по какой-то причине"},{"time":"20:50","title":"Невеста демона"},{"time":"20:55","title":"Лиричная волшебница Наноха: Опередители — Огненный выстрел возмездия"},{"time":"21:00","title":"Кот и дракон"},{"time":"21:10","title":"Ханаори хочет драться даже после перерождения"},{"time":"21:40","title":"Забота об одарённой девушке"},{"time":"22:30","title":"Мао"},{"time":"22:50","title":"Цугаи загробного мира"}]},{"name":"Воскресенье","entries":[{"time":"10:10","title":"Компания «Маги-Люмьер» 2"},{"time":"11:55","title":"Вперёд, отряд мистики!"},{"time":"12:00","title":"Прощай, Лара"},{"time":"12:10","title":"Ты и я полные противоположности"},{"time":"12:20","title":"Железный котелок Жана!"},{"time":"16:25","title":"Самый сильный в мире заступник"},{"time":"17:40","title":"История электричества в двадцатом веке"},{"time":"17:50","title":"Сто девушек 3"},{"time":"18:40","title":"Дигимоны: Битбрейк"},{"time":"18:50","title":"Реинкарнация безработного 3"},{"time":"19:20","title":"Чёрная кошка и класс ведьм"},{"time":"19:40","title":"Хоть я и бездарная злодейка"},{"time":"20:10","title":"Лазурный путь: Малый вперёд! 2"}]}]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -233,7 +233,8 @@ if(!IDB_OK&&!LS_OK)setTimeout(()=>{if(document.getElementById('lsban'))return;
  document.getElementById('lsbx').onclick=()=>b.remove()},700);
 /* внешний прокси: страницу можно хостить на GitHub Pages, а потоки брать с домашнего прокси */
 let PB_BASE='';try{const qp=new URLSearchParams(location.search).get('proxy');if(qp){PB_BASE=qp.replace(/\/+$/,'');LS.set('proxybase',PB_BASE)}else PB_BASE=LS.get('proxybase','')||''}catch{}
-const PB=()=>PB_BASE||(location.protocol==='file:'||location.hostname==='localhost'||location.hostname==='127.0.0.1'?'https://anihub-rooms.onrender.com':location.origin);
+const PB=()=>PB_BASE||(location.hostname.endsWith('.onrender.com')?location.origin:'https://anihub-rooms.onrender.com');
+setInterval(()=>{try{fetch(PB()+'/api/health',{cache:'no-store'}).catch(()=>{})}catch{}},24e5);
 const IN_FRAME=(()=>{try{return window.self!==window.top}catch{return true}})();
 const FRAME_HINT=IN_FRAME?'Похоже, страница открыта во встроенном предпросмотре, который блокирует внешние видео и плееры. Скачайте этот файл и откройте его напрямую в браузере — там всё заработает.':'';
 const rnd=n=>Array.from({length:n},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
@@ -369,8 +370,8 @@ const BUILTIN_TOKEN='56a768d08f43091901c44b54fe970049';
 const withTimeout=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg||'таймаут')),ms))]);
 function dek(tkn){try{const h=Math.floor(tkn.length/2);const p1=atob(tkn.slice(0,h).split('').reverse().join(''));const p2=atob(tkn.slice(h).split('').reverse().join(''));return p2+p1}catch(e){return null}}
 function kodikTok(){return S.kodikToken||LS.get('kodikPub','')||BUILTIN_TOKEN}
-let proxyOk=null;
-async function hasProxy(){if(location.protocol==='file:'&&!PB_BASE)return false;if(proxyOk===null){try{const r=await fetch(PB()+'/kodik-proxy/search?token=probe&limit=1');proxyOk=r.status!==404}catch{proxyOk=false}}return proxyOk}
+let proxyOk=null,proxyChk=0;
+async function hasProxy(){if(proxyOk!==null&&Date.now()-proxyChk<(proxyOk?36e5:45e3))return proxyOk;try{const r=await withTimeout(fetch(PB()+'/kodik-proxy/search?token=probe&limit=1'),12000,'probe');proxyOk=r.status!==404}catch{proxyOk=false}proxyChk=Date.now();return proxyOk}
 async function kodikApiGet(u){
   const uu=new URL(u);
   /* рядом работает kodik_proxy.py (локально или на сервере) — идём через него, без CORS-проблем */
@@ -1267,7 +1268,7 @@ async function pageTitle(id){
   <aside id="taside" style="display:grid;gap:18px;align-content:start"><p class="panel sm muted" style="margin:0">Описание, оценки и постер — по данным <a href="${esc(t.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent);font-weight:700">Shikimori</a> (часть обложек — AniList).</p>
   ${rooms.length?`<div class="panel"><h3 style="font-size:12px;text-transform:uppercase;color:var(--muted);margin-bottom:10px">● Комнаты по тайтлу</h3><div class="list">${rooms.map(([c,r])=>`<a class="item" href="#/room/${c}"><span class="t"><b>${c}</b><small>${esc(r.title)}</small></span></a>`).join('')}</div></div>`:''}
   ${rel.length?`<div><h3 style="font-size:15px;padding-bottom:10px;border-bottom:1px solid var(--line)">Похожее</h3><div class="grid" style="grid-template-columns:repeat(3,1fr);margin-top:14px;gap:10px">${rel.map(card).join('')}</div></div>`:''}</aside></div><section class="wrap" id="cmtsec" style="margin-top:8px"></section>`;
-  app.onclick=e=>{const kb=e.target.closest('[data-kretry]');if(kb){return router()}const ko=e.target.closest('[data-kopen]');if(ko){try{window.open(kq(ep.link||kres.link),'_blank','noopener')}catch(x){}return}const l=e.target.closest('[data-list]');if(l){const k=l.dataset.list;if(S.lists[t.id]===k){delete S.lists[t.id];toast('Убрано из списка',t.title)}else{S.lists[t.id]=k;toast('Добавлено в список',t.title,'ok')}save('lists');pageTitle(id)}
+  app.onclick=e=>{const kb=e.target.closest('[data-kretry]');if(kb){proxyOk=null;proxyChk=0;return router()}const ko=e.target.closest('[data-kopen]');if(ko){try{window.open(kq(ep.link||kres.link),'_blank','noopener')}catch(x){}return}const l=e.target.closest('[data-list]');if(l){const k=l.dataset.list;if(S.lists[t.id]===k){delete S.lists[t.id];toast('Убрано из списка',t.title)}else{S.lists[t.id]=k;toast('Добавлено в список',t.title,'ok')}save('lists');pageTitle(id)}
     if(e.target.closest('[data-sub]')){if(S.subs.includes(t.id)){S.subs=S.subs.filter(x=>x!==t.id);toast('Подписка отключена')}else{S.subs.push(t.id);S.aired[t.id]=t.aired;S.notes.unshift({id:uid(),title:`${t.title} · серия ${t.aired}`,body:'Вы подписались на тайтл — пришлём уведомление о новой серии.',link:`#/watch/${t.id}/${t.aired}`,at:Date.now(),read:false});toast('Подписка оформлена','Уведомим о новой серии','ok');save('notes','aired');badge()}save('subs');pageTitle(id)}}
   cmtInit(t,my);
 
@@ -1322,7 +1323,7 @@ async function pageTitle(id){
       const mm=e0&&String(e0.link||'').match(/\/(seria|serial|video|season|movie)\/(\d+)\/([a-f0-9]+)/i);
       let js=null;
       try{
-        if(mm&&await hasProxy()){const r0=await withTimeout(fetch(PB()+`/kodik/resolve?id=${mm[2]}&hash=${mm[3]}&type=${mm[1]}`),25000,'таймаут');if(r0.ok)js=await r0.json()}
+        if(mm&&await hasProxy()){const r0=await withTimeout(fetch(PB()+`/kodik/resolve?id=${mm[2]}&hash=${mm[3]}&type=${mm[1]}`),35000,'таймаут');if(r0.ok)js=await r0.json()}
         if(!js&&mm){try{js=await withTimeout(browserResolve(mm[1],mm[2],mm[3]),32000,'таймаут')}catch{}}
         bay.innerHTML='';
         const dur=((entry.material_data&&(entry.material_data.duration||entry.material_data.episodes_duration))||24)*60;
@@ -1426,7 +1427,7 @@ async function pageWatch(id,epn,Q){
   if(used==='kodik'&&ep.link){
     const m=String(ep.link).match(/\/(seria|serial|video|season|movie)\/(\d+)\/([a-f0-9]+)/i);
     if(m&&await hasProxy()){
-      try{for(let rr=0;rr<2&&!kodikDirect;rr++){const r=await withTimeout(fetch(PB()+`/kodik/resolve?id=${m[2]}&hash=${m[3]}&type=${m[1]}`),rr?14000:25000,'таймаут');
+      try{for(let rr=0;rr<2&&!kodikDirect;rr++){const r=await withTimeout(fetch(PB()+`/kodik/resolve?id=${m[2]}&hash=${m[3]}&type=${m[1]}`),rr?20000:35000,'таймаут');
         if(r.ok){const j=await r.json();if(j&&j.links)kodikDirect=j}}}catch{}
       if(my!==nav)return}
     else if(m){noProxy=true;bgResolveM=m}
@@ -1935,7 +1936,7 @@ const hdr=()=>{const r=R.get(code);if(!r)return;const on=Object.keys(r.members).
         const kall=kodikSeasons(kres).flatMap(x=>x.eps);
         const ke=kall.find(e=>e.n===ep.n)||kall[0];
         const mm=ke?String(ke.link||'').match(/\/(seria|serial|video|season|movie)\/(\d+)\/([a-f0-9]+)/i):null;
-        if(mm&&await hasProxy()){try{const r2=await withTimeout(fetch(PB()+`/kodik/resolve?id=${mm[2]}&hash=${mm[3]}&type=${mm[1]}`),25000,'таймаут');if(r2.ok)kdir=await r2.json()}catch{}}}}
+        if(mm&&await hasProxy()){try{const r2=await withTimeout(fetch(PB()+`/kodik/resolve?id=${mm[2]}&hash=${mm[3]}&type=${mm[1]}`),35000,'таймаут');if(r2.ok)kdir=await r2.json()}catch{}}}}
     if(nav!==my)return;lib=libPick(title,libP?await libP:null);if(lib&&!lib.alts)libriaAlts(title);if(nav!==my)return;
     let nm=null,bg=null;
     if(kdir&&kdir.links){nm=kodikDirectMedia(kdir);bg='<span style="color:var(--cyan)">● Kodik · прямой поток · совместный просмотр</span>'}
