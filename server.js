@@ -618,4 +618,231 @@ setInterval(() => {
 }, 30000);
 
 const PORT = process.env.PORT || 3000;
+/* ==== AniHub · Kodik-шлюз (порт kodik_proxy.py на Node) =====================
+   Зачем: страница может жить на GitHub Pages или открыта как файл —
+   ей нужен сервер-компаньон: достать ПРЯМЫЕ m3u8-потоки Kodik
+   (без рекламного плеера), проксировать HLS-манифесты/сегменты
+   и форвардить поисковые запросы к Kodik API. Всё с CORS *, кэшем
+   и защитой от SSRF (белый список хостов + запрет приватных IP). */
+
+const dnsProm = require('dns').promises;
+const KODIK_UPSTREAM = 'https://kodik-api.com';
+const KODIK_PLAYER = 'https://kodikplayer.com';
+const KODIK_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126 Safari/537.36';
+const EGRESS_ALLOW = [
+  'anilibria.top', 'aniliberty.top', 'libria.fun',
+  'kodik-api.com', 'kodik.dev', 'kodikplayer.com', 'kodik.info', 'kodik.cc', 'kodikcdn.com',
+  'solodcdn.com', 'raw.githubusercontent.com'
+];
+(process.env.EGRESS_EXTRA || '').split(',').filter(Boolean).forEach(d => EGRESS_ALLOW.push(d.trim().toLowerCase()));
+
+const _kCache = new Map();                      // key -> {at, val}
+function kCacheGet(k, ttl) {
+  const e = _kCache.get(k);
+  if (!e) return null;
+  if (Date.now() - e.at > ttl) { _kCache.delete(k); return null; }
+  return e.val;
+}
+function kCacheSet(k, v) {
+  if (_kCache.size >= 256) _kCache.delete(_kCache.keys().next().value);
+  _kCache.set(k, { at: Date.now(), val: v });
+}
+
+async function egressCheck(rawUrl) {
+  let u;
+  try { u = new URL(rawUrl); } catch { throw new Error('плохой URL'); }
+  if (u.protocol !== 'https:' && u.protocol !== 'http:') throw new Error('разрешены только http(s)');
+  const host = (u.hostname || '').toLowerCase().replace(/\.$/, '');
+  if (!EGRESS_ALLOW.some(d => host === d || host.endsWith('.' + d))) throw new Error('host не в белом списке: ' + host);
+  try {
+    const addrs = await dnsProm.lookup(host, { all: true });
+    for (const a of addrs) {
+      if (/^(10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|0\.|22[4-9]\.|23\d\.)/.test(a.address))
+        throw new Error('хост ' + host + ' указывает на закрытый адрес ' + a.address);
+    }
+  } catch (e) {
+    if (/закрытый адрес/.test(String(e.message))) throw e;
+    throw new Error('DNS не разрешился: ' + host);
+  }
+  return u.toString();
+}
+async function kGet(url, timeout) {
+  const safe = await egressCheck(url);
+  const r = await fetch(safe, { headers: { 'User-Agent': KODIK_UA }, signal: AbortSignal.timeout(timeout || 20000), redirect: 'follow' });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  return r;
+}
+function kRot(s, n) {
+  let out = '';
+  for (const c of s) {
+    if (/[a-z]/.test(c)) out += String.fromCharCode((c.charCodeAt(0) - 97 + n) % 26 + 97);
+    else if (/[A-Z]/.test(c)) out += String.fromCharCode((c.charCodeAt(0) - 65 + n) % 26 + 65);
+    else out += c;
+  }
+  return out;
+}
+function kDecode(s) {
+  if (s.includes('mp4:hls:manifest')) return s;
+  for (let n = 0; n < 26; n++) {
+    const t = kRot(s, n) + '='.repeat((4 - (kRot(s, n).length % 4)) % 4);
+    try {
+      const d = Buffer.from(t, 'base64').toString('utf8');
+      if (d.includes('mp4:hls:manifest')) return d;
+    } catch {}
+  }
+  throw new Error('не удалось расшифровать ссылку');
+}
+
+/* --- /kodik-proxy/:op — форвард к Kodik API (search/translations/...) --- */
+app.get('/kodik-proxy/:op', async (q, r) => {
+  try {
+    const qs = new URLSearchParams(q.query).toString();
+    const url = KODIK_UPSTREAM + '/' + encodeURIComponent(q.params.op) + (qs ? '?' + qs : '');
+    const resp = await kGet(url, 12000);
+    const txt = await resp.text();
+    r.status(resp.status).type('application/json').send(txt);
+  } catch (e) {
+    r.status(502).type('application/json').send(JSON.stringify({ error: 'kodik-proxy: ' + e.message }));
+  }
+});
+
+/* --- /kodik/resolve — прямые m3u8-ссылки из плеера Kodik (серверный алгоритм) --- */
+app.get('/kodik/resolve', async (q, r) => {
+  const { id, hash, type } = q.query;
+  if (!id || !hash || !type) return r.status(400).json({ error: 'нужны id, hash, type' });
+  const key = type + '|' + id + '|' + hash;
+  const hit = kCacheGet(key, 1500000);
+  if (hit) return r.json(hit);
+  try {
+    const page = await (await kGet(`${KODIK_PLAYER}/${encodeURIComponent(type)}/${encodeURIComponent(id)}/${encodeURIComponent(hash)}/720p`, 15000)).text();
+    const up = page.indexOf('urlParams');
+    let urlParams = null;
+    const mStr = page.slice(up).match(/=\s*'(\{[\s\S]*?\})'\s*;/);
+    if (mStr) { try { urlParams = JSON.parse(mStr[1]); } catch {} }
+    if (!urlParams) {
+      const b = page.indexOf('{', up), e = page.indexOf('};', up);
+      if (b > 0 && e > b) { try { urlParams = JSON.parse(page.slice(b, e + 1)); } catch {} }
+    }
+    if (!urlParams) throw new Error('urlParams не найдены');
+    const sm = page.match(/<script[^>]*src="(\/assets\/js\/app\.(?:player|serial|movie|video|film)[^"]+)"/) ||
+               page.match(/<script[^>]*src="(\/assets\/js\/app\.[^"]+)"/);
+    if (!sm) throw new Error('не найден скрипт плеера');
+    const val = k => { const m = page.match(new RegExp('\\.' + k + " = '([^']+)'")); return m && m[1]; };
+    const vtype = val('type'), vhash = val('hash'), vid = val('id');
+    if (!vtype || !vhash || !vid) throw new Error('параметры плеера не найдены');
+    const skip = [];
+    const skm = page.match(/parseSkipButton\("([^"]*)"/);
+    if (skm && skm[1]) {
+      for (const seg of skm[1].split(',')) {
+        if (!seg.includes('-')) continue;
+        const [a, b] = seg.split('-');
+        const p = t => t.split(':').reduce((x, y) => +x * 60 + +y, 0);
+        skip.push([p(a), p(b)]);
+      }
+    }
+    const js = await (await kGet(KODIK_PLAYER + sm[1], 15000)).text();
+    const ai = js.indexOf('$.ajax'), ci = js.indexOf('cache:!1');
+    if (ai < 0 || ci < 0) throw new Error('алгоритм изменился');
+    const postLink = Buffer.from(js.slice(ai + 30, ci - 3), 'base64').toString('utf8');
+    const qs = new URLSearchParams({
+      hash: vhash, id: vid, type: vtype,
+      d: urlParams.d, d_sign: urlParams.d_sign,
+      pd: urlParams.pd, pd_sign: urlParams.pd_sign,
+      ref: '', ref_sign: urlParams.ref_sign,
+      bad_user: 'true', cdn_is_working: 'true'
+    }).toString();
+    const pr = await fetch(await egressCheck(KODIK_PLAYER + postLink), {
+      method: 'POST',
+      body: qs,
+      headers: { 'User-Agent': KODIK_UA, 'Content-Type': 'application/x-www-form-urlencoded', 'Referer': `${KODIK_PLAYER}/${type}/${id}/${hash}/720p` },
+      signal: AbortSignal.timeout(15000)
+    });
+    const data = await pr.json();
+    const links = {};
+    for (const [quality, arr] of Object.entries(data.links || {})) {
+      try { links[quality] = kDecode(arr[0].src); } catch {}
+    }
+    if (!Object.keys(links).length) throw new Error('пустой список ссылок');
+    const out = { links, max: Math.max(...Object.keys(links).map(Number)), skip };
+    kCacheSet(key, out);
+    r.json(out);
+  } catch (e) {
+    r.status(502).json({ error: 'kodik resolve: ' + e.message });
+  }
+});
+
+/* --- /kodik/hls — прокси манифестов и сегментов + вырезание рекламных блоков --- */
+const _AD_RE = /(\/ads?[\/._-]|\/ad\/|advert|preroll|midroll|adcreative|adfox|doubleclick|googlesynd|adservice|adsystem|an\.yandex|adriver|\/promo)/i;
+const _HEADER_TAG = /^#EXT-X-(TARGETDURATION|VERSION|MEDIA-SEQUENCE|DISCONTINUITY-SEQUENCE|PLAYLIST-TYPE|ALLOW-CACHE|INDEPENDENT-SEGMENTS|START)[:\s]/i;
+const _URI_RE = /URI="([^"]+)"/g;
+function kGuessType(url) {
+  const p = (new URL(url)).path || '';
+  const path = (new URL(url)).pathname.toLowerCase();
+  if (path.endsWith('.m3u8')) return 'application/vnd.apple.mpegurl';
+  if (path.endsWith('.ts')) return 'video/mp2t';
+  if (path.endsWith('.m4s')) return 'video/iso.segment';
+  if (path.endsWith('.mp4')) return 'video/mp4';
+  if (path.endsWith('.vtt')) return 'text/vtt';
+  if (path.endsWith('.aac')) return 'audio/aac';
+  return 'application/octet-stream';
+}
+app.get('/kodik/hls', async (q, r) => {
+  const target = String(q.query.url || '');
+  try {
+    const safe = await egressCheck(target);
+    const resp = await fetch(safe, { headers: { 'User-Agent': KODIK_UA }, signal: AbortSignal.timeout(20000), redirect: 'follow' });
+    if (!resp.ok) return r.status(resp.status).send('upstream ' + resp.status);
+    const ct = resp.headers.get('content-type') || '';
+    const buf = Buffer.from(await resp.arrayBuffer());
+    const isManifest = target.includes('.m3u8') || buf.slice(0, 20).toString('utf8').trimStart().startsWith('#EXTM3U');
+    if (!isManifest) return r.type(ct || kGuessType(target)).send(buf);
+    // --- манифест: переписываем пути, режем рекламные DISCONTINUITY-блоки ---
+    const units = [], header = [], trailer = [];
+    let pending = [], disco = false;
+    for (let ln of buf.toString('utf8').split('\n')) {
+      const s = ln.trim();
+      if (!s) continue;
+      if (s === '#EXTM3U') continue;
+      if (!s.startsWith('#')) {
+        units.push({ tags: pending, seg: new URL(s, target).toString(), disco });
+        pending = []; disco = false;
+        continue;
+      }
+      if (s.startsWith('#EXT-X-DISCONTINUITY') && !s.startsWith('#EXT-X-DISCONTINUITY-SEQUENCE')) disco = true;
+      else if (_HEADER_TAG.test(s)) header.push(s);
+      else if (s.startsWith('#EXT-X-ENDLIST')) trailer.push(s);
+      else pending.push(s);
+    }
+    trailer.push(...pending);
+    if (!units.length) return r.type('application/vnd.apple.mpegurl').send(buf);
+    const groups = []; let cur = [];
+    for (const u of units) {
+      if (u.disco && cur.length) { groups.push(cur); cur = []; }
+      cur.push(u);
+    }
+    if (cur.length) groups.push(cur);
+    const out = []; let removed = 0;
+    const wrapUri = line => line.replace(_URI_RE, (m, u1) => 'URI="/kodik/hls?url=' + encodeURIComponent(new URL(u1, target).toString()) + '"');
+    for (const g of groups) {
+      const gsegs = g.map(u => u.seg);
+      const wholeAd = g[0].disco && gsegs.every(x => _AD_RE.test(x));
+      if (wholeAd) { removed += gsegs.length; continue; }
+      if (g[0].disco) out.push('#EXT-X-DISCONTINUITY');
+      for (const u of g) {
+        if (_AD_RE.test(u.seg)) { removed++; continue; }
+        out.push(...u.tags.map(wrapUri));
+        out.push('/kodik/hls?url=' + encodeURIComponent(u.seg));
+      }
+    }
+    if (removed && !out.some(l => l.startsWith('/kodik/hls')))
+      return r.type('application/vnd.apple.mpegurl').send(buf);
+    let body = ['#EXTM3U', ...header, ...out, ...trailer];
+    if (removed) body.splice(1, 0, '# AniHub: вырезано рекламных сегментов: ' + removed);
+    r.type('application/vnd.apple.mpegurl').send(body.join('\n'));
+  } catch (e) {
+    r.status(502).send('kodik hls: ' + e.message);
+  }
+});
+/* ==== конец Kodik-шлюза ==================================================== */
+
 server.listen(PORT, () => console.log('anihub-rooms on :' + PORT));
