@@ -474,6 +474,22 @@ const NICK_RE = /^[A-Za-zА-Яа-яЁё0-9_\- ]{2,24}$/;
 const nickClean = v => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, '').trim().slice(0, 24);
 const avaOk = v => typeof v === 'string' && v.startsWith('data:image/') && v.length < 150000 ? v : '';
 
+/* ---- аккаунты v17.34: scrypt-пароли с солью, токены сессий, почта ---- */
+const crypto = require('crypto');
+const scryptHash = (pass, salt) => crypto.scryptSync(String(pass), salt, 32).toString('hex');
+const newSalt = () => crypto.randomBytes(8).toString('hex');
+const newToken = () => crypto.randomBytes(24).toString('hex');
+const emailOk = v => typeof v === 'string' && v.length < 190 && /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/.test(v.trim()) ? v.trim().toLowerCase() : '';
+const passVerify = (u, pass) => {
+  if (u.salt && u.hash) { try { return crypto.timingSafeEqual(Buffer.from(u.hash, 'hex'), Buffer.from(scryptHash(pass, u.salt), 'hex')); } catch { return false; } }
+  if (u.pass) { const ok = u.pass === sha256(pass); if (ok) { u.salt = newSalt(); u.hash = scryptHash(pass, u.salt); delete u.pass; } return ok; }
+  return false;
+};
+const tokenIssue = u => { const t = newToken(); u.tokens = u.tokens || {}; u.tokens[t] = { at: Date.now() };
+  const ks = Object.keys(u.tokens); if (ks.length > 10) ks.sort((a, b) => (u.tokens[a].at||0) - (u.tokens[b].at||0)).slice(0, ks.length - 10).forEach(k => delete u.tokens[k]); return t; };
+const tokenUser = t => { if (!t || typeof t !== 'string') return null; for (const u of usersState.values()) if (u.tokens && u.tokens[t]) return u; return null; };
+const pubUser = u => ({ nick: u.nick, email: u.email || '', avatar: u.avatar || '' });
+
 app.get('/api/user/:nick', (req, res) => {
   const k = nickClean(req.params.nick).toLowerCase();
   const u = usersState.get(k);
@@ -489,25 +505,59 @@ app.post('/api/users', (req, res) => {
     if (!NICK_RE.test(nick) || /^гость$/i.test(nick))
       return res.status(400).json({ error: 'ник 2–24 символа: буквы, цифры, пробел, _ или -' });
     if (pass.length < 4) return res.status(400).json({ error: 'пароль минимум 4 символа' });
+    const email = b.email != null && b.email !== '' ? emailOk(b.email) : '';
+    if (b.email != null && b.email !== '' && !email) return res.status(400).json({ error: 'почта не похоже на почту' });
+    if (email) for (const u of usersState.values()) if (u.email && u.email === email && u.nick.toLowerCase() !== nick.toLowerCase())
+      return res.status(409).json({ error: 'почта уже привязана к другому нику' });
     const k = nick.toLowerCase();
     const u = usersState.get(k);
-    if (u && u.pass !== sha256(pass)) return res.status(409).json({ error: 'ник уже занят' });
-    const avatar = avaOk(b.avatar) || (u ? u.avatar : '');
-    usersState.set(k, { nick, pass: sha256(pass), avatar, at: Date.now() });
-    usrSave();
-    return res.json({ ok: true, nick, avatar, taken: !!u });
+    if (u) {
+      if (!passVerify(u, pass)) return res.status(409).json({ error: 'ник уже занят' });
+      if (email && !u.email) u.email = email;
+      u.at = Date.now(); usrSave();
+      return res.json({ ok: true, nick: u.nick, avatar: u.avatar || '', email: u.email || '', taken: true, token: tokenIssue(u) });
+    }
+    const nu = { nick, salt: newSalt(), hash: scryptHash(pass, newSalt()), email, avatar: avaOk(b.avatar), at: Date.now(), tokens: {} };
+    nu.hash = scryptHash(pass, nu.salt);
+    usersState.set(k, nu); usrSave();
+    return res.json({ ok: true, nick, avatar: nu.avatar, email, taken: false, token: tokenIssue(nu) });
   }
   if (act === 'login') {
-    const u = usersState.get(nick.toLowerCase());
-    if (!u || u.pass !== sha256(pass)) return res.status(403).json({ error: 'неверный ник или пароль' });
-    return res.json({ ok: true, nick: u.nick, avatar: u.avatar || '' });
+    const lg = String(b.login == null ? '' : b.login).trim().slice(0, 190);
+    if (!lg) return res.status(400).json({ error: 'укажите ник или почту' });
+    let u = null;
+    if (lg.includes('@')) { for (const x of usersState.values()) if (x.email && x.email.toLowerCase() === lg.toLowerCase()) { u = x; break; } }
+    else u = usersState.get(nickClean(lg).toLowerCase());
+    if (!u || !passVerify(u, pass)) return res.status(403).json({ error: 'неверный ник (или почта) или пароль' });
+    u.at = Date.now(); usrSave();
+    return res.json(Object.assign({ ok: true, taken: true, token: tokenIssue(u) }, pubUser(u)));
+  }
+  if (act === 'chpass') {
+    const lg = String(b.login == null ? '' : b.login).trim().slice(0, 190);
+    const n1 = String(b.new1 == null ? '' : b.new1);
+    let u = null;
+    if (lg.includes('@')) { for (const x of usersState.values()) if (x.email && x.email.toLowerCase() === lg.toLowerCase()) { u = x; break; } }
+    else u = usersState.get(nickClean(lg).toLowerCase());
+    if (!u || !passVerify(u, pass)) return res.status(403).json({ error: 'старый пароль неверный' });
+    if (n1.length < 4) return res.status(400).json({ error: 'новый пароль минимум 4 символа' });
+    u.salt = newSalt(); u.hash = scryptHash(n1, u.salt); u.at = Date.now(); usrSave();
+    return res.json({ ok: true, token: tokenIssue(u) });
+  }
+  if (act === 'bytoken') {
+    const u = tokenUser(b.token);
+    if (!u) return res.status(403).json({ ok: false, error: 'сессия истекла' });
+    return res.json(Object.assign({ ok: true }, pubUser(u)));
   }
   if (act === 'setava') {
-    const u = usersState.get(nick.toLowerCase());
-    if (!u || u.pass !== sha256(pass)) return res.status(403).json({ error: 'нет доступа' });
-    u.avatar = avaOk(b.avatar);
-    u.at = Date.now();
-    usrSave();
+    let u = tokenUser(b.token);
+    if (!u && b.nick) { const x = usersState.get(nickClean(b.nick).toLowerCase()); if (x && String(b.pass || '') && passVerify(x, String(b.pass))) u = x; }
+    if (!u) return res.status(403).json({ error: 'нет доступа' });
+    u.avatar = avaOk(b.avatar); u.at = Date.now(); usrSave();
+    return res.json({ ok: true });
+  }
+  if (act === 'logout') {
+    const u = tokenUser(b.token);
+    if (u) { delete (u.tokens || {})[String(b.token)]; usrSave(); }
     return res.json({ ok: true });
   }
   res.status(400).json({ error: 'неизвестное действие' });
