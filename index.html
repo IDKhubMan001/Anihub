@@ -191,7 +191,7 @@ footer.foot{margin-top:90px;border-top:1px solid var(--line);background:var(--bg
 <script>/* APP */
 (()=>{
 'use strict';
-const BUILD='2026-10-27 v17.37 · фильмы и продолжения в списках: в каталог добавлены популярные фильмы (Shikimori movie + AniList TV/MOVIE), живой поиск в шапке ищет по всем видам (не только ТВ), страница каталога при пустом локальном результате показывает живой поиск Shikimori (фильмы, продолжения — например, Girl und Panzer das Finale)';
+const BUILD='2026-10-27 v17.38 · «Порядок просмотра» показывает всю франшизу: идём вглубь по цепочке пре/сиквелов AniList (das Finale части 2–5, вторые сезоны), а не только первый уровень связей; спин-оффы дедуплицированы, до 18 позиций';
 const STUDIO_SNAPSHOT={"date":"10.10.2026","days":[{"name":"Понедельник","entries":[{"time":"16:10","title":"Я влюбился в тебя, когда ты бежала в лунной ночи"},{"time":"16:30","title":"Тайная битва за престол сильнейшего принца-дуралея"},{"time":"18:10","title":"Разгневанная леди поклялась отомстить"},{"time":"18:15","title":"Мир танцует"},{"time":"18:30","title":"Аккуратная и симпатичная девочка в моей новой школе"},{"time":"18:40","title":"Рыцарь-скелет вступает в параллельный мир 2"},{"time":"18:55","title":"Необъятный океан 3"},{"time":"20:20","title":"Игра лжецов"},{"time":"21:15","title":"Отверженная святая и её гастрономическое путешествие в другом мире"}]},{"name":"Вторник","entries":[{"time":"13:10","title":"Призрак в доспехах"},{"time":"17:10","title":"Забывчивая святая дева неосознанно изливает свою силу"},{"time":"22:55","title":"Непревзойдённый"},{"time":"19:15","title":"Истинные чудотворные рыцари 2"},{"time":"22:05","title":"Красная река"},{"time":"23:00","title":"Виктория с множеством козырей"}]},{"name":"Среда","entries":[{"time":"15:45","title":"Клеватесс 2"},{"time":"17:05","title":"Военная хроника маленькой девочки 2"},{"time":"18:00","title":"Мир отомэ-игр — это тяжелый мир для мобов 2"},{"time":"18:10","title":"Героиня? Святая? Нет, я всемогущая горничная!"},{"time":"19:45","title":"Для тебя во всём цвету 2"},{"time":"20:10","title":"Крестьянин 999-го уровня"},{"time":"20:20","title":"Тройной шторм"},{"time":"20:40","title":"Старик из деревни становится Святым мечом"}]},{"name":"Четверг","entries":[{"time":"09:45","title":"Для тебя во всём цвету 2"},{"time":"16:15","title":"Дара из Рэйвы"},{"time":"16:30","title":"Бродячие псы: Шуточные истории 2"},{"time":"18:25","title":"Ура мечте! Бесконечная мечта"},{"time":"18:45","title":"Пыль Мёбиуса"},{"time":"19:45","title":"Табакошка"},{"time":"19:50","title":"Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры"},{"time":"20:00","title":"Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга"},{"time":"21:05","title":"Монстрик Карамелька"}]},{"name":"Пятница","entries":[{"time":"18:20","title":"Прошло десять лет с момента, как я стал легендой"},{"time":"18:30","title":"О моём перерождении в слизь 4"},{"time":"19:00","title":"Население приграничного владения начинается с нуля"},{"time":"19:10","title":"Нарисуй это, потом умри"},{"time":"20:10","title":"Пожалуйста, простите моих младших братьев"},{"time":"20:15","title":"Адский режим 2"},{"time":"20:45","title":"Юный лорд — мастер побега 2"},{"time":"22:10","title":"Слёзы Бога"}]},{"name":"Суббота","entries":[{"time":"13:10","title":"Добро пожаловать в ад, Ирума! 4"},{"time":"14:10","title":"Власть книжного червя 4"},{"time":"16:45","title":"Чёрный факел"},{"time":"17:55","title":"Рекомендация старшеклассника Ивамото"},{"time":"20:15","title":"Шатёр чародея"},{"time":"20:35","title":"Шоу для взрослых: Цирк «Подсолнух»"},{"time":"20:40","title":"Следующий герцог, который скажет: «Я не хочу любить тебя», будет любить тебя по какой-то причине"},{"time":"20:50","title":"Невеста демона"},{"time":"20:55","title":"Лиричная волшебница Наноха: Опередители — Огненный выстрел возмездия"},{"time":"21:00","title":"Кот и дракон"},{"time":"21:10","title":"Ханаори хочет драться даже после перерождения"},{"time":"21:40","title":"Забота об одарённой девушке"},{"time":"22:30","title":"Мао"},{"time":"22:50","title":"Цугаи загробного мира"}]},{"name":"Воскресенье","entries":[{"time":"10:10","title":"Компания «Маги-Люмьер» 2"},{"time":"11:55","title":"Вперёд, отряд мистики!"},{"time":"12:00","title":"Прощай, Лара"},{"time":"12:10","title":"Ты и я полные противоположности"},{"time":"12:20","title":"Железный котелок Жана!"},{"time":"16:25","title":"Самый сильный в мире заступник"},{"time":"17:40","title":"История электричества в двадцатом веке"},{"time":"17:50","title":"Сто девушек 3"},{"time":"18:40","title":"Дигимоны: Битбрейк"},{"time":"18:50","title":"Реинкарнация безработного 3"},{"time":"19:20","title":"Чёрная кошка и класс ведьм"},{"time":"19:40","title":"Хоть я и бездарная злодейка"},{"time":"20:10","title":"Лазурный путь: Малый вперёд! 2"}]}]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1365,15 +1365,33 @@ async function pageTitle(id){
         const KIND={TV:'ТВ-сезон',TV_SHORT:'ТВ-спешл',OVA:'OVA',ONA:'ONA',SPECIAL:'Спец. выпуск',MOVIE:'Фильм'};
         const RK={TV:0,TV_SHORT:1,OVA:2,ONA:3,SPECIAL:4,MOVIE:5};
         const OK=new Set(['PREQUEL','SEQUEL','SIDE_STORY','SPIN_OFF']);
-        const raw=[];
-        if(dd&&dd.Media&&dd.Media.relations)dd.Media.relations.edges.forEach(e=>{const n=e&&e.node;if(!n||!n.format||n.format==='MANGA'||n.format==='NOVEL'||n.format==='ONE_SHOT')return;if(!OK.has(e.relationType))return;
-          raw.push({_al:true,_alid:n.id,_mal:n.idMal||0,_rel:e.relationType,_kind:KIND[n.format]||n.format,_fmt:n.format,_year:n.startDate&&n.startDate.year||9999,title:n.title&&(n.title.userPreferred||n.title.romaji||n.title.english)||'Без названия',_epsTxt:n.episodes?n.episodes+' сер.':'',type:n.format==='MOVIE'?'movie':'anime',translation:{title:'Kodik'},material_data:{duration:24},year:n.startDate&&n.startDate.year||0})});
+        const FRQ='query($id:Int){Media(id:$id,type:ANIME){relations{edges{relationType node{id idMal format title{userPreferred romaji english} startDate{year} episodes}}}}}';
+        const mkEntry=(n,rel)=>({_al:true,_alid:n.id,_mal:n.idMal||0,_rel:rel||'',_kind:KIND[n.format]||n.format,_fmt:n.format,_year:n.startDate&&n.startDate.year||9999,title:n.title&&(n.title.userPreferred||n.title.romaji||n.title.english)||'Без названия',_epsTxt:n.episodes?n.episodes+' сер.':'',type:n.format==='MOVIE'?'movie':'anime',translation:{title:'Kodik'},material_data:{duration:24},year:n.startDate&&n.startDate.year||0});
         const byY=(a,b)=>(a._year-b._year)||((RK[a._fmt]??9)-(RK[b._fmt]??9))||String(a.title).localeCompare(String(b.title));
-        const pre=raw.filter(x=>x._rel==='PREQUEL').sort(byY);
-        const seq=raw.filter(x=>x._rel==='SEQUEL').sort(byY);
-        const side=raw.filter(x=>x._rel==='SIDE_STORY'||x._rel==='SPIN_OFF').sort(byY);
+        /* вся цепочка франшизы: идём вглубь по пре/сиквелам (das Finale 2–5, вторые сезоны), спин-оффы — по бокам */
+        const chain=new Map(),sideRaw=[];
+        const first=[];
+        if(dd&&dd.Media&&dd.Media.relations)dd.Media.relations.edges.forEach(e=>{const n=e&&e.node;if(!n||!n.id||!n.format||n.format==='MANGA'||n.format==='NOVEL'||n.format==='ONE_SHOT')return;if(!OK.has(e.relationType))return;
+          if(e.relationType==='PREQUEL'||e.relationType==='SEQUEL'){if(n.id!==aid&&!chain.has(n.id)){chain.set(n.id,mkEntry(n,e.relationType));first.push(n.id)}}
+          else sideRaw.push(mkEntry(n,e.relationType))});
+        let frontier=first.slice(0,6);
+        for(let depth=0;depth<4&&frontier.length;depth++){
+          const wave=await Promise.all(frontier.map(fid=>withTimeout(anilistQ(FRQ,{id:fid}).catch(()=>null),12000,'fr')));
+          if(my!==nav)return;
+          const next=[];
+          for(const d2 of wave){const edges=d2&&d2.Media&&d2.Media.relations&&d2.Media.relations.edges||[];
+            for(const e of edges){const n=e&&e.node;if(!n||!n.id||!n.format||n.format==='MANGA'||n.format==='NOVEL'||n.format==='ONE_SHOT')continue;
+              if(e.relationType==='PREQUEL'||e.relationType==='SEQUEL'){if(n.id!==aid&&!chain.has(n.id)){chain.set(n.id,mkEntry(n,e.relationType));next.push(n.id)}}
+              else if(e.relationType==='SIDE_STORY'||e.relationType==='SPIN_OFF'){if(!sideRaw.some(x=>x._alid===n.id))sideRaw.push(mkEntry(n,e.relationType))}}}
+          frontier=next.slice(0,6);
+        }
         const cur={_cur:true,_kind:'вы смотрите здесь',title:t.title,_year:t.year||9999,_epsTxt:eps.length+' сер.',type:'anime'};
-        parts=[...pre,cur,...seq,...side].slice(0,14);
+        const curY=t.year||9999;
+        const all=[...chain.values()];
+        const pre=all.filter(x=>x._year<curY).sort(byY);
+        const seq=all.filter(x=>x._year>=curY).sort(byY);
+        const side=sideRaw.filter(x=>!chain.has(x._alid)).sort(byY);
+        parts=[...pre,cur,...seq,...side].slice(0,18);
         if(my!==nav)return;
         render();
         bind('part',parts,gotoPart);
