@@ -25,7 +25,7 @@ app.use((q, r, next) => {
   r.header('Access-Control-Allow-Origin', '*');
   if (q.method === 'OPTIONS') {
     r.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-    r.header('Access-Control-Allow-Headers', 'Content-Type');
+    r.header('Access-Control-Allow-Headers', 'Content-Type,Authorization');
     return r.sendStatus(204);
   }
   next();
@@ -97,7 +97,7 @@ app.get('/api/rooms', (q, r) => {
 app.get('/api/room/:code', (req, res) => {
   const code = String(req.params.code || '').toUpperCase();
   const s = roomsState.get(code);
-  if (!s) return res.status(404).json({ error: 'комнаты нет на сервере' });
+  if (!s) return res.status(404).json({ error: 'комнаты нет на сервере', serverNow: Date.now() });
   const since = parseInt(req.query.since || '0', 10) || 0;
   if (s.rev <= since) {
     const set = waiters.get(code) || new Set(); waiters.set(code, set);
@@ -105,17 +105,17 @@ app.get('/api/room/:code', (req, res) => {
     const fire = () => {
       if (fired) return; fired = true; set.delete(fire);
       const s2 = roomsState.get(code);
-      if (!s2) return res.status(404).json({ error: 'комнаты нет на сервере' });
-      res.json({ rev: s2.rev, data: s2.data, hb: hbOut(code) });
+      if (!s2) return res.status(404).json({ error: 'комнаты нет на сервере', serverNow: Date.now() });
+      res.json({ rev: s2.rev, data: s2.data, hb: hbOut(code), serverNow: Date.now() });
     };
     set.add(fire);
     setTimeout(fire, 20000);
     return;
   }
-  res.json({ rev: s.rev, data: s.data, hb: hbOut(code) });
+  res.json({ rev: s.rev, data: s.data, hb: hbOut(code), serverNow: Date.now() });
 });
 
-/* действия: put / sync / hb */
+/* действия: put / sync / hb / allowLinks */
 app.post('/api/room/:code', (req, res) => {
   const code = String(req.params.code || '').toUpperCase();
   const body = req.body || {};
@@ -125,17 +125,63 @@ app.post('/api/room/:code', (req, res) => {
     const data = body.data || {};
     if (typeof data !== 'object' || JSON.stringify(data).length > 900000)
       return res.status(413).json({ error: 'слишком большие данные комнаты' });
+    if (s && s.data) {
+      if (s.data.members && data.members && typeof data.members === 'object') {
+        for (const [uid2, prevM] of Object.entries(s.data.members)) {
+          if (!data.members[uid2]) {
+            data.members[uid2] = prevM;
+          } else if (typeof data.members[uid2].allowLinks !== 'boolean' && typeof prevM.allowLinks === 'boolean') {
+            data.members[uid2].allowLinks = prevM.allowLinks;
+          }
+        }
+      }
+      if (Array.isArray(s.data.log) && s.data.log.length) {
+        data.log = Array.isArray(data.log) ? data.log : [];
+        for (const lg of s.data.log) {
+          if (lg && !data.log.some(x => x && x.action === lg.action && x.target === lg.target && Math.abs((x.at || 0) - (lg.at || 0)) < 3000)) {
+            data.log.unshift(lg);
+          }
+        }
+        data.log.sort((a, b) => (b.at || 0) - (a.at || 0));
+        data.log = data.log.slice(0, 100);
+      }
+    }
+    sanitizeRoomPut(code, data, s);
     if (s) { s.data = data; s.rev++; s.at = Date.now(); }
-    else { roomsState.set(code, { rev: 1, data, at: Date.now() }); }
+    else {
+      const seen = new Set(((data && data.msgs) || []).map(m => m && m.id).filter(Boolean));
+      roomsState.set(code, { rev: 1, data, at: Date.now(), seenMsgs: seen });
+    }
     notifyWaiters(code);
-    return res.json({ rev: roomsState.get(code).rev });
+    return res.json({ rev: roomsState.get(code).rev, serverNow: Date.now() });
   }
-  if (!s) return res.status(404).json({ error: 'комнаты нет на сервере' });
+  if (!s) return res.status(404).json({ error: 'комнаты нет на сервере', serverNow: Date.now() });
+  if (act === 'allowLinks') {
+    const byId = String(body.byUid || '');
+    const targetId = String(body.targetUid || '');
+    const mems = (s.data && s.data.members) || {};
+    const actor = mems[byId];
+    const target = mems[targetId];
+    if (!actor || !['streamer', 'moderator'].includes(actor.role))
+      return res.status(403).json({ error: 'разрешать ссылки может только стример или модератор', serverNow: Date.now() });
+    if (!target) return res.status(404).json({ error: 'участник не найден в комнате', serverNow: Date.now() });
+    target.allowLinks = body.allow !== undefined ? !!body.allow : !target.allowLinks;
+    s.data.msgs = s.data.msgs || [];
+    const mid = 'sys_' + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+    s.data.msgs.push({
+      id: mid, sys: true, at: Date.now(),
+      body: '🔗 ' + (target.name || 'Участник') + ': ссылки в этой комнате ' + (target.allowLinks ? 'разрешены (' + (actor.name || 'модератор') + ')' : 'снова запрещены')
+    });
+    if (s.seenMsgs) s.seenMsgs.add(mid);
+    s.rev++; s.at = Date.now();
+    notifyWaiters(code);
+    return res.json({ ok: true, allowLinks: target.allowLinks, rev: s.rev, serverNow: Date.now() });
+  }
   if (act === 'sync') {
     s.data.sync = { st: body.st, uid: body.uid, name: body.name, at: Date.now() };
     s.rev++; s.at = Date.now();
     notifyWaiters(code);
-    return res.json({ rev: s.rev });
+    return res.json({ rev: s.rev, serverNow: Date.now() });
   }
   if (act === 'hb') {
     const m = roomsHB.get(code) || {};
@@ -143,7 +189,7 @@ app.post('/api/room/:code', (req, res) => {
     const now = Date.now();
     for (const k of Object.keys(m)) if (now - m[k] > 120000) delete m[k];
     roomsHB.set(code, m);
-    return res.json({ ok: true });
+    return res.json({ ok: true, serverNow: now });
   }
   return res.status(400).json({ error: 'неизвестное действие' });
 });
@@ -187,7 +233,7 @@ app.get('/api/comments/:tid', (req, res) => {
   const tid = tidOk(req.params.tid);
   if (!tid) return res.status(400).json({ error: 'плохой id тайтла' });
   const s = commentsState.get(tid);
-  const out = () => res.json({ rev: s ? s.rev : 0, list: s ? s.list.slice(-400) : [] });
+  const out = () => res.json({ rev: s ? s.rev : 0, list: s ? s.list.slice(-400) : [], serverNow: Date.now() });
   if (req.query.since === undefined) return out();
   const since = parseInt(req.query.since, 10) || 0;
   if (s && s.rev > since) return out();
@@ -209,7 +255,42 @@ app.post('/api/comments/:tid', (req, res) => {
   if (!s) { s = { rev: 0, list: [], at: Date.now() }; commentsState.set(tid, s); }
   if (act === 'add') {
     const text = cmtClean(b.text, 1200);
-    if (!text) return res.status(400).json({ error: 'пустой комментарий' });
+    if (!text) return res.status(400).json({ error: 'пустой комментарий', serverNow: Date.now() });
+    const now = Date.now();
+    const authorName = (tokenUser(b.token) && tokenUser(b.token).nick) || cmtClean(b.name, 24) || 'Гость';
+    const pen0 = getPenRecord(b.token, authorName, uid, false);
+    if (pen0) {
+      if (pen0.permBan)
+        return res.status(403).json({ error: 'Чат и комментарии заблокированы навсегда без права обжалования', code: 'PERM_BAN', serverNow: now, mod: pubPen(pen0) });
+      if ((pen0.tempBanUntil || 0) > now)
+        return res.status(403).json({ error: 'Чат и комментарии временно заблокированы', code: 'TEMP_BAN', serverNow: now, mod: pubPen(pen0) });
+      if ((pen0.mutedUntil || 0) > now)
+        return res.status(403).json({ error: 'Вы в муте ещё ' + Math.ceil((pen0.mutedUntil - now) / 1000) + ' сек', code: 'MUTED', serverNow: now, mod: pubPen(pen0) });
+    }
+    if (hasLink(text)) {
+      const stLink = recordStrike({ token: b.token, nick: authorName, uid, kind: 'link', where: 'cmt:' + tid });
+      return res.status(403).json({
+        error: stLink.permBan
+          ? 'Ссылка удалена: аккаунт заблокирован навсегда за систематические нарушения'
+          : stLink.tempBanned
+            ? 'Ссылка удалена: 5+ нарушений за 7 дней — временная блокировка чата и комментариев'
+            : 'Ссылки запрещены: сообщение мгновенно удалено, выдан мут на 5 минут',
+        code: stLink.permBan ? 'PERM_BAN' : (stLink.tempBanned ? 'TEMP_BAN' : 'LINK_MUTE'),
+        deleted: true, serverNow: stLink.serverNow, mod: stLink
+      });
+    }
+    if (isDirty(text)) {
+      const stDirty = recordStrike({ token: b.token, nick: authorName, uid, kind: 'profanity', where: 'cmt:' + tid });
+      return res.status(403).json({
+        error: stDirty.permBan
+          ? 'Сообщение удалено: аккаунт заблокирован навсегда'
+          : stDirty.tempBanned
+            ? 'Сообщение удалено: временная блокировка чата и комментариев'
+            : 'Нецензурная лексика: сообщение удалено, выдан мут на 5 минут',
+        code: stDirty.permBan ? 'PERM_BAN' : (stDirty.tempBanned ? 'TEMP_BAN' : 'DIRTY_MUTE'),
+        deleted: true, serverNow: stDirty.serverNow, mod: stDirty
+      });
+    }
     if (s.list.length >= 500) s.list = s.list.slice(-400);
     let parent = null, parentName = '';
     if (b.parent) {
@@ -221,12 +302,12 @@ app.post('/api/comments/:tid', (req, res) => {
     }
     const c = {
       id: Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4),
-      uid, name: cmtClean(b.name, 24) || 'Гость', text,
+      uid, name: authorName, text,
       at: Date.now(), parent, parentName, likes: [], dislikes: []
     };
     s.list.push(c); s.rev++; s.at = Date.now();
     cmtNotify(tid); cmtSave();
-    return res.json({ rev: s.rev, id: c.id });
+    return res.json({ rev: s.rev, id: c.id, serverNow: Date.now() });
   }
   if (act === 'vote') {
     const c = s.list.find(x => x.id === String(b.cid || '').slice(0, 24));
@@ -444,12 +525,18 @@ app.get('/api/profile/:name', (req, res) => {
     }
   }
   const just = (sanctions.get('user:' + k) || {}).just || 0;
+  const penProf = pubPen(getPenRecord(null, name, null, false));
+  const viewer = authFromReq(req);
+  const friendship = profileFriendship(viewer, k);
   res.json({
-    ok: true, name,
+    ok: true, name, serverNow: Date.now(),
+    hasAccount: usersState.has(k),
+    friendship,
+    mod: penProf,
     prof: prof ? { name: prof.name, hist: pub ? prof.hist : [], lists: pub ? prof.lists : {}, pub: prof.pub !== false, at: prof.at } : null,
     reports: { count: reports.length, list: reports.slice(-10), summary },
     msgs: msgs.slice(-30).reverse(),
-    status, punished: just > 10, just
+    status, punished: just > 10 || penProf.permBan || penProf.tempBanned, just
   });
 });
 
@@ -561,6 +648,522 @@ app.post('/api/users', (req, res) => {
     return res.json({ ok: true });
   }
   res.status(400).json({ error: 'неизвестное действие' });
+});
+
+/* ==================== v17.41: серверная анти-спам защита, Self-Pardon, друзья и ЛС ====================
+   Все таймеры наказаний, эскалаций и апелляций считаются СТРОГО по серверному Date.now()
+   (перевод часов на телефоне/ПК не влияет ни на проверки, ни на возвращаемые остатки времени). */
+const LINK_RE = /(?:https?:\/\/|ftp:\/\/|www\.|discord\.gg\/|t\.me\/|vk\.com\/|youtu\.be\/|bit\.ly\/|\b[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.(?:com|ru|net|org|io|gg|me|tv|xyz|info|site|online|top|club|dev|app|cc|kz|ua|by|su|pro|live|fun|ink|link|pw|click|shop)(?:\/|\b))/i;
+function hasLink(t) { return LINK_RE.test(String(t == null ? '' : t)); }
+
+const MUTE_5M_MS = 5 * 60 * 1000;
+const WIN_7D_MS = 7 * 86400 * 1000;
+const WIN_30D_MS = 30 * 86400 * 1000;
+const TEMP_BAN_MS = 7 * 86400 * 1000;
+const PARDON_CD_MS = 90 * 86400 * 1000; /* 3 месяца */
+
+const penaltiesState = new Map();
+const strikeDedup = new Map();
+try {
+  const j = JSON.parse(fs.readFileSync('penalties.json', 'utf8'));
+  for (const [k, v] of Object.entries(j || {})) penaltiesState.set(k, v);
+  console.log('penalties loaded:', penaltiesState.size);
+} catch {}
+let penSaveT = null;
+function penSave() {
+  clearTimeout(penSaveT);
+  penSaveT = setTimeout(() => {
+    try { fs.writeFileSync('penalties.json', JSON.stringify(Object.fromEntries(penaltiesState))); } catch {}
+  }, 2500);
+}
+
+function authFromReq(req) {
+  const b = (req && req.body) || {};
+  const q = (req && req.query) || {};
+  const hdr = String((req && req.headers && req.headers.authorization) || '').replace(/^Bearer\s+/i, '').trim();
+  const tok = b.token || q.token || hdr || '';
+  return tokenUser(tok);
+}
+
+function actorKeys(token, nick, uid) {
+  const keys = [];
+  const u = tokenUser(token);
+  const nk = u ? u.nick : nickClean(nick);
+  if (nk && !/^гость$/i.test(nk) && nk !== '?') keys.push('u:' + nk.toLowerCase());
+  const idClean = String(uid || '').replace(/[^A-Za-z0-9_:\-]/g, '').slice(0, 48);
+  if (idClean && idClean !== '?') keys.push('id:' + idClean);
+  return { keys, nick: nk || 'Гость', uid: idClean };
+}
+
+function getPenRecord(token, nick, uid, create) {
+  const { keys, nick: dispNick } = actorKeys(token, nick, uid);
+  if (!keys.length) return create ? { nick: dispNick, mutedUntil: 0, tempBanUntil: 0, permBan: false, onProbation: false, lastPardonAt: 0, strikes: [] } : null;
+  let primary = null;
+  for (const k of keys) {
+    const r = penaltiesState.get(k);
+    if (r) { primary = r; break; }
+  }
+  if (!primary) {
+    if (!create) return null;
+    primary = { nick: dispNick, mutedUntil: 0, tempBanUntil: 0, permBan: false, onProbation: false, lastPardonAt: 0, strikes: [] };
+  }
+  /* мёрджим, если ранее были записи по второму ключу (например до входа в аккаунт) */
+  for (const k of keys) {
+    const r = penaltiesState.get(k);
+    if (r && r !== primary) {
+      primary.mutedUntil = Math.max(primary.mutedUntil || 0, r.mutedUntil || 0);
+      primary.tempBanUntil = Math.max(primary.tempBanUntil || 0, r.tempBanUntil || 0);
+      primary.permBan = !!(primary.permBan || r.permBan);
+      primary.permReason = primary.permReason || r.permReason || '';
+      primary.onProbation = !!(primary.onProbation || r.onProbation);
+      primary.lastPardonAt = Math.max(primary.lastPardonAt || 0, r.lastPardonAt || 0);
+      const seen = new Set((primary.strikes || []).map(x => x.at + '|' + x.kind));
+      for (const s of (r.strikes || [])) {
+        const sk = s.at + '|' + s.kind;
+        if (!seen.has(sk)) { primary.strikes.push(s); seen.add(sk); }
+      }
+    }
+    if (create || penaltiesState.has(k)) penaltiesState.set(k, primary);
+  }
+  if (dispNick && dispNick !== 'Гость') primary.nick = dispNick;
+  return primary;
+}
+
+function pubPen(rec) {
+  const now = Date.now();
+  if (!rec) {
+    return {
+      serverNow: now, muted: false, mutedUntil: 0, muteLeftMs: 0,
+      tempBanned: false, tempBanUntil: 0, tempBanLeftMs: 0,
+      permBan: false, permReason: '', onProbation: false,
+      lastPardonAt: 0, pardonWaitMs: 0, canPardon: false,
+      strikes7d: 0, strikes30d: 0
+    };
+  }
+  const muteLeftMs = rec.permBan ? 0 : Math.max(0, (rec.mutedUntil || 0) - now);
+  const tempBanLeftMs = rec.permBan ? 0 : Math.max(0, (rec.tempBanUntil || 0) - now);
+  const pardonWaitMs = rec.lastPardonAt ? Math.max(0, (rec.lastPardonAt + PARDON_CD_MS) - now) : 0;
+  const strikes = Array.isArray(rec.strikes) ? rec.strikes : [];
+  const strikes7d = strikes.filter(s => now - s.at <= WIN_7D_MS).length;
+  const strikes30d = strikes.filter(s => now - s.at <= WIN_30D_MS).length;
+  return {
+    serverNow: now,
+    muted: !rec.permBan && muteLeftMs > 0,
+    mutedUntil: rec.mutedUntil || 0,
+    muteLeftMs,
+    tempBanned: !rec.permBan && tempBanLeftMs > 0,
+    tempBanUntil: rec.tempBanUntil || 0,
+    tempBanLeftMs,
+    permBan: !!rec.permBan,
+    permReason: rec.permReason || '',
+    onProbation: !!rec.onProbation,
+    lastPardonAt: rec.lastPardonAt || 0,
+    pardonWaitMs,
+    canPardon: !rec.permBan && tempBanLeftMs > 0 && pardonWaitMs === 0,
+    strikes7d,
+    strikes30d
+  };
+}
+
+function recordStrike(opts) {
+  const now = Date.now();
+  for (const [dk, dt] of strikeDedup) if (now - dt > 60000) strikeDedup.delete(dk);
+  const rec = getPenRecord(opts.token, opts.nick, opts.uid, true);
+  if (opts.dedupId) {
+    if (strikeDedup.has(opts.dedupId)) return pubPen(rec);
+    strikeDedup.set(opts.dedupId, now);
+  }
+  rec.mutedUntil = Math.max(rec.mutedUntil || 0, now + MUTE_5M_MS);
+  rec.strikes = (rec.strikes || []).filter(s => now - s.at <= 35 * 86400e3);
+  const kind = String(opts.kind || 'spam').slice(0, 24);
+  const where = String(opts.where || '').slice(0, 48);
+  rec.strikes.push({ at: now, kind, where });
+  const c7 = rec.strikes.filter(s => now - s.at <= WIN_7D_MS).length;
+  const c30 = rec.strikes.filter(s => now - s.at <= WIN_30D_MS).length;
+  if (rec.onProbation) {
+    rec.permBan = true;
+    rec.permAt = now;
+    rec.permReason = 'Нарушение правил после апелляции «Честное слово»';
+    modLog({ kind: 'perm_ban_probation', who: rec.nick || opts.uid || '?', note: rec.permReason + ' (' + kind + ')' });
+  } else if (c30 >= 10) {
+    rec.permBan = true;
+    rec.permAt = now;
+    rec.permReason = '10 нарушений за 30 дней';
+    modLog({ kind: 'perm_ban', who: rec.nick || opts.uid || '?', note: '10 нарушений за 30 дней — вечная блокировка чата/комментов' });
+  } else if (c7 >= 5) {
+    rec.tempBanUntil = Math.max(rec.tempBanUntil || 0, now + TEMP_BAN_MS);
+    modLog({ kind: 'temp_ban', who: rec.nick || opts.uid || '?', note: '5 нарушений за 7 дней — временная блокировка чата/комментов' });
+  } else {
+    modLog({ kind: 'auto_mute', who: rec.nick || opts.uid || '?', note: 'авто-мут 5 мин (' + kind + (where ? ' · ' + where : '') + ')' });
+  }
+  penSave();
+  return pubPen(rec);
+}
+
+function sanitizeRoomPut(code, data, prevEntry) {
+  if (!data || !Array.isArray(data.msgs)) return;
+  const now = Date.now();
+  const seen = prevEntry && prevEntry.seenMsgs ? prevEntry.seenMsgs : new Set();
+  const mems = data.members || {};
+  const kept = [];
+  for (const m of data.msgs) {
+    if (!m) continue;
+    if (m.sys || m.del || (m.id && seen.has(m.id))) {
+      if (m.id) seen.add(m.id);
+      kept.push(m);
+      continue;
+    }
+    /* исторический сид при первом создании комнаты (>5 сек назад и без ссылок) пропускаем как есть */
+    if (!prevEntry && m.at && (now - m.at > 5000) && !hasLink(m.body)) {
+      if (m.id) seen.add(m.id);
+      kept.push(m);
+      continue;
+    }
+    const mem = mems[m.uid];
+    const role = (mem && mem.role) || m.role || 'viewer';
+    const canLinks = role === 'streamer' || role === 'moderator' || !!(mem && mem.allowLinks);
+    const pen = getPenRecord(null, m.name || (mem && mem.name), m.uid, false);
+    if (pen && (pen.permBan || (pen.tempBanUntil || 0) > now || (pen.mutedUntil || 0) > now)) {
+      continue; /* заблокированные/замученные по серверному времени не могут пушить сообщения */
+    }
+    if (!canLinks && !m.gif && hasLink(m.body)) {
+      const st = recordStrike({ nick: m.name || (mem && mem.name), uid: m.uid, kind: 'link', where: 'room:' + code, dedupId: m.id ? ('msg:' + m.id) : '' });
+      if (mem) mem.mutedUntil = Math.max(mem.mutedUntil || 0, st.mutedUntil || (now + MUTE_5M_MS));
+      data.log = Array.isArray(data.log) ? data.log : [];
+      data.log.unshift({ at: now, by: 'Авто-модерация', byId: 'sys', action: 'auto_mute', target: m.name || '', reason: 'ссылка без разрешения: авто-мут 5 минут' });
+      const sysId = 'sys_' + Math.random().toString(36).slice(2, 9) + now.toString(36).slice(-4);
+      seen.add(sysId);
+      kept.push({
+        id: sysId, sys: true, at: now,
+        body: st.permBan
+          ? '⛔ ' + (m.name || 'Зритель') + ': ссылка удалена, аккаунт заблокирован навсегда'
+          : st.tempBanned
+            ? '🛡 ' + (m.name || 'Зритель') + ': ссылка удалена, выдана временная блокировка чата/комментов (5+ нарушений за 7 дней)'
+            : '🛡 Авто-модерация: ссылка от ' + (m.name || 'зрителя') + ' мгновенно удалена, выдан мут на 5 минут'
+      });
+      continue;
+    }
+    if (m.id) seen.add(m.id);
+    kept.push(m);
+  }
+  data.msgs = kept.slice(-300);
+  if (prevEntry) prevEntry.seenMsgs = seen;
+}
+
+app.get('/api/mod/status', (req, res) => {
+  const rec = getPenRecord(req.query.token, req.query.nick, req.query.uid, false);
+  res.json({ ok: true, serverNow: Date.now(), mod: pubPen(rec) });
+});
+
+app.post('/api/mod/strike', (req, res) => {
+  const b = req.body || {};
+  const kind = ['link', 'profanity', 'spam'].includes(b.kind) ? b.kind : 'spam';
+  const room = String(b.room || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+  const st = recordStrike({
+    token: b.token,
+    nick: b.nick,
+    uid: b.uid,
+    kind,
+    where: room ? ('room:' + room) : 'chat',
+    dedupId: b.dedupId ? String(b.dedupId).slice(0, 48) : ''
+  });
+  if (room && roomsState.has(room)) {
+    const rs = roomsState.get(room);
+    const mems = (rs.data && rs.data.members) || {};
+    const mem = mems[String(b.uid || '')];
+    if (mem) mem.mutedUntil = Math.max(mem.mutedUntil || 0, st.mutedUntil);
+    if (rs.data) {
+      rs.data.log = Array.isArray(rs.data.log) ? rs.data.log : [];
+      const whoTgt = String(b.nick || (mem && mem.name) || 'Гость').slice(0, 24);
+      const rTxt = kind === 'link' ? 'ссылка без разрешения: авто-мут 5 минут' : (kind === 'profanity' ? 'нецензурная лексика: авто-мут 5 минут' : 'спам: авто-мут 5 минут');
+      if (!rs.data.log.some(l => l && l.action === 'auto_mute' && l.target === whoTgt && Date.now() - (l.at || 0) < 3000)) {
+        rs.data.log.unshift({ at: Date.now(), by: whoTgt, byId: String(b.uid || 'sys'), action: 'auto_mute', target: whoTgt, reason: rTxt });
+        rs.data.log = rs.data.log.slice(0, 100);
+      }
+    }
+    rs.rev++; rs.at = Date.now();
+    notifyWaiters(room);
+  }
+  res.json({ ok: true, serverNow: st.serverNow, mod: st });
+});
+
+/* Self-Pardon («Честное слово»): мгновенное снятие временного бана без модератора, не чаще 1 раза в 3 мес */
+app.post('/api/mod/pardon', (req, res) => {
+  const b = req.body || {};
+  const now = Date.now();
+  const rec = getPenRecord(b.token, b.nick, b.uid, false);
+  if (!rec) return res.status(400).json({ error: 'Нет активных наказаний', serverNow: now, mod: pubPen(null) });
+  if (rec.permBan)
+    return res.status(403).json({ error: 'Перманентный бан не подлежит обжалованию', serverNow: now, mod: pubPen(rec) });
+  if (!((rec.tempBanUntil || 0) > now))
+    return res.status(400).json({ error: 'У вас нет активной временной блокировки', serverNow: now, mod: pubPen(rec) });
+  if (rec.lastPardonAt && (now - rec.lastPardonAt < PARDON_CD_MS)) {
+    return res.status(429).json({
+      error: 'Обжаловать наказание можно не чаще 1 раза в 3 месяца',
+      serverNow: now, mod: pubPen(rec)
+    });
+  }
+  rec.tempBanUntil = 0;
+  rec.mutedUntil = 0;
+  rec.lastPardonAt = now;
+  rec.onProbation = true;
+  penSave();
+
+  const uAuth = tokenUser(b.token);
+  const whoName = (uAuth && uAuth.nick) || nickClean(b.nick) || rec.nick || 'Участник';
+  const sysText = '📜 ' + whoName + ' дал(а) честное слово больше не нарушать правила — временная блокировка снята. При повторном нарушении аккаунт будет заблокирован навсегда.';
+  modLog({ kind: 'self_pardon', who: whoName, note: 'Честное слово: временный бан снят, включён испытательный режим' });
+
+  const targetRoom = String(b.room || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+  const touchedRooms = new Set();
+  for (const [c, rs] of roomsState) {
+    const mems = (rs.data && rs.data.members) || {};
+    let hasUser = c === targetRoom;
+    for (const id2 of Object.keys(mems)) {
+      const m2 = mems[id2];
+      if (id2 === b.uid || (m2 && String(m2.name || '').toLowerCase() === whoName.toLowerCase())) {
+        m2.mutedUntil = 0;
+        hasUser = true;
+      }
+    }
+    if (hasUser && rs.data) {
+      rs.data.msgs = Array.isArray(rs.data.msgs) ? rs.data.msgs : [];
+      const mid = 'pardon_' + Math.random().toString(36).slice(2, 9) + now.toString(36).slice(-4);
+      rs.data.msgs.push({ id: mid, sys: true, body: sysText, at: now });
+      rs.data.msgs = rs.data.msgs.slice(-300);
+      if (rs.seenMsgs) rs.seenMsgs.add(mid);
+      rs.rev++; rs.at = now;
+      touchedRooms.add(c);
+      notifyWaiters(c);
+    }
+  }
+  res.json({ ok: true, serverNow: now, sysText, roomsNotified: [...touchedRooms], mod: pubPen(rec) });
+});
+
+/* ---- Друзья (двустороннее подтверждение) и Личные сообщения (ЛС) ---- */
+const friendsState = new Map();
+const dmsState = new Map();
+const dmWaiters = new Map();
+try {
+  const j = JSON.parse(fs.readFileSync('friends.json', 'utf8'));
+  for (const [k, v] of Object.entries(j || {})) friendsState.set(k, v);
+  console.log('friends loaded:', friendsState.size);
+} catch {}
+try {
+  const j = JSON.parse(fs.readFileSync('dms.json', 'utf8'));
+  for (const [k, v] of Object.entries(j || {})) dmsState.set(k, v);
+  console.log('dms loaded:', dmsState.size);
+} catch {}
+let frSaveT = null, dmSaveT = null;
+function frSave() {
+  clearTimeout(frSaveT);
+  frSaveT = setTimeout(() => {
+    try { fs.writeFileSync('friends.json', JSON.stringify(Object.fromEntries(friendsState))); } catch {}
+  }, 2500);
+}
+function dmSave() {
+  clearTimeout(dmSaveT);
+  dmSaveT = setTimeout(() => {
+    try { fs.writeFileSync('dms.json', JSON.stringify(Object.fromEntries(dmsState))); } catch {}
+  }, 2500);
+}
+function dmNotify(pk) {
+  const set = dmWaiters.get(pk);
+  if (set) { const fns = [...set]; set.clear(); for (const fn of fns) { try { fn(); } catch {} } }
+}
+const frPair = (a, b) => [String(a).toLowerCase(), String(b).toLowerCase()].sort().join('|');
+
+function profileFriendship(viewer, targetLower) {
+  if (!viewer || !targetLower) return 'none';
+  const meK = viewer.nick.toLowerCase();
+  if (meK === targetLower) return 'self';
+  const rec = friendsState.get(frPair(meK, targetLower));
+  if (!rec) return 'none';
+  if (rec.status === 'accepted') return 'friends';
+  return rec.from === meK ? 'outgoing' : 'incoming';
+}
+
+app.get('/api/friends', (req, res) => {
+  const me = authFromReq(req);
+  if (!me) return res.status(401).json({ error: 'Войдите в аккаунт для доступа к друзьям и ЛС', serverNow: Date.now() });
+  const meK = me.nick.toLowerCase();
+  const friends = [], incoming = [], outgoing = [];
+  let unreadTotal = 0;
+  for (const [pk, rec] of friendsState) {
+    if (rec.a !== meK && rec.b !== meK) continue;
+    const otherK = rec.a === meK ? rec.b : rec.a;
+    const ou = usersState.get(otherK);
+    const nick = (ou && ou.nick) || (rec.a === meK ? rec.bNick : rec.aNick) || otherK;
+    const avatar = (ou && ou.avatar) || '';
+    if (rec.status === 'accepted') {
+      const conv = dmsState.get(pk);
+      const readAt = (conv && conv.readAt && conv.readAt[meK]) || 0;
+      const msgs = (conv && conv.msgs) || [];
+      const unread = msgs.filter(m => m.to === meK && m.at > readAt).length;
+      unreadTotal += unread;
+      const last = msgs.length ? msgs[msgs.length - 1] : null;
+      friends.push({
+        nick, avatar, since: rec.updatedAt || rec.at, unread,
+        lastMsg: last ? { text: String(last.text || '').slice(0, 120), at: last.at, from: last.fromNick || last.from } : null
+      });
+    } else if (rec.from === meK) {
+      outgoing.push({ nick, avatar, at: rec.at });
+    } else {
+      incoming.push({ nick, avatar, at: rec.at });
+    }
+  }
+  friends.sort((a, b) => ((b.lastMsg && b.lastMsg.at) || b.since || 0) - ((a.lastMsg && a.lastMsg.at) || a.since || 0));
+  incoming.sort((a, b) => b.at - a.at);
+  outgoing.sort((a, b) => b.at - a.at);
+  res.json({ ok: true, serverNow: Date.now(), friends, incoming, outgoing, unreadTotal });
+});
+
+app.post('/api/friends', (req, res) => {
+  const me = authFromReq(req);
+  const now = Date.now();
+  if (!me) return res.status(401).json({ error: 'Войдите в аккаунт, чтобы управлять списком друзей', serverNow: now });
+  const b = req.body || {};
+  const act = String(b.act || '');
+  const targetNick = nickClean(b.target);
+  const meK = me.nick.toLowerCase();
+  const targetK = targetNick.toLowerCase();
+  if (!targetK || !NICK_RE.test(targetNick))
+    return res.status(400).json({ error: 'Укажите корректный ник пользователя', serverNow: now });
+  if (meK === targetK)
+    return res.status(400).json({ error: 'Нельзя добавить в друзья самого себя', serverNow: now });
+  const pk = frPair(meK, targetK);
+  const rec = friendsState.get(pk);
+  const tu = usersState.get(targetK);
+
+  if (act === 'request') {
+    if (!tu) return res.status(404).json({ error: 'Пользователь «' + targetNick + '» ещё не зарегистрировал аккаунт', serverNow: now });
+    if (rec && rec.status === 'accepted')
+      return res.json({ ok: true, status: 'friends', serverNow: now });
+    if (rec && rec.status === 'pending') {
+      if (rec.from === meK) return res.json({ ok: true, status: 'outgoing', serverNow: now });
+      /* встречная заявка уже висела от второго пользователя -> взаимное подтверждение! */
+      rec.status = 'accepted';
+      rec.updatedAt = now;
+      frSave();
+      return res.json({ ok: true, status: 'friends', serverNow: now });
+    }
+    const [a, bKey] = [meK, targetK].sort();
+    friendsState.set(pk, {
+      a, b: bKey,
+      aNick: a === meK ? me.nick : tu.nick,
+      bNick: bKey === meK ? me.nick : tu.nick,
+      status: 'pending',
+      from: meK,
+      at: now,
+      updatedAt: now
+    });
+    frSave();
+    return res.json({ ok: true, status: 'outgoing', serverNow: now });
+  }
+  if (act === 'accept') {
+    if (!rec || rec.status !== 'pending')
+      return res.status(404).json({ error: 'Заявка в друзья не найдена', serverNow: now });
+    if (rec.from === meK)
+      return res.status(403).json({ error: 'Нельзя подтвердить собственную заявку — дождитесь ответа второго пользователя', serverNow: now });
+    rec.status = 'accepted';
+    rec.updatedAt = now;
+    frSave();
+    return res.json({ ok: true, status: 'friends', serverNow: now });
+  }
+  if (act === 'decline' || act === 'cancel') {
+    if (rec && rec.status === 'pending') { friendsState.delete(pk); frSave(); }
+    return res.json({ ok: true, status: 'none', serverNow: now });
+  }
+  if (act === 'remove') {
+    /* Удаляем дружбу, но dmsState.get(pk) сохраняем нетронутым в базе! */
+    if (rec) { friendsState.delete(pk); frSave(); }
+    return res.json({ ok: true, status: 'none', historySaved: true, serverNow: now });
+  }
+  res.status(400).json({ error: 'неизвестное действие', serverNow: now });
+});
+
+/* ЛС доступны ТОЛЬКО подтверждённым друзьям (даже при временном/вечном бане публичного чата и комментов!) */
+app.get('/api/dm/:peer', (req, res) => {
+  const me = authFromReq(req);
+  const now = Date.now();
+  if (!me) return res.status(401).json({ error: 'Войдите в аккаунт для доступа к ЛС', serverNow: now });
+  const peerNick = nickClean(req.params.peer);
+  const meK = me.nick.toLowerCase();
+  const peerK = peerNick.toLowerCase();
+  const pk = frPair(meK, peerK);
+  const fr = friendsState.get(pk);
+  if (!fr || fr.status !== 'accepted')
+    return res.status(403).json({ error: 'Писать и открывать ЛС можно только подтверждённым друзьям', code: 'NOT_FRIENDS', serverNow: now });
+  const tu = usersState.get(peerK);
+  const sendOut = () => {
+    const conv = dmsState.get(pk) || { rev: 0, msgs: [], readAt: {} };
+    conv.readAt = conv.readAt || {};
+    if (conv.msgs && conv.msgs.length) { conv.readAt[meK] = Date.now(); dmsState.set(pk, conv); dmSave(); }
+    res.json({
+      ok: true,
+      serverNow: Date.now(),
+      rev: conv.rev || 0,
+      peer: { nick: (tu && tu.nick) || peerNick, avatar: (tu && tu.avatar) || '' },
+      msgs: (conv.msgs || []).slice(-300)
+    });
+  };
+  if (req.query.since === undefined) return sendOut();
+  const since = parseInt(req.query.since, 10) || 0;
+  const cur = dmsState.get(pk);
+  if (cur && cur.rev > since) return sendOut();
+  const set = dmWaiters.get(pk) || new Set();
+  dmWaiters.set(pk, set);
+  let fired = false;
+  const fire = () => {
+    if (fired) return;
+    fired = true;
+    set.delete(fire);
+    const frNow = friendsState.get(pk);
+    if (!frNow || frNow.status !== 'accepted')
+      return res.status(403).json({ error: 'Пользователь больше не в списке друзей', code: 'NOT_FRIENDS', serverNow: Date.now() });
+    sendOut();
+  };
+  set.add(fire);
+  setTimeout(fire, 20000);
+});
+
+app.post('/api/dm/:peer', (req, res) => {
+  const me = authFromReq(req);
+  const now = Date.now();
+  if (!me) return res.status(401).json({ error: 'Войдите в аккаунт для отправки ЛС', serverNow: now });
+  const peerNick = nickClean(req.params.peer);
+  const meK = me.nick.toLowerCase();
+  const peerK = peerNick.toLowerCase();
+  const pk = frPair(meK, peerK);
+  const fr = friendsState.get(pk);
+  if (!fr || fr.status !== 'accepted')
+    return res.status(403).json({ error: 'Писать в ЛС можно только после подтверждения заявки в друзья', code: 'NOT_FRIENDS', serverNow: now });
+  const b = req.body || {};
+  if (b.act === 'read') {
+    const conv = dmsState.get(pk);
+    if (conv) { conv.readAt = conv.readAt || {}; conv.readAt[meK] = now; dmSave(); }
+    return res.json({ ok: true, serverNow: now });
+  }
+  const text = cmtClean(b.text, 1500);
+  if (!text) return res.status(400).json({ error: 'Пустое сообщение', serverNow: now });
+  let conv = dmsState.get(pk);
+  if (!conv) { conv = { rev: 0, msgs: [], readAt: {} }; dmsState.set(pk, conv); }
+  if (conv.msgs.length >= 600) conv.msgs = conv.msgs.slice(-450);
+  const msg = {
+    id: 'dm_' + Math.random().toString(36).slice(2, 10) + now.toString(36).slice(-4),
+    from: meK,
+    fromNick: me.nick,
+    to: peerK,
+    text,
+    at: now
+  };
+  conv.msgs.push(msg);
+  conv.rev = (conv.rev || 0) + 1;
+  conv.readAt = conv.readAt || {};
+  conv.readAt[meK] = now;
+  dmSave();
+  dmNotify(pk);
+  res.json({ ok: true, rev: conv.rev, id: msg.id, msg, serverNow: now });
 });
 
 /* ------------------------- комнаты в памяти -----------------------
