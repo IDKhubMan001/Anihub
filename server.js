@@ -1285,7 +1285,8 @@ const KODIK_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 C
 const EGRESS_ALLOW = [
   'anilibria.top', 'aniliberty.top', 'libria.fun',
   'kodik-api.com', 'kodik.dev', 'kodikplayer.com', 'kodik.info', 'kodik.cc', 'kodikcdn.com',
-  'solodcdn.com', 'raw.githubusercontent.com'
+  'solodcdn.com', 'raw.githubusercontent.com',
+  'api.animethemes.moe', 'v.animethemes.moe'
 ];
 (process.env.EGRESS_EXTRA || '').split(',').filter(Boolean).forEach(d => EGRESS_ALLOW.push(d.trim().toLowerCase()));
 
@@ -1360,64 +1361,73 @@ app.get('/kodik-proxy/:op', async (q, r) => {
 });
 
 /* --- /kodik/resolve — прямые m3u8-ссылки из плеера Kodik (серверный алгоритм) --- */
-app.get('/kodik/resolve', async (q, r) => {
-  const { id, hash, type } = q.query;
-  if (!id || !hash || !type) return r.status(400).json({ error: 'нужны id, hash, type' });
+async function kodikResolveInternal(type, id, hash) {
   const key = type + '|' + id + '|' + hash;
   const hit = kCacheGet(key, 1500000);
-  if (hit) return r.json(hit);
-  try {
-    const page = await (await kGet(`${KODIK_PLAYER}/${encodeURIComponent(type)}/${encodeURIComponent(id)}/${encodeURIComponent(hash)}/720p`, 15000)).text();
-    const up = page.indexOf('urlParams');
-    let urlParams = null;
-    const mStr = page.slice(up).match(/=\s*'(\{[\s\S]*?\})'\s*;/);
-    if (mStr) { try { urlParams = JSON.parse(mStr[1]); } catch {} }
-    if (!urlParams) {
-      const b = page.indexOf('{', up), e = page.indexOf('};', up);
-      if (b > 0 && e > b) { try { urlParams = JSON.parse(page.slice(b, e + 1)); } catch {} }
+  if (hit) return hit;
+  const page = await (await kGet(`${KODIK_PLAYER}/${encodeURIComponent(type)}/${encodeURIComponent(id)}/${encodeURIComponent(hash)}/720p`, 15000)).text();
+  const up = page.indexOf('urlParams');
+  let urlParams = null;
+  const mStr = page.slice(up).match(/=\s*'(\{[\s\S]*?\})'\s*;/);
+  if (mStr) { try { urlParams = JSON.parse(mStr[1]); } catch {} }
+  if (!urlParams) {
+    const b = page.indexOf('{', up), e = page.indexOf('};', up);
+    if (b > 0 && e > b) { try { urlParams = JSON.parse(page.slice(b, e + 1)); } catch {} }
+  }
+  if (!urlParams) throw new Error('urlParams не найдены');
+  const sm = page.match(/<script[^>]*src="(\/assets\/js\/app\.(?:player|serial|movie|video|film)[^"]+)"/) ||
+             page.match(/<script[^>]*src="(\/assets\/js\/app\.[^"]+)"/);
+  if (!sm) throw new Error('не найден скрипт плеера');
+  const val = k => { const m = page.match(new RegExp('\\.' + k + " = '([^']+)'")); return m && m[1]; };
+  const vtype = val('type'), vhash = val('hash'), vid = val('id');
+  if (!vtype || !vhash || !vid) throw new Error('параметры плеера не найдены');
+  const skip = [];
+  const skm = page.match(/parseSkipButton\("([^"]*)"/);
+  if (skm && skm[1]) {
+    for (const seg of skm[1].split(',')) {
+      if (!seg.includes('-')) continue;
+      const [a, b] = seg.split('-');
+      const p = t => t.split(':').reduce((x, y) => +x * 60 + +y, 0);
+      skip.push([p(a), p(b)]);
     }
-    if (!urlParams) throw new Error('urlParams не найдены');
-    const sm = page.match(/<script[^>]*src="(\/assets\/js\/app\.(?:player|serial|movie|video|film)[^"]+)"/) ||
-               page.match(/<script[^>]*src="(\/assets\/js\/app\.[^"]+)"/);
-    if (!sm) throw new Error('не найден скрипт плеера');
-    const val = k => { const m = page.match(new RegExp('\\.' + k + " = '([^']+)'")); return m && m[1]; };
-    const vtype = val('type'), vhash = val('hash'), vid = val('id');
-    if (!vtype || !vhash || !vid) throw new Error('параметры плеера не найдены');
-    const skip = [];
-    const skm = page.match(/parseSkipButton\("([^"]*)"/);
-    if (skm && skm[1]) {
-      for (const seg of skm[1].split(',')) {
-        if (!seg.includes('-')) continue;
-        const [a, b] = seg.split('-');
-        const p = t => t.split(':').reduce((x, y) => +x * 60 + +y, 0);
-        skip.push([p(a), p(b)]);
-      }
-    }
+  }
+  let postLink = kCacheGet('plink|' + sm[1], 3600000);
+  if (!postLink) {
     const js = await (await kGet(KODIK_PLAYER + sm[1], 15000)).text();
     const ai = js.indexOf('$.ajax'), ci = js.indexOf('cache:!1');
     if (ai < 0 || ci < 0) throw new Error('алгоритм изменился');
-    const postLink = Buffer.from(js.slice(ai + 30, ci - 3), 'base64').toString('utf8');
-    const qs = new URLSearchParams({
-      hash: vhash, id: vid, type: vtype,
-      d: urlParams.d, d_sign: urlParams.d_sign,
-      pd: urlParams.pd, pd_sign: urlParams.pd_sign,
-      ref: '', ref_sign: urlParams.ref_sign,
-      bad_user: 'true', cdn_is_working: 'true'
-    }).toString();
-    const pr = await fetch(await egressCheck(KODIK_PLAYER + postLink), {
-      method: 'POST',
-      body: qs,
-      headers: { 'User-Agent': KODIK_UA, 'Content-Type': 'application/x-www-form-urlencoded', 'Referer': `${KODIK_PLAYER}/${type}/${id}/${hash}/720p` },
-      signal: AbortSignal.timeout(15000)
-    });
-    const data = await pr.json();
-    const links = {};
-    for (const [quality, arr] of Object.entries(data.links || {})) {
-      try { links[quality] = kDecode(arr[0].src); } catch {}
-    }
-    if (!Object.keys(links).length) throw new Error('пустой список ссылок');
-    const out = { links, max: Math.max(...Object.keys(links).map(Number)), skip };
-    kCacheSet(key, out);
+    postLink = Buffer.from(js.slice(ai + 30, ci - 3), 'base64').toString('utf8');
+    kCacheSet('plink|' + sm[1], postLink);
+  }
+  const qs = new URLSearchParams({
+    hash: vhash, id: vid, type: vtype,
+    d: urlParams.d, d_sign: urlParams.d_sign,
+    pd: urlParams.pd, pd_sign: urlParams.pd_sign,
+    ref: '', ref_sign: urlParams.ref_sign,
+    bad_user: 'true', cdn_is_working: 'true'
+  }).toString();
+  const pr = await fetch(await egressCheck(KODIK_PLAYER + postLink), {
+    method: 'POST',
+    body: qs,
+    headers: { 'User-Agent': KODIK_UA, 'Content-Type': 'application/x-www-form-urlencoded', 'Referer': `${KODIK_PLAYER}/${type}/${id}/${hash}/720p` },
+    signal: AbortSignal.timeout(15000)
+  });
+  const data = await pr.json();
+  const links = {};
+  for (const [quality, arr] of Object.entries(data.links || {})) {
+    try { links[quality] = kDecode(arr[0].src); } catch {}
+  }
+  if (!Object.keys(links).length) throw new Error('пустой список ссылок');
+  const out = { links, max: Math.max(...Object.keys(links).map(Number)), skip };
+  kCacheSet(key, out);
+  return out;
+}
+
+app.get('/kodik/resolve', async (q, r) => {
+  const { id, hash, type } = q.query;
+  if (!id || !hash || !type) return r.status(400).json({ error: 'нужны id, hash, type' });
+  try {
+    const out = await kodikResolveInternal(type, id, hash);
     r.json(out);
   } catch (e) {
     r.status(502).json({ error: 'kodik resolve: ' + e.message });
@@ -1497,5 +1507,260 @@ app.get('/kodik/hls', async (q, r) => {
   }
 });
 /* ==== конец Kodik-шлюза ==================================================== */
+
+/* ==== v17.42 · Живые карточки и постеры: случайный отрывок из любой серии ==== */
+const KODIK_PUB_TOKEN = process.env.KODIK_TOKEN || '56a768d08f43091901c44b54fe970049';
+
+function parseKodikLink(link) {
+  const m = String(link || '').match(/\/(seria|serial|video|season|movie)\/(\d+)\/([a-f0-9]+)/i);
+  return m ? { type: m[1], id: m[2], hash: m[3] } : null;
+}
+
+async function listTitleEpisodes(shikiId, title) {
+  const ck = 'eps|' + (shikiId || 0) + '|' + String(title || '').toLowerCase().slice(0, 60);
+  const hit = kCacheGet(ck, 3600000);
+  if (hit) return hit;
+  const queries = [];
+  if (shikiId > 0) queries.push(`token=${encodeURIComponent(KODIK_PUB_TOKEN)}&shikimori_id=${encodeURIComponent(shikiId)}&with_episodes=true&limit=5`);
+  if (title) queries.push(`token=${encodeURIComponent(KODIK_PUB_TOKEN)}&title=${encodeURIComponent(title)}&types=anime,anime-serial&with_episodes=true&limit=5`);
+  const eps = [];
+  const seen = new Set();
+  for (const qs of queries) {
+    try {
+      const resp = await kGet(KODIK_UPSTREAM + '/search?' + qs, 10000);
+      const data = await resp.json();
+      const results = Array.isArray(data && data.results) ? data.results : [];
+      for (const r0 of results) {
+        const seasons = r0 && r0.seasons && typeof r0.seasons === 'object' ? Object.entries(r0.seasons) : [];
+        if (seasons.length) {
+          for (const [sNum, sObj] of seasons) {
+            const epMap = sObj && sObj.episodes && typeof sObj.episodes === 'object' ? Object.entries(sObj.episodes) : [];
+            for (const [epNum, epVal] of epMap) {
+              const lnk = typeof epVal === 'string' ? epVal : (epVal && epVal.link);
+              const p = parseKodikLink(lnk);
+              if (p && !seen.has(p.id)) { seen.add(p.id); eps.push({ ep: (seasons.length > 1 ? sNum + 'x' : '') + epNum, ...p }); }
+            }
+          }
+        }
+        if (!eps.length && r0 && r0.link) {
+          const p = parseKodikLink(r0.link);
+          if (p && !seen.has(p.id)) { seen.add(p.id); eps.push({ ep: '1', ...p }); }
+        }
+        if (eps.length >= 3) break;
+      }
+      if (eps.length) break;
+    } catch {}
+  }
+  if (eps.length) kCacheSet(ck, eps);
+  return eps;
+}
+
+async function fetchManifestSegments(manifestUrl) {
+  const ck = 'm3segs|' + manifestUrl;
+  const hit = kCacheGet(ck, 1200000);
+  if (hit) return hit;
+  let curUrl = manifestUrl;
+  let text = await (await kGet(curUrl, 14000)).text();
+  if (text.includes('#EXT-X-STREAM-INF')) {
+    const lines = text.split('\n').map(x => x.trim()).filter(Boolean);
+    const sub = lines.find(l => !l.startsWith('#'));
+    if (sub) {
+      curUrl = new URL(sub, curUrl).toString();
+      text = await (await kGet(curUrl, 14000)).text();
+    }
+  }
+  const segs = [];
+  let dur = 6, keyLine = '', disco = false;
+  for (const raw of text.split('\n')) {
+    const s = raw.trim();
+    if (!s || s === '#EXTM3U') continue;
+    if (s.startsWith('#EXT-X-DISCONTINUITY') && !s.startsWith('#EXT-X-DISCONTINUITY-SEQUENCE')) { disco = true; continue; }
+    if (s.startsWith('#EXT-X-KEY:')) { keyLine = s; continue; }
+    if (s.startsWith('#EXTINF:')) {
+      const m = s.match(/#EXTINF:([0-9.]+)/);
+      dur = m ? (parseFloat(m[1]) || 6) : 6;
+      continue;
+    }
+    if (!s.startsWith('#')) {
+      const abs = new URL(s, curUrl).toString();
+      if (!_AD_RE.test(abs)) segs.push({ dur, url: abs, keyLine, baseUrl: curUrl, disco });
+      disco = false;
+    }
+  }
+  if (segs.length) kCacheSet(ck, segs);
+  return segs;
+}
+
+function sliceSegmentsToM3u8(segs, proxyPrefix) {
+  const n = segs.length;
+  let idx = 0;
+  if (n >= 8) {
+    const lo = Math.floor(n * 0.20);
+    const hi = Math.max(lo, Math.floor(n * 0.78) - 2);
+    idx = lo + Math.floor(Math.random() * (hi - lo + 1));
+  } else if (n >= 3) {
+    idx = Math.floor(n / 2) - 1;
+  }
+  const s0 = segs[idx];
+  const slice = [s0];
+  if (segs[idx + 1] && !segs[idx + 1].disco) slice.push(segs[idx + 1]);
+  const maxDur = Math.max(6, Math.ceil(Math.max(...slice.map(x => x.dur || 6))));
+  const wrapUrl = u => proxyPrefix + '/kodik/hls?url=' + encodeURIComponent(u);
+  const out = [
+    '#EXTM3U',
+    '#EXT-X-VERSION:3',
+    '#EXT-X-TARGETDURATION:' + maxDur,
+    '#EXT-X-MEDIA-SEQUENCE:1',
+    '#EXT-X-PLAYLIST-TYPE:VOD'
+  ];
+  let lastKey = '';
+  for (const sg of slice) {
+    if (sg.keyLine && sg.keyLine !== lastKey) {
+      lastKey = sg.keyLine;
+      out.push(sg.keyLine.replace(_URI_RE, (_, u1) => 'URI="' + wrapUrl(new URL(u1, sg.baseUrl).toString()) + '"'));
+    }
+    out.push('#EXTINF:' + (sg.dur || 6).toFixed(3) + ',');
+    out.push(wrapUrl(sg.url));
+  }
+  out.push('#EXT-X-ENDLIST');
+  const approxSec = Math.round(segs.slice(0, idx).reduce((a, b) => a + (b.dur || 6), 0));
+  const durSec = Math.round(slice.reduce((a, b) => a + (b.dur || 6), 0));
+  return { m3u8: out.join('\n'), idx, totalSegs: n, approxSec, durSec };
+}
+
+async function buildLiveClip({ shiki, mal, libria, title, q, baseUrl }) {
+  const shikiId = Number(shiki || mal || 0) || 0;
+  const libriaId = Number(libria || 0) || 0;
+  const wantOrder = String(q) === '480' ? ['480', '360', '720'] : ['360', '480', '720'];
+  const fastKey = 'fastsegs|' + (shikiId || libriaId || String(title || '').toLowerCase().slice(0, 40)) + '|' + wantOrder[0];
+  const fastHit = kCacheGet(fastKey, 900000);
+  if (fastHit && fastHit.segs && fastHit.segs.length) {
+    const cut = sliceSegmentsToM3u8(fastHit.segs, baseUrl);
+    return { ok: true, kind: 'hls', source: fastHit.source, ep: fastHit.ep, atSec: cut.approxSec, durSec: cut.durSec, m3u8: cut.m3u8 };
+  }
+
+  /* 1. Основной источник: случайная серия из Kodik -> вырезка случайных 10-12 сек из середины серии */
+  const eps = await listTitleEpisodes(shikiId, title);
+  if (eps.length) {
+    const shuffled = [...eps].sort(() => Math.random() - 0.5).slice(0, 3);
+    for (const pick of shuffled) {
+      try {
+        const res = await kodikResolveInternal(pick.type, pick.id, pick.hash);
+        const qKey = wantOrder.find(k => res.links && res.links[k]) || (res.links && Object.keys(res.links)[0]);
+        if (!qKey) continue;
+        const segs = await fetchManifestSegments(res.links[qKey]);
+        if (!segs.length) continue;
+        kCacheSet(fastKey, { segs, source: 'kodik', ep: pick.ep });
+        const cut = sliceSegmentsToM3u8(segs, baseUrl);
+        return {
+          ok: true,
+          kind: 'hls',
+          source: 'kodik',
+          ep: pick.ep,
+          atSec: cut.approxSec,
+          durSec: cut.durSec,
+          m3u8: cut.m3u8
+        };
+      } catch {}
+    }
+  }
+
+  /* 2. Запасной источник: AniLibria HLS (вырезка случайных 2 сегментов из случайной серии) */
+  if (libriaId > 0) {
+    try {
+      const r = await kGet(`https://anilibria.top/api/v1/anime/releases/${encodeURIComponent(libriaId)}`, 9000);
+      const rel = await r.json();
+      const rEps = Array.isArray(rel && rel.episodes) ? rel.episodes : [];
+      if (rEps.length) {
+        const ep = rEps[Math.floor(Math.random() * rEps.length)];
+        const mUrl = (ep && (ep.hls_480 || ep.hls_720 || ep.hls_1080)) || '';
+        if (mUrl) {
+          const segs = await fetchManifestSegments(mUrl);
+          if (segs.length) {
+            const cut = sliceSegmentsToM3u8(segs, baseUrl);
+            return { ok: true, kind: 'hls', source: 'anilibria', ep: String(ep.ordinal || 1), atSec: cut.approxSec, durSec: cut.durSec, m3u8: cut.m3u8 };
+          }
+        }
+      }
+    } catch {}
+  }
+
+  /* 3. Запасной источник: AnimeThemes (прямой видеоролик по MAL/Shikimori ID) */
+  if (shikiId > 0) {
+    try {
+      const u = `https://api.animethemes.moe/anime?filter%5Bhas%5D=resources&filter%5Bsite%5D=MyAnimeList&filter%5Bexternal_id%5D=${encodeURIComponent(shikiId)}&include=animethemes.animethemeentries.videos`;
+      const r = await kGet(u, 8000);
+      const d = await r.json();
+      const vids = [];
+      for (const an of (d && d.anime) || []) {
+        for (const th of (an && an.animethemes) || []) {
+          for (const en of (th && th.animethemeentries) || []) {
+            for (const vd of (en && en.videos) || []) {
+              if (vd && vd.link) vids.push(vd.link);
+            }
+          }
+        }
+      }
+      if (vids.length) {
+        const vUrl = vids[Math.floor(Math.random() * vids.length)];
+        return { ok: true, kind: 'video', source: 'animethemes', ep: 'OP/ED', atSec: 22 + Math.floor(Math.random() * 35), durSec: 10, url: vUrl };
+      }
+    } catch {}
+  }
+
+  return { ok: false, error: 'отрывок не найден' };
+}
+
+function reqPublicBase(req) {
+  const xfProto = String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim();
+  const proto = xfProto || req.protocol || 'https';
+  const host = req.headers['x-forwarded-host'] || req.get('host') || ('localhost:' + PORT);
+  return proto + '://' + host;
+}
+
+app.get('/api/live-clip', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const baseUrl = reqPublicBase(req);
+    const out = await buildLiveClip({
+      shiki: req.query.shiki,
+      mal: req.query.mal,
+      libria: req.query.libria,
+      title: req.query.title,
+      q: req.query.q,
+      baseUrl
+    });
+    if (!out.ok) return res.status(404).json(out);
+    const qs = new URLSearchParams();
+    if (req.query.shiki) qs.set('shiki', String(req.query.shiki));
+    if (req.query.mal) qs.set('mal', String(req.query.mal));
+    if (req.query.libria) qs.set('libria', String(req.query.libria));
+    if (req.query.title) qs.set('title', String(req.query.title));
+    if (req.query.q) qs.set('q', String(req.query.q));
+    out.playlistUrl = baseUrl + '/api/live-clip.m3u8?' + qs.toString();
+    res.json(out);
+  } catch (e) {
+    res.status(502).json({ ok: false, error: String(e && e.message || e) });
+  }
+});
+
+app.get('/api/live-clip.m3u8', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const baseUrl = reqPublicBase(req);
+    const out = await buildLiveClip({
+      shiki: req.query.shiki,
+      mal: req.query.mal,
+      libria: req.query.libria,
+      title: req.query.title,
+      q: req.query.q,
+      baseUrl
+    });
+    if (!out.ok || !out.m3u8) return res.status(404).type('text/plain').send('# no clip');
+    res.type('application/vnd.apple.mpegurl').send(out.m3u8);
+  } catch (e) {
+    res.status(502).type('text/plain').send('# err');
+  }
+});
 
 server.listen(PORT, () => console.log('anihub-rooms on :' + PORT));
