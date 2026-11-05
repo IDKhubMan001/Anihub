@@ -70,6 +70,11 @@ input[type=range]{-webkit-appearance:none;appearance:none;background:transparent
 .card .shade,.card .bar,.card .rk,.card .sc,.card .cap{z-index:2}
 .live-spin{position:absolute;top:8px;left:8px;width:14px;height:14px;border:2px solid rgba(255,255,255,.28);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;z-index:3;pointer-events:none}
 .sres-pw .live-spin,.item-pw .live-spin{top:4px;left:4px;width:10px;height:10px;border-width:1.5px}
+.fr-cards{margin-top:12px}
+.fr-card .fr-step{position:absolute;top:8px;left:8px;z-index:2;background:rgba(8,8,14,.8);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.2);color:#fff;font-family:var(--fd);font-size:11px;font-weight:800;padding:2px 8px;border-radius:99px;line-height:1.35}
+.fr-card.is-cur .pw{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan),0 22px 48px -22px rgba(34,211,238,.5)}
+.fr-card.is-cur .fr-step{background:var(--cyan);color:#041318;border-color:transparent}
+.fr-card .sc.fr-here{background:rgba(34,211,238,.94);color:#041318}
 @keyframes kb{0%,100%{transform:scale(1.04)}50%{transform:scale(1.14) translate(-1.5%,-1.5%)}}
 .hero:after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(102deg,rgba(6,6,10,.96) 0%,rgba(6,6,10,.82) 48%,rgba(6,6,10,.34) 100%),linear-gradient(0deg,rgba(6,6,10,.92) 0%,transparent 36%),radial-gradient(circle at 78% 18%,rgba(255,78,106,.26),transparent 55%)}
 .hero-card{display:flex;gap:22px;align-items:flex-start}
@@ -212,7 +217,7 @@ footer.foot{margin-top:90px;border-top:1px solid var(--line);background:var(--bg
 <script>/* APP */
 (()=>{
 'use strict';
-const BUILD='2026-11-05 v17.42 · живые карточки в каталоге и поиске при наведении + живой постер на странице аниме сразу (вырезка случайного отрывка из любой серии), живой Hero-баннер, друзья и ЛС, анти-спам + Self-Pardon';
+const BUILD='2026-11-05 v17.43 · живые карточки с постерами в «Порядке просмотра» и фильмах франшизы, живые карточки каталога/поиска + авто-постер аниме, друзья и ЛС, анти-спам + Self-Pardon';
 const STUDIO_SNAPSHOT={"date":"10.10.2026","days":[{"name":"Понедельник","entries":[{"time":"16:10","title":"Я влюбился в тебя, когда ты бежала в лунной ночи"},{"time":"16:30","title":"Тайная битва за престол сильнейшего принца-дуралея"},{"time":"18:10","title":"Разгневанная леди поклялась отомстить"},{"time":"18:15","title":"Мир танцует"},{"time":"18:30","title":"Аккуратная и симпатичная девочка в моей новой школе"},{"time":"18:40","title":"Рыцарь-скелет вступает в параллельный мир 2"},{"time":"18:55","title":"Необъятный океан 3"},{"time":"20:20","title":"Игра лжецов"},{"time":"21:15","title":"Отверженная святая и её гастрономическое путешествие в другом мире"}]},{"name":"Вторник","entries":[{"time":"13:10","title":"Призрак в доспехах"},{"time":"17:10","title":"Забывчивая святая дева неосознанно изливает свою силу"},{"time":"22:55","title":"Непревзойдённый"},{"time":"19:15","title":"Истинные чудотворные рыцари 2"},{"time":"22:05","title":"Красная река"},{"time":"23:00","title":"Виктория с множеством козырей"}]},{"name":"Среда","entries":[{"time":"15:45","title":"Клеватесс 2"},{"time":"17:05","title":"Военная хроника маленькой девочки 2"},{"time":"18:00","title":"Мир отомэ-игр — это тяжелый мир для мобов 2"},{"time":"18:10","title":"Героиня? Святая? Нет, я всемогущая горничная!"},{"time":"19:45","title":"Для тебя во всём цвету 2"},{"time":"20:10","title":"Крестьянин 999-го уровня"},{"time":"20:20","title":"Тройной шторм"},{"time":"20:40","title":"Старик из деревни становится Святым мечом"}]},{"name":"Четверг","entries":[{"time":"09:45","title":"Для тебя во всём цвету 2"},{"time":"16:15","title":"Дара из Рэйвы"},{"time":"16:30","title":"Бродячие псы: Шуточные истории 2"},{"time":"18:25","title":"Ура мечте! Бесконечная мечта"},{"time":"18:45","title":"Пыль Мёбиуса"},{"time":"19:45","title":"Табакошка"},{"time":"19:50","title":"Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры"},{"time":"20:00","title":"Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга"},{"time":"21:05","title":"Монстрик Карамелька"}]},{"name":"Пятница","entries":[{"time":"18:20","title":"Прошло десять лет с момента, как я стал легендой"},{"time":"18:30","title":"О моём перерождении в слизь 4"},{"time":"19:00","title":"Население приграничного владения начинается с нуля"},{"time":"19:10","title":"Нарисуй это, потом умри"},{"time":"20:10","title":"Пожалуйста, простите моих младших братьев"},{"time":"20:15","title":"Адский режим 2"},{"time":"20:45","title":"Юный лорд — мастер побега 2"},{"time":"22:10","title":"Слёзы Бога"}]},{"name":"Суббота","entries":[{"time":"13:10","title":"Добро пожаловать в ад, Ирума! 4"},{"time":"14:10","title":"Власть книжного червя 4"},{"time":"16:45","title":"Чёрный факел"},{"time":"17:55","title":"Рекомендация старшеклассника Ивамото"},{"time":"20:15","title":"Шатёр чародея"},{"time":"20:35","title":"Шоу для взрослых: Цирк «Подсолнух»"},{"time":"20:40","title":"Следующий герцог, который скажет: «Я не хочу любить тебя», будет любить тебя по какой-то причине"},{"time":"20:50","title":"Невеста демона"},{"time":"20:55","title":"Лиричная волшебница Наноха: Опередители — Огненный выстрел возмездия"},{"time":"21:00","title":"Кот и дракон"},{"time":"21:10","title":"Ханаори хочет драться даже после перерождения"},{"time":"21:40","title":"Забота об одарённой девушке"},{"time":"22:30","title":"Мао"},{"time":"22:50","title":"Цугаи загробного мира"}]},{"name":"Воскресенье","entries":[{"time":"10:10","title":"Компания «Маги-Люмьер» 2"},{"time":"11:55","title":"Вперёд, отряд мистики!"},{"time":"12:00","title":"Прощай, Лара"},{"time":"12:10","title":"Ты и я полные противоположности"},{"time":"12:20","title":"Железный котелок Жана!"},{"time":"16:25","title":"Самый сильный в мире заступник"},{"time":"17:40","title":"История электричества в двадцатом веке"},{"time":"17:50","title":"Сто девушек 3"},{"time":"18:40","title":"Дигимоны: Битбрейк"},{"time":"18:50","title":"Реинкарнация безработного 3"},{"time":"19:20","title":"Чёрная кошка и класс ведьм"},{"time":"19:40","title":"Хоть я и бездарная злодейка"},{"time":"20:10","title":"Лазурный путь: Малый вперёд! 2"}]}]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -436,7 +441,7 @@ function kodikFetch(t){const tid=t.id;
     const filt=shikiId?`shikimori_id=${shikiId}`:`title=${encodeURIComponent(String(t.title))}&types=anime,anime-serial`;
     const u=`${KODIK_API}/search?token=${encodeURIComponent(kodikTok())}&${filt}&with_material_data=true&with_episodes=true`;
     const j=await kodikApiGet(u);if(j.error)throw new Error(j.error);
-    const data={total:j.total||0,results:(j.results||[]).map(m=>({id:m.id,type:m.type,title:m.title||m.title_orig||'',translation:(m.translation&&m.translation.title)||'Озвучка',link:m.link,episodes:m.episodes&&typeof m.episodes==='object'?m.episodes:null,seasons:m.seasons&&typeof m.seasons==='object'?m.seasons:null}))};
+    const data={total:j.total||0,results:(j.results||[]).map(m=>({id:m.id,type:m.type,title:m.title||m.title_orig||'',title_orig:m.title_orig||'',year:m.year||0,shikimori_id:+m.shikimori_id||0,material_data:m.material_data||null,poster:(m.material_data&&(m.material_data.anime_poster_url||m.material_data.poster_url))||'',translation:(m.translation&&m.translation.title)||'Озвучка',link:m.link,episodes:m.episodes&&typeof m.episodes==='object'?m.episodes:null,seasons:m.seasons&&typeof m.seasons==='object'?m.seasons:null}))};
     const c=LS.get('kodicache',{})||{};c[tid]={t:Date.now(),data};try{LS.set('kodicache',c)}catch{}
     return data})();
   const shared=p.catch(e=>{const c=LS.get('kodicache',{})||{};c[tid]={t:Date.now(),data:{total:0,results:[]},err:'Kodik: '+(e.message||e)};try{LS.set('kodicache',c)}catch{};throw e}).finally(()=>kodikInflight.delete(tid));
@@ -1450,11 +1455,12 @@ async function pageTitle(id){
       let epsHtml='';
       if(seasons.length>1)epsHtml=H2+seasons.map(x=>`<h3 id="season-${x.season}" class="muted tiny" style="letter-spacing:.14em;text-transform:uppercase;margin:18px 0 8px">Сезон ${x.season} · ${x.eps.length} сер.</h3><div class="grid w" style="margin-top:10px;gap:8px">${x.eps.map(e=>{const k2=e.season>1?e.season+'x'+e.n:e.n,hh=S.hist[hkey(t.id,k2)];return`<a class="ep" href="#/watch/${t.id}/${k2}"><span class="n">${e.n}</span><span class="t" style="min-width:0;flex:1"><b style="display:block;font-size:13px">Серия ${e.n}</b><small class="muted tiny">${hh?(hh.done?'просмотрено':'смотрели · до '+fmt(hh.pos||0)):'Kodik · '+esc(kres.translation||'озвучка')}</small></span>${hh&&!hh.done?'<b class="tiny" style="color:var(--accent)">▶ продолжить</b>':hh&&hh.done?'<b class="tiny" style="color:var(--accent)">✓</b>':''}</a>`}).join('')}</div>`).join('');
       let filmsHtml='';
-      if(films.length)filmsHtml=`<h3 class="muted tiny" style="letter-spacing:.14em;text-transform:uppercase;margin:22px 0 8px">🎬 Фильмы по этому аниме · ${films.length}</h3><div class="grid w" style="margin-top:10px;gap:8px">${films.map((f,i2)=>`<div class="ep" style="cursor:pointer" data-film="${i2}"><span class="n">🎥</span><span class="t" style="min-width:0;flex:1"><b style="display:block;font-size:13px">${esc(f.title||f.title_orig||'Фильм')}</b><small class="muted">фильм${f.year?' · '+f.year:''}${f.material_data&&f.material_data.duration?' · '+f.material_data.duration+' мин':''} · Kodik</small></span><b class="tiny" style="color:var(--accent)">▶ смотреть</b></div>`).join('')}</div>`;
+      if(films.length)filmsHtml=`<h3 class="muted tiny" style="letter-spacing:.14em;text-transform:uppercase;margin:22px 0 8px">🎬 Фильмы по этому аниме · ${films.length}</h3><div class="grid fr-cards">${films.map((f,i2)=>{const fSh=+(f.shikimori_id||0)||0;const fT=f.title||f.title_orig||'Фильм';const fSub=['фильм',f.year||'',f.material_data&&f.material_data.duration?f.material_data.duration+' мин':'','Kodik'].filter(Boolean).join(' · ');return`<div class="card fr-card" style="--ac:${t.accent};cursor:pointer" data-film="${i2}" role="button" tabindex="0" data-live-card="1" data-live-id="${fSh||''}" data-live-shiki="${fSh}" data-live-libria="0" data-live-title="${esc(fT)}"><div class="pw" data-live-slot="1"><img loading="lazy" referrerpolicy="no-referrer" src="${esc(f.poster||t.poster)}" alt="Постер: ${esc(fT)}"><div class="shade"></div><div class="bar"></div><span class="fr-step">🎥</span><div class="cap"><b>${esc(fT)}</b><small>${esc(fSub)}</small></div></div><div class="tags"><span>▶ смотреть</span><span>Фильм</span></div></div>`}).join('')}</div>`;
       let partsHtml='';
-      if(parts.length)partsHtml=`<h3 class="muted tiny" style="letter-spacing:.14em;text-transform:uppercase;margin:22px 0 8px">📖 Порядок просмотра · ${parts.length} <span style="opacity:.6;letter-spacing:0;text-transform:none">· по данным AniList</span></h3><div class="grid w" style="margin-top:10px;gap:8px">${parts.map((p,i2)=>`<div class="ep" style="cursor:pointer" data-part="${i2}"><span class="n">${i2+1}</span><span class="t" style="min-width:0;flex:1"><b style="display:block;font-size:13px">${esc(p.title||'Без названия')}${p._cur?' <span class="chip on" style="font-size:9px;padding:1px 7px">вы здесь</span>':''}</b><small class="muted">${[p._kind||'',p.year||'',p._epsTxt||''].filter(Boolean).join(' · ')}</small></span>${p._cur?'<b class="tiny" style="color:var(--cyan)">▸ сейчас</b>':'<b class="tiny" style="color:var(--accent)">▶ смотреть</b>'}</div>`).join('')}</div>`;
-      if(seasons.length>1)area.innerHTML=epsHtml+filmsHtml+partsHtml+'<div id="filmbay" style="margin-top:14px"></div>';
-      else area.insertAdjacentHTML('beforeend',filmsHtml+partsHtml+'<div id="filmbay" style="margin-top:14px"></div>');
+      if(parts.length)partsHtml=`<h3 class="muted tiny" style="letter-spacing:.14em;text-transform:uppercase;margin:22px 0 8px">📖 Порядок просмотра · ${parts.length} <span style="opacity:.6;letter-spacing:0;text-transform:none">· по данным AniList</span></h3><div class="grid fr-cards">${parts.map((p,i2)=>{const pSh=+(p._mal||0)||0;const pT=p.title||'Без названия';const pSub=[p._kind||'',p.year||'',p._epsTxt||''].filter(Boolean).join(' · ');const pBadge=p._cur?'<span class="sc fr-here">вы здесь</span>':(p.score>0?`<span class="sc">★ ${(+p.score).toFixed(1)}</span>`:'');return`<div class="card fr-card${p._cur?' is-cur':''}" style="--ac:${p._cur?'var(--cyan)':t.accent};cursor:pointer" data-part="${i2}" role="button" tabindex="0" data-live-card="1" data-live-id="${esc(String(pSh||p._alid||''))}" data-live-shiki="${pSh}" data-live-libria="0" data-live-title="${esc(p.titleOrig||pT)}"><div class="pw" data-live-slot="1"><img loading="lazy" referrerpolicy="no-referrer" src="${esc(p.poster||t.poster)}" alt="Постер: ${esc(pT)}"><div class="shade"></div><div class="bar"></div><span class="fr-step">#${i2+1}</span>${pBadge}<div class="cap"><b>${esc(pT)}</b><small>${esc(pSub)}</small></div></div><div class="tags"><span>${p._cur?'▸ сейчас':'▶ смотреть'}</span>${p._kind&&!p._cur?`<span>${esc(p._kind)}</span>`:''}</div></div>`}).join('')}</div>`;
+      const frExtra=`<div id="frbox">${filmsHtml}${partsHtml}<div id="filmbay" style="margin-top:14px"></div></div>`;
+      if(seasons.length>1)area.innerHTML=epsHtml+frExtra;
+      else{const exFr=area.querySelector('#frbox');if(exFr)exFr.outerHTML=frExtra;else area.insertAdjacentHTML('beforeend',frExtra)}
       const tas=document.getElementById('taside');
       const old=tas&&tas.querySelector('[data-avapanel]');old&&old.remove();
       if(tas&&(seasons.length>1||films.length||parts.length)){
@@ -1490,7 +1496,7 @@ async function pageTitle(id){
         cleanup=()=>{try{filmCtl&&filmCtl.destroy&&filmCtl.destroy()}catch(e){}filmCtl=null}
       }catch(e){bay.innerHTML=empty('Не удалось открыть',esc(String(e.message||e)),'')}
     };
-    const bind=(attr,list,fn)=>area.querySelectorAll('[data-'+attr+']').forEach(btn=>btn.onclick=async()=>{if(my!==nav)return;const it=list[+btn.dataset[attr]];if(it&&fn)fn(it)});
+    const bind=(attr,list,fn)=>area.querySelectorAll('[data-'+attr+']').forEach(btn=>{btn.onclick=async()=>{if(my!==nav)return;const it=list[+btn.dataset[attr]];if(it&&fn)fn(it)};btn.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();btn.click()}}});
     const gotoPart=entry=>{
       if(entry._cur){const el2=document.getElementById('epsarea');el2&&el2.scrollIntoView({behavior:'smooth',block:'start'});return}
       /* id-пространства: Shikimori/MAL — одно, AniList — другое. Прыжок по _alid уводил на чужой тайтл (например, 1 сезон). Поэтому: сначала mal (точное попадание), _alid — только если mal нет вовсе. */
@@ -1520,7 +1526,7 @@ async function pageTitle(id){
         const RK={TV:0,TV_SHORT:1,OVA:2,ONA:3,SPECIAL:4,MOVIE:5};
         const OK=new Set(['PREQUEL','SEQUEL','SIDE_STORY','SPIN_OFF']);
         const FRQ='query($id:Int){Media(id:$id,type:ANIME){relations{edges{relationType node{id idMal format title{userPreferred romaji english} startDate{year} episodes}}}}}';
-        const mkEntry=(n,rel)=>({_al:true,_alid:n.id,_mal:n.idMal||0,_rel:rel||'',_kind:KIND[n.format]||n.format,_fmt:n.format,_year:n.startDate&&n.startDate.year||9999,title:n.title&&(n.title.userPreferred||n.title.romaji||n.title.english)||'Без названия',_epsTxt:n.episodes?n.episodes+' сер.':'',type:n.format==='MOVIE'?'movie':'anime',translation:{title:'Kodik'},material_data:{duration:24},year:n.startDate&&n.startDate.year||0});
+        const mkEntry=(n,rel)=>({_al:true,_alid:n.id,_mal:n.idMal||0,_rel:rel||'',_kind:KIND[n.format]||n.format,_fmt:n.format,_year:n.startDate&&n.startDate.year||9999,title:n.title&&(n.title.userPreferred||n.title.romaji||n.title.english)||'Без названия',titleOrig:n.title&&(n.title.romaji||n.title.english||n.title.userPreferred)||'',poster:(n.coverImage&&(n.coverImage.extraLarge||n.coverImage.large))||'',score:0,_epsTxt:n.episodes?n.episodes+' сер.':'',type:n.format==='MOVIE'?'movie':'anime',translation:{title:'Kodik'},material_data:{duration:24},year:n.startDate&&n.startDate.year||0});
         const byY=(a,b)=>(a._year-b._year)||((RK[a._fmt]??9)-(RK[b._fmt]??9))||String(a.title).localeCompare(String(b.title));
         /* вся цепочка франшизы: идём вглубь по пре/сиквелам (das Finale 2–5, вторые сезоны), спин-оффы — по бокам */
         const chain=new Map(),sideRaw=[];
@@ -1539,16 +1545,48 @@ async function pageTitle(id){
               else if(e.relationType==='SIDE_STORY'||e.relationType==='SPIN_OFF'){if(!sideRaw.some(x=>x._alid===n.id))sideRaw.push(mkEntry(n,e.relationType))}}}
           frontier=next.slice(0,6);
         }
-        const cur={_cur:true,_kind:'вы смотрите здесь',title:t.title,_year:t.year||9999,_epsTxt:eps.length+' сер.',type:'anime'};
+        const cur={_cur:true,_mal:+(t.mal||t.shiki||(t.src==='libria'?0:t.id))||0,_kind:'вы смотрите здесь',title:t.title,titleOrig:t.alt||t.title,poster:t.poster,score:t.score||0,_year:t.year||9999,year:t.year||0,_epsTxt:eps.length+' сер.',type:'anime'};
         const curY=t.year||9999;
         const all=[...chain.values()];
         const pre=all.filter(x=>x._year<curY).sort(byY);
         const seq=all.filter(x=>x._year>=curY).sort(byY);
         const side=sideRaw.filter(x=>!chain.has(x._alid)).sort(byY);
         parts=[...pre,cur,...seq,...side].slice(0,18);
+        parts.forEach(p=>{if(p._cur)return;const loc=p._mal&&(ALL.find(x=>x.mal===p._mal||x.shiki===p._mal)||extra.get(p._mal));if(loc){p.title=loc.title||p.title;if(!p.poster)p.poster=loc.poster;if(!p.score&&loc.score)p.score=loc.score}});
         if(my!==nav)return;
         render();
-        bind('part',parts,gotoPart);
+        bind('film',films,playInline);bind('part',parts,gotoPart);
+        const needAl=parts.filter(p=>!p._cur&&p._alid&&(!p.poster||!p.score)).map(p=>p._alid);
+        const needMal=parts.filter(p=>!p._cur&&p._mal).map(p=>p._mal);
+        if(needAl.length||needMal.length){
+          const [alCov,shCov]=await Promise.all([
+            needAl.length?withTimeout(anilistQ('query($ids:[Int]){Page(perPage:25){media(id_in:$ids,type:ANIME){id averageScore coverImage{extraLarge large}}}}',{ids:needAl}),9000,'alcov').catch(()=>null):null,
+            needMal.length?withTimeout(gql(`{ animes(ids:${JSON.stringify(needMal.join(','))}, limit:25){ id russian score poster { originalUrl } } }`),9000,'shcov').catch(()=>null):null
+          ]);
+          if(my!==nav)return;
+          let changed=false;
+          const alMap=new Map(((alCov&&alCov.Page&&alCov.Page.media)||[]).map(m=>[m.id,m]));
+          const shMap=new Map(((shCov&&shCov.animes)||[]).map(m=>[+m.id,m]));
+          for(const p of parts){
+            if(p._cur)continue;
+            const am=alMap.get(p._alid);
+            if(am){
+              const cp=am.coverImage&&(am.coverImage.extraLarge||am.coverImage.large);
+              if(cp&&!p.poster){p.poster=cp;changed=true}
+              if(am.averageScore&&!p.score){p.score=+(am.averageScore/10).toFixed(1);changed=true}
+            }
+            const sm=p._mal&&shMap.get(+p._mal);
+            if(sm){
+              if(sm.russian&&sm.russian!==p.title){p.title=sm.russian;changed=true}
+              if(+sm.score>0&&!p.score){p.score=+sm.score;changed=true}
+              if(!p.poster&&sm.poster&&sm.poster.originalUrl&&!/missing_/.test(sm.poster.originalUrl)){
+                p.poster=sm.poster.originalUrl.startsWith('/')?'https://shikimori.one'+sm.poster.originalUrl:sm.poster.originalUrl;
+                changed=true;
+              }
+            }
+          }
+          if(changed&&my===nav&&!played){render();bind('film',films,playInline);bind('part',parts,gotoPart)}
+        }
       }
     }catch{}
   }).catch(()=>{})
