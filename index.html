@@ -217,7 +217,7 @@ footer.foot{margin-top:90px;border-top:1px solid var(--line);background:var(--bg
 <script>/* APP */
 (()=>{
 'use strict';
-const BUILD='2026-11-05 v17.43 · живые карточки с постерами в «Порядке просмотра» и фильмах франшизы, живые карточки каталога/поиска + авто-постер аниме, друзья и ЛС, анти-спам + Self-Pardon';
+const BUILD='2026-11-07 v17.44 · безрекламные источники VideoHub, AnimeVost и Yani/Aksor помимо Kodik, живые карточки франшизы, друзья и ЛС, анти-спам';
 const STUDIO_SNAPSHOT={"date":"10.10.2026","days":[{"name":"Понедельник","entries":[{"time":"16:10","title":"Я влюбился в тебя, когда ты бежала в лунной ночи"},{"time":"16:30","title":"Тайная битва за престол сильнейшего принца-дуралея"},{"time":"18:10","title":"Разгневанная леди поклялась отомстить"},{"time":"18:15","title":"Мир танцует"},{"time":"18:30","title":"Аккуратная и симпатичная девочка в моей новой школе"},{"time":"18:40","title":"Рыцарь-скелет вступает в параллельный мир 2"},{"time":"18:55","title":"Необъятный океан 3"},{"time":"20:20","title":"Игра лжецов"},{"time":"21:15","title":"Отверженная святая и её гастрономическое путешествие в другом мире"}]},{"name":"Вторник","entries":[{"time":"13:10","title":"Призрак в доспехах"},{"time":"17:10","title":"Забывчивая святая дева неосознанно изливает свою силу"},{"time":"22:55","title":"Непревзойдённый"},{"time":"19:15","title":"Истинные чудотворные рыцари 2"},{"time":"22:05","title":"Красная река"},{"time":"23:00","title":"Виктория с множеством козырей"}]},{"name":"Среда","entries":[{"time":"15:45","title":"Клеватесс 2"},{"time":"17:05","title":"Военная хроника маленькой девочки 2"},{"time":"18:00","title":"Мир отомэ-игр — это тяжелый мир для мобов 2"},{"time":"18:10","title":"Героиня? Святая? Нет, я всемогущая горничная!"},{"time":"19:45","title":"Для тебя во всём цвету 2"},{"time":"20:10","title":"Крестьянин 999-го уровня"},{"time":"20:20","title":"Тройной шторм"},{"time":"20:40","title":"Старик из деревни становится Святым мечом"}]},{"name":"Четверг","entries":[{"time":"09:45","title":"Для тебя во всём цвету 2"},{"time":"16:15","title":"Дара из Рэйвы"},{"time":"16:30","title":"Бродячие псы: Шуточные истории 2"},{"time":"18:25","title":"Ура мечте! Бесконечная мечта"},{"time":"18:45","title":"Пыль Мёбиуса"},{"time":"19:45","title":"Табакошка"},{"time":"19:50","title":"Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры"},{"time":"20:00","title":"Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга"},{"time":"21:05","title":"Монстрик Карамелька"}]},{"name":"Пятница","entries":[{"time":"18:20","title":"Прошло десять лет с момента, как я стал легендой"},{"time":"18:30","title":"О моём перерождении в слизь 4"},{"time":"19:00","title":"Население приграничного владения начинается с нуля"},{"time":"19:10","title":"Нарисуй это, потом умри"},{"time":"20:10","title":"Пожалуйста, простите моих младших братьев"},{"time":"20:15","title":"Адский режим 2"},{"time":"20:45","title":"Юный лорд — мастер побега 2"},{"time":"22:10","title":"Слёзы Бога"}]},{"name":"Суббота","entries":[{"time":"13:10","title":"Добро пожаловать в ад, Ирума! 4"},{"time":"14:10","title":"Власть книжного червя 4"},{"time":"16:45","title":"Чёрный факел"},{"time":"17:55","title":"Рекомендация старшеклассника Ивамото"},{"time":"20:15","title":"Шатёр чародея"},{"time":"20:35","title":"Шоу для взрослых: Цирк «Подсолнух»"},{"time":"20:40","title":"Следующий герцог, который скажет: «Я не хочу любить тебя», будет любить тебя по какой-то причине"},{"time":"20:50","title":"Невеста демона"},{"time":"20:55","title":"Лиричная волшебница Наноха: Опередители — Огненный выстрел возмездия"},{"time":"21:00","title":"Кот и дракон"},{"time":"21:10","title":"Ханаори хочет драться даже после перерождения"},{"time":"21:40","title":"Забота об одарённой девушке"},{"time":"22:30","title":"Мао"},{"time":"22:50","title":"Цугаи загробного мира"}]},{"name":"Воскресенье","entries":[{"time":"10:10","title":"Компания «Маги-Люмьер» 2"},{"time":"11:55","title":"Вперёд, отряд мистики!"},{"time":"12:00","title":"Прощай, Лара"},{"time":"12:10","title":"Ты и я полные противоположности"},{"time":"12:20","title":"Железный котелок Жана!"},{"time":"16:25","title":"Самый сильный в мире заступник"},{"time":"17:40","title":"История электричества в двадцатом веке"},{"time":"17:50","title":"Сто девушек 3"},{"time":"18:40","title":"Дигимоны: Битбрейк"},{"time":"18:50","title":"Реинкарнация безработного 3"},{"time":"19:20","title":"Чёрная кошка и класс ведьм"},{"time":"19:40","title":"Хоть я и бездарная злодейка"},{"time":"20:10","title":"Лазурный путь: Малый вперёд! 2"}]}]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -243,7 +243,7 @@ const LS_OK=(()=>{try{localStorage.setItem('__ah','1');localStorage.removeItem('
   const keys=await new Promise(res=>{try{const t=dbp.transaction('kv').objectStore('kv').getAllKeys();t.onsuccess=()=>res(t.result||[]);t.onerror=()=>res([])}catch{res([])}});
   for(const k of keys){if(_mem.has(k))continue;const v=await new Promise(res=>{const t=dbp.transaction('kv').objectStore('kv').get(k);t.onsuccess=()=>res(t.result);t.onerror=()=>res(undefined)});if(v!==undefined)_mem.set(k,v)}
   /* восстанавливаем ВСЁ живое состояние: статусы, историю, позиции — а не только ник */
-  const STK=['hist','lists','marks','ovr','notes','subs','aired','prefs','kodicsel','kodikSeason','embeds','sourceMode','dubpref','avamap','name','avatar','theme','auth','lang'];
+  const STK=['hist','lists','marks','ovr','notes','subs','aired','prefs','kodicsel','kodikSeason','cvhsel','cvhSeason','yanisel','embeds','sourceMode','dubpref','avamap','name','avatar','theme','auth','lang'];
   let rerender=false;
   for(const k of STK){if(!_mem.has(k))continue;const v=_mem.get(k);
     try{if(JSON.stringify(S[k])!==JSON.stringify(v)){S[k]=v;rerender=true}}catch(e){S[k]=v;rerender=true}}
@@ -285,7 +285,7 @@ const HERO_CLIPS=[
   {id:30276,mal:30276,title:'Ванпанчмен',year:2015,score:8.5,studio:'Madhouse',genres:['экшен','комедия'],poster:'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21087-B5DHjqZ3kW4b.jpg',banner:'https://s4.anilist.co/file/anilistcdn/media/anime/banner/21087-sHb9zUZFsHe1.jpg',video:'https://www.sakugabooru.com/data/f6ed35beb228f0510770d8e3b7e31061.mp4',desc:'Сайтама тренировался так усердно, что побеждает любого монстра одним ударом — и теперь ищет достойного противника среди угроз человечества.'}
 ];
 const S={theme:LS.get('theme','dark'),name:LS.get('name',''),avatar:LS.get('avatar',''),avamap:LS.get('avamap',{}),prefs:{...DEF,...LS.get('prefs',{})},lists:LS.get('lists',{}),subs:LS.get('subs',[]),hist:LS.get('hist',{}),marks:LS.get('marks',[]),ovr:LS.get('ovr',{}),notes:LS.get('notes',[]),auth:LS.get('auth',null),lang:LS.get('lang','ru'),tpl:LS.get('tpl',''),giphy:LS.get('giphy',''),aired:LS.get('aired',{}),
-dubpref:LS.get('dubpref',''),kodikSeason:LS.get('kodikseason',{}),kodikToken:LS.get('kodikToken',''),kodikDomain:LS.get('kodikDomain','kodik.info'),kodikQ:LS.get('kodikQ','720'),embeds:LS.get('embeds',{}),kodicsel:LS.get('kodicsel',{}),sourceMode:LS.get('sourceMode','auto'),anihubDub:LS.get('anihubDub',{}),recHide:LS.get('recHide',{}),libalt:LS.get('libalt',{})};
+dubpref:LS.get('dubpref',''),kodikSeason:LS.get('kodikseason',{}),kodikToken:LS.get('kodikToken',''),kodikDomain:LS.get('kodikDomain','kodik.info'),kodikQ:LS.get('kodikQ','720'),embeds:LS.get('embeds',{}),kodicsel:LS.get('kodicsel',{}),cvhsel:LS.get('cvhsel',{}),cvhSeason:LS.get('cvhseason',{}),yanisel:LS.get('yanisel',{}),sourceMode:LS.get('sourceMode','auto'),anihubDub:LS.get('anihubDub',{}),recHide:LS.get('recHide',{}),libalt:LS.get('libalt',{})};
 const save=(...k)=>{k.forEach(x=>LS.set(x,S[x]));try{if(k.some(x=>x==='hist'||x==='lists'||x==='name'))pubProf()}catch{}};
 if(!S.name)S.name='Гость';if(S.auth&&S.name!==S.auth.nick)S.name=S.auth.nick;
 const ME={id:(()=>{try{return sessionStorage.getItem('ah:id')||(()=>{const i=uid();sessionStorage.setItem('ah:id',i);return i})()}catch{return uid()}})()};
@@ -526,14 +526,15 @@ async function libriaResolve(t){
   if(t.src==='libria'){try{const rel=await libriaGet('/anime/releases/'+t.id);if(rel?.episodes?.length)return store(rel)}catch{}}
   const names=[];
   const add=n=>{n=String(n||'').trim();if(n&&n!=='—'&&!names.includes(n))names.push(n)};
-  add(t.title);String(t.alt||'').split('/').forEach(add);
+  add(t.title);add(t.titleEn);String(t.alt||'').split('/').forEach(add);
+  const shId=+(t.mal||t.id)||0;
   for(const nm of names){
     try{
       const found=await libriaGet('/app/search/releases?query='+encodeURIComponent(nm));
       if(!Array.isArray(found)||!found.length)continue;
       /* СТРОГАЯ сверка: только совпадение Shikimori/MAL-id, иначе имя+год. Чужой релиз = отказ, не «первый попавшийся» */
       const norm=n=>String(n||'').toLowerCase().replace(/[^a-zа-яё0-9]+/gi,' ');
-      const byId=found.filter(r=>(r.shikimori&&+r.shikimori.id===+t.id)||(r.mal&&t.mal&&+r.mal.id===+t.mal));
+      const byId=found.filter(r=>(r.shikimori&&(+r.shikimori.id===+t.id||(shId&&+r.shikimori.id===shId)))||(r.mal&&shId&&+r.mal.id===shId));
       let best=null;
       if(byId.length)best=byId[0];
       else{
@@ -546,6 +547,8 @@ async function libriaResolve(t){
         const nmOK=[nmOf(rel.name),rel.name?.english].some(x=>{const a=norm(x),bq=norm(nm);return a&&bq&&(a===bq||a.includes(bq)||bq.includes(a))});
         if(!yrOK2||!nmOK)continue}
       return store(rel)}catch(e){/* пробуем следующее название */}}
+  try{const ym=await yaniFind(t);const al=ym&&ym.remote_ids&&ym.remote_ids.anilibria_alias;
+    if(al){const rel=await libriaGet('/anime/releases/'+encodeURIComponent(al));if(rel&&rel.episodes?.length)return store(rel)}}catch(e){}
   return null}
 function libriaMedia(ep){
   if(!ep||(!ep.hls_480&&!ep.hls_720&&!ep.hls_1080))return null;
@@ -560,13 +563,200 @@ function libriaMedia(ep){
     const nm=(x&&typeof x==='object'&&(x.label||x.name||x.lang))||('Субтитры '+(i+1));
     return{id:'lsub'+i,label:String(nm).slice(0,40),lang:'ls'+i,url}}).filter(Boolean);
   return{demo:false,libria:true,sources,audios:[{id:'main',label:'AniLibria · русская озвучка',lang:'ru'}],subs,opening:op,ending:ed}}
+const CVH_API=()=>window.__CVH_API||'https://plapi.cdnvideohub.com/api/v1';
+const VOST_API=()=>window.__VOST_API||'https://api.animevost.org/v1';
+const YANI_API=()=>window.__YANI_API||'https://api.yani.tv';
+const _cvhVidMem=new Map();const _yaniMetaMem=new Map();
+function altStudioScore(nm){
+  const s=String(nm||'').toLowerCase();
+  if(S.dubpref&&s===String(S.dubpref).toLowerCase())return 1000;
+  if(S.dubpref&&s.includes(String(S.dubpref).toLowerCase()))return 900;
+  const P=['anilibria','анилибрия','anidub','анидаб','studio band','студийная банда','dream cast','dreamcast','shiza','tvshows','animevost','анимевост','fumodub','kitsune','anistar','onwave','дубляжная'];
+  for(let i=0;i<P.length;i++)if(s.includes(P[i]))return 500-i*15;
+  if(/субтитр|sub/i.test(s))return 40;
+  return 100}
+async function yaniFind(t){
+  if(!t)return null;
+  if(_yaniMetaMem.has(t.id))return _yaniMetaMem.get(t.id);
+  const shId=+(t.mal||(t.src!=='libria'?t.id:0))||0;
+  const qs=[];const addQ=x=>{x=String(x||'').trim();if(x&&x!=='—'&&!qs.includes(x))qs.push(x)};
+  addQ(t.title);addQ(t.titleEn);String(t.alt||'').split('/').slice(0,2).forEach(addQ);
+  const norm=n=>String(n||'').toLowerCase().replace(/[^a-zа-яё0-9]+/gi,' ').trim();
+  for(const q of qs.slice(0,3)){
+    try{
+      const r=await withTimeout(fetch(YANI_API()+'/anime?q='+encodeURIComponent(q)+'&limit=8',{headers:{'Accept':'application/json'}}),6000,'таймаут');
+      if(!r.ok)continue;
+      const j=await r.json();const list=Array.isArray(j&&j.response)?j.response:[];
+      if(!list.length)continue;
+      let hit=shId?list.find(a=>a.remote_ids&&(+a.remote_ids.shikimori_id===shId||+a.remote_ids.myanimelist_id===shId)):null;
+      if(!hit){hit=list.find(a=>{const yr=!a.year||!t.year||Math.abs(+a.year-+t.year)<=1;
+        if(!yr)return false;
+        const cands=[a.title,...(Array.isArray(a.other_titles)?a.other_titles:[])];
+        return cands.some(c=>{const u=norm(c),v=norm(q);return u&&v&&(u===v||u.includes(v)||v.includes(u))&&Math.min(u.length,v.length)>=4})})}
+      if(hit){_yaniMetaMem.set(t.id,hit);return hit}
+    }catch(e){}
+  }
+  _yaniMetaMem.set(t.id,null);return null}
+async function cvhResolve(t){
+  if(!t)return null;
+  const cache=LS.get('cvhcache',{})||{};const hit=cache[t.id];
+  if(hit&&Date.now()<(hit.at||0)+(hit.results&&hit.results.length?2*3600e3:10*60e3))return hit.results&&hit.results.length?hit:null;
+  let malId=+(t.mal||(t.src!=='libria'?t.id:0))||0;
+  if(!malId){try{const ym=await yaniFind(t);malId=+(ym&&ym.remote_ids&&(ym.remote_ids.myanimelist_id||ym.remote_ids.shikimori_id))||0}catch(e){}}
+  if(!malId)return null;
+  try{
+    const r=await withTimeout(fetch(CVH_API()+'/player/sv/playlist?pub=745&aggr=mali&id='+encodeURIComponent(malId),{headers:{'Accept':'application/json'}}),7000,'таймаут');
+    if(r.status===204){cache[t.id]={at:Date.now(),results:[]};LS.set('cvhcache',cache);return null}
+    if(!r.ok)return null;
+    const j=await r.json();const items=Array.isArray(j&&j.items)?j.items:[];
+    if(!items.length){cache[t.id]={at:Date.now(),results:[]};LS.set('cvhcache',cache);return null}
+    const isSer=j.isSerial!==false;const bySt=new Map();
+    for(const it of items){
+      if(!it||!it.vkId)continue;
+      const st=String(it.voiceStudio||(it.voiceType==='subtitles'?'Русские субтитры':'Русская озвучка')).trim();
+      const sn=isSer?Math.max(1,+it.season||1):1;
+      const ep=isSer?Math.max(1,+it.episode||1):1;
+      let rec=bySt.get(st);if(!rec){rec={translation:st,voiceType:it.voiceType||'dubbing',seasons:{}};bySt.set(st,rec)}
+      if(!rec.seasons[sn])rec.seasons[sn]={};
+      if(!rec.seasons[sn][ep])rec.seasons[sn][ep]=String(it.vkId);
+    }
+    const results=[...bySt.values()].filter(x=>Object.keys(x.seasons).length>0);
+    const data={at:Date.now(),title:j.titleName||t.title,results};
+    cache[t.id]=data;LS.set('cvhcache',cache);
+    return results.length?data:null;
+  }catch(e){return null}}
+function cvhPick(data){
+  const rs=(data&&data.results)||[];if(!rs.length)return 0;
+  let bi=0,bs=-1;rs.forEach((r,i)=>{const sc=altStudioScore(r.translation);if(sc>bs){bs=sc;bi=i}});return bi}
+function cvhSeasons(r){
+  const out=[];const ss=(r&&r.seasons)||{};
+  for(const sk of Object.keys(ss).sort((a,b)=>+a-+b)){
+    const em=ss[sk]||{};
+    const eps=Object.keys(em).sort((a,b)=>+a-+b).map(ek=>({n:+ek,season:+sk,vkId:em[ek]}));
+    if(eps.length)out.push({season:+sk,eps});
+  }
+  return out}
+async function cvhFetchMedia(vkId,studio){
+  if(!vkId)return null;
+  const mem=_cvhVidMem.get(vkId);
+  if(mem&&Date.now()-mem.at<15*60e3)return mem.media;
+  try{
+    const r=await withTimeout(fetch(CVH_API()+'/player/sv/video/'+encodeURIComponent(vkId),{headers:{'Accept':'application/json'}}),8000,'таймаут');
+    if(!r.ok)return null;
+    const j=await r.json();const sc=(j&&j.sources)||{};
+    const pairs=[['mpeg2kUrl','1440','1440p'],['mpegFullHdUrl','1080','1080p'],['mpegHighUrl','720','720p'],['mpegMediumUrl','480','480p'],['mpegLowUrl','360','360p'],['mpegLowestUrl','240','240p']];
+    const list=[];
+    for(const [k,qv,lbl] of pairs){const u=sc[k];if(u&&/^https?:/.test(u))list.push({quality:qv,label:lbl+' · VideoHub',type:'mp4',url:String(u).replace(/^http:/,'https:')})}
+    if(!list.length&&sc.hlsUrl&&/^https?:/.test(sc.hlsUrl))list.push({quality:'auto',label:'HLS · VideoHub',type:'hls',url:String(sc.hlsUrl).replace(/^http:/,'https:')});
+    if(!list.length)return null;
+    const prefQ=String(S.kodikQ||'720');
+    const main=(list.find(x=>x.quality===prefQ)||list.find(x=>x.quality==='1080')||list.find(x=>x.quality==='720')||list[0]).url;
+    const sources=list[0].quality==='auto'?list:[{quality:'auto',label:'Авто · '+(studio||'VideoHub'),type:'mp4',url:main},...list];
+    const media={demo:false,cvh:true,sources,audios:[{id:'main',label:(studio||'Русская озвучка')+' · VideoHub',lang:'ru'}],subs:[],dur:+j.duration||0};
+    _cvhVidMem.set(vkId,{at:Date.now(),media});return media;
+  }catch(e){return null}}
+async function vostPost(endpoint,bodyStr,fbQuery){
+  try{
+    const r=await withTimeout(fetch(VOST_API()+endpoint,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:bodyStr}),7000,'таймаут');
+    if(r.ok)return await r.json();
+  }catch(e){}
+  if(fbQuery&&await hasProxy()){
+    const r2=await withTimeout(fetch(PB()+'/api/vost/resolve?'+fbQuery),9000,'таймаут');
+    if(r2.ok){const j2=await r2.json();return endpoint==='/playlist'?(j2.items||[]):{data:j2.data||[]}}
+  }
+  return null}
+async function vostResolve(t){
+  if(!t)return null;
+  const cache=LS.get('vostcache',{})||{};const hit=cache[t.id];
+  if(hit&&Date.now()<(hit.at||0)+(hit.episodes&&hit.episodes.length?6*3600e3:15*60e3))return hit.episodes&&hit.episodes.length?hit:null;
+  const qs=[];const addQ=x=>{x=String(x||'').trim();if(x&&x!=='—'&&x.length>=3&&!qs.includes(x))qs.push(x)};
+  addQ(t.title);
+  const shortRu=String(t.title||'').split(/[:—–]/)[0].trim();if(shortRu.length>=5)addQ(shortRu);
+  String(t.alt||'').split('/').filter(x=>/[а-яё]/i.test(x)).slice(0,2).forEach(addQ);
+  const norm=n=>String(n||'').toLowerCase().replace(/\[[^\]]*\]/g,'').replace(/[^a-zа-яё0-9]+/gi,' ').trim();
+  const wantNms=[t.title,t.titleEn,...String(t.alt||'').split('/')].map(norm).filter(x=>x.length>=3);
+  for(const q of qs.slice(0,3)){
+    try{
+      const sr=await vostPost('/search','name='+encodeURIComponent(q),'q='+encodeURIComponent(q));
+      const arr=Array.isArray(sr&&sr.data)?sr.data:[];if(!arr.length)continue;
+      const best=arr.find(r=>{
+        const yrOK=!r.year||!t.year||Math.abs(+r.year-+t.year)<=1;if(!yrOK)return false;
+        const parts=String(r.title||'').replace(/\[[^\]]*\]/g,'').split('/').map(norm).filter(Boolean);
+        return parts.some(p=>wantNms.some(w=>p===w||((p.includes(w)||w.includes(p))&&Math.min(p.length,w.length)>=5)));
+      });
+      if(!best||!best.id)continue;
+      const pl=await vostPost('/playlist','id='+encodeURIComponent(best.id),'id='+encodeURIComponent(best.id));
+      if(!Array.isArray(pl)||!pl.length)continue;
+      const episodes=pl.map((it,idx)=>{
+        const m=String(it&&it.name||'').match(/(\d+)\s*сери/i)||String(it&&it.name||'').match(/^(\d+)$/);
+        const n=m?+m[1]:(idx+1);
+        const hd=it&&it.hd?String(it.hd).replace(/^http:/,'https:'):'';
+        const std=it&&it.std?String(it.std).replace(/^http:/,'https:'):'';
+        return (hd||std)?{n,name:String(it.name||('Серия '+n)),hd,std}:null;
+      }).filter(Boolean).sort((a,b)=>a.n-b.n);
+      if(!episodes.length)continue;
+      const ruName=String(best.title||'').split('/')[0].replace(/\[[^\]]*\]/g,'').trim()||t.title;
+      const data={at:Date.now(),id:best.id,name:ruName,episodes};
+      cache[t.id]=data;LS.set('vostcache',cache);return data;
+    }catch(e){}
+  }
+  cache[t.id]={at:Date.now(),episodes:[]};LS.set('vostcache',cache);return null}
+function vostMedia(ep){
+  if(!ep||(!ep.hd&&!ep.std))return null;
+  const main=ep.hd||ep.std;
+  const sources=[{quality:'auto',label:'Авто · AnimeVost',type:'mp4',url:main}];
+  if(ep.hd)sources.push({quality:'720',label:'720p · AnimeVost',type:'mp4',url:ep.hd});
+  if(ep.std)sources.push({quality:'480',label:'480p · AnimeVost',type:'mp4',url:ep.std});
+  return{demo:false,vost:true,sources,audios:[{id:'main',label:'AnimeVost · русская озвучка',lang:'ru'}],subs:[]}}
+async function yaniResolve(t){
+  if(!t)return null;
+  const cache=LS.get('yanicache',{})||{};const hit=cache[t.id];
+  if(hit&&Date.now()<(hit.at||0)+(hit.results&&hit.results.length?2*3600e3:15*60e3))return hit.results&&hit.results.length?hit:null;
+  try{
+    const ym=await yaniFind(t);if(!ym||!ym.anime_id)return null;
+    const r=await withTimeout(fetch(YANI_API()+'/anime/'+encodeURIComponent(ym.anime_id)+'/videos',{headers:{'Accept':'application/json'}}),7000,'таймаут');
+    if(!r.ok)return null;
+    const j=await r.json();const vids=Array.isArray(j&&j.response)?j.response:[];
+    const bySt=new Map();
+    for(const v of vids){
+      const pl=v&&v.data&&v.data.player;
+      if(pl!=='Плеер Aksor')continue;
+      const m=String(v.iframe_url||'').match(/\/video\/([a-zA-Z0-9_-]+)/);
+      if(!m)continue;
+      const dub=String((v.data&&v.data.dubbing)||'Русская озвучка').replace(/^Озвучка\s+/i,'').trim()||'Русская озвучка';
+      const n=Math.max(1,parseInt(v.number,10)||1);
+      const sk=v.skips||{};
+      const op=sk.opening&&+sk.opening.length>0?[Math.round(+sk.opening.time||0),Math.round((+sk.opening.time||0)+(+sk.opening.length||0))]:null;
+      const ed=sk.ending&&+sk.ending.length>0?[Math.round(+sk.ending.time||0),Math.round((+sk.ending.time||0)+(+sk.ending.length||0))]:null;
+      let rec=bySt.get(dub);if(!rec){rec={translation:dub,eps:{}};bySt.set(dub,rec)}
+      if(!rec.eps[n])rec.eps[n]={n,aksorId:m[1],opening:op,ending:ed};
+    }
+    const results=[...bySt.values()].map(x=>({translation:x.translation,episodes:Object.values(x.eps).sort((a,b)=>a.n-b.n)})).filter(x=>x.episodes.length>0);
+    const data={at:Date.now(),animeId:ym.anime_id,title:ym.title||t.title,results};
+    cache[t.id]=data;LS.set('yanicache',cache);
+    return results.length?data:null;
+  }catch(e){return null}}
+function yaniPick(data){return cvhPick(data)}
+async function yaniFetchMedia(epRec,studio){
+  if(!epRec||!epRec.aksorId||!(await hasProxy()))return null;
+  try{
+    const r=await withTimeout(fetch(PB()+'/api/aksor/video?id='+encodeURIComponent(epRec.aksorId)),10000,'таймаут');
+    if(!r.ok)return null;
+    const j=await r.json();if(!j||!j.ok||!Array.isArray(j.sources)||!j.sources.length)return null;
+    const main=j.sources[0];
+    const sources=[{quality:'auto',label:'Авто · '+(studio||j.studio||'Yani'),type:main.type||'hls',url:main.url},...j.sources];
+    return{demo:false,yani:true,sources,audios:[{id:'main',label:(studio||j.studio||'Русская озвучка')+' · Yani',lang:'ru'}],subs:[],opening:epRec.opening||j.opening||null,ending:epRec.ending||j.ending||null};
+  }catch(e){return null}}
 function resolveOrder(t){
   if(S.sourceMode==='demo')return['demo'];
   if(S.sourceMode==='tpl')return S.tpl?['tpl']:[];
   if(S.sourceMode==='kodik')return['kodik'];
   if(S.sourceMode==='libria')return['libria'];
+  if(S.sourceMode==='cvh')return['cvh'];
+  if(S.sourceMode==='vost')return['vost'];
+  if(S.sourceMode==='yani')return['yani'];
   if(S.sourceMode==='embed')return S.embeds[t.id]?['embed']:[];
-  const a=[];if(S.embeds[t.id])a.push('embed');if(S.tpl)a.push('tpl');a.push('libria');a.push('kodik');return a}
+  const a=[];if(S.embeds[t.id])a.push('embed');if(S.tpl)a.push('tpl');a.push('libria');a.push('cvh');a.push('vost');a.push('yani');a.push('kodik');return a}
 function mountEmbedPlayer(box,o){
   box.classList.add('player');
   box.innerHTML=`<iframe class="kframe" src="${esc(o.url)}" title="${esc(o.title)}" allow="autoplay; fullscreen; encrypted-media; picture-in-picture; clipboard-write" allowfullscreen referrerpolicy="no-referrer"></iframe>
@@ -1595,72 +1785,142 @@ async function pageTitle(id){
 async function pageWatch(id,epn,Q){
   setNav('catalog');app.innerHTML=loading;let my=nav;const tT=Q?Math.max(0,Math.round(+Q.get('t')||0)):0;const t=await getTitle(id);if(my!==nav)return;
   if(!t){app.innerHTML=`<div class="wrap" style="padding-top:60px">${empty('Не удалось загрузить данные тайтла','Shikimori, AniList и AniLibria не ответили. Проверьте интернет и повторите.','<button class="btn pri" data-retry>Повторить</button>')}</div>`;return}
-  /* --- выбор источника видео: страница не должна ждать сеть --- */
+  /* --- выбор источника видео: параллельный поиск безрекламных потоков --- */
   const order=resolveOrder(t);let used=null,kodik=null,kodikErr='';my=nav;
-  /* AniLibria ищем сразу параллельно с Kodik — источник подхватится без ожидания очереди */
-  const libP=order.includes('libria')?libriaResolve(t).catch(()=>null):null;
-  if(order.includes('kodik')){
-    const kc=kodikCacheHit(t.id);
-    if(kc){
-      if(kc.data.total>0&&kc.data.results.length){kodik={data:kc.data};kodik.sel=Math.max(0,Math.min(S.kodicsel[t.id]!=null?S.kodicsel[t.id]:kodikPick(kodik.data),kodik.data.results.length-1));if(order[0]==='kodik')used='kodik'}
-      else kodikErr=kc.err||'Kodik: материал по этому тайтлу не найден'}
-    else if(order[0]==='kodik'){
-      try{const data=await withTimeout(kodikFetch(t),4000,'таймаут');if(my!==nav)return;
-        if(data.total>0&&data.results.length){kodik={data};kodik.sel=Math.max(0,Math.min(S.kodicsel[t.id]!=null?S.kodicsel[t.id]:kodikPick(data),data.results.length-1));used='kodik'}
-        else kodikErr='Kodik: материал по этому тайтлу не найден'}
-      catch(e){if(my!==nav)return;kodikErr=e.message==='таймаут'?'Kodik: поиск занимает время — ищем в фоне, страница обновится сама.':('Kodik: '+(e.message||e));kodikBackground(t)}}
-    else kodikBackground(t)}
-  if(my!==nav)return;if(!used)used=order.find(m=>m!=='kodik')||'off';
-  /* AniLibria: ищем релиз и список эпизодов с прямыми потоками */
-  let lib=null,libErr='';
-  if(used==='libria'){
-    try{lib=libPick(t,await withTimeout(libP||libriaResolve(t),9000,'таймаут'));if(lib&&!lib.alts)libriaAlts(t)}catch(e){if(my!==nav)return;libErr='AniLibria: '+(e.message||e)}
-    if(my!==nav)return;
-    if(!lib||!lib.episodes.length){lib=null;libErr=libErr||'AniLibria: тайтл не найден в базе озвучки';used=order.find(m=>m!=='kodik'&&m!=='libria')||'off'}
-  }
-  let eps,kres=null,kodikSeasonsAll=null,season=1;
   const _mm=String(epn||'').match(/^(\d+)x(\d+)$/),qS=_mm?+_mm[1]:0,qE=_mm?+_mm[2]:(+epn||0);
-  if(used==='kodik'&&!(kodik&&kodik.data&&kodik.data.results.length&&kodik.data.results[kodik.sel])){used='off';kodikErr=kodikErr||'Kodik: материал по этому тайтлу не найден'}else if(used==='kodik'){kres=kodik.data.results[kodik.sel];kodikSeasonsAll=kodikSeasons(kres);
-    const want=+S.kodikSeason[t.id]||0;
-    const selS=(qS&&kodikSeasonsAll.find(x=>x.season===qS))||kodikSeasonsAll.find(x=>x.season===want)||kodikSeasonsAll.find(x=>x.eps.some(e=>e.n===qE))||kodikSeasonsAll[0]||{season:1,eps:[]};
-    season=selS.season;S.kodikSeason[t.id]=season;
-    eps=selS.eps.map(e=>({...e,dur:(t.dur||24)*60}));if(!eps.length){used='off';kodikErr=kodikErr||'Kodik: у выбранного перевода нет серий — автовоспроизведение остановлено';eps=episodes(t)}}
-  else if(used==='libria'&&lib){eps=lib.episodes.map(e=>({n:e.ordinal,title:e.name&&!/^серия\s*\d+$/i.test(e.name)?e.name:'',dur:Math.max(120,(e.duration>600?e.duration:(e.duration||0)*60)||(t.dur||24)*60)}))}
-  else eps=episodes(t);
+  const libP=order.includes('libria')?libriaResolve(t).catch(()=>null):null;
+  const cvhP=order.includes('cvh')?cvhResolve(t).catch(()=>null):null;
+  const vostP=order.includes('vost')?vostResolve(t).catch(()=>null):null;
+  const yaniP=order.includes('yani')?yaniResolve(t).catch(()=>null):null;
+  if(!order.includes('kodik')||order[0]!=='kodik'){if(!kodikCacheHit(t.id))kodikBackground(t)}
+  let lib=null,libErr='',libMedia=null;
+  let cvh=null,cvhSel=0,cvhRes=null,cvhSeasonsAll=null,cvhMedia=null,cvhErr='';
+  let vost=null,vostMediaObj=null,vostErr='';
+  let yani=null,yaniSel=0,yaniRes=null,yaniMedia=null,yaniErr='';
+  let eps=null,kres=null,kodikSeasonsAll=null,season=1;
+  let kodikDirect=null,noProxy=false,bgResolveM=null,kpend=false;
+  const _rr2=x=>Array.isArray(x)&&x.length>=2?[Math.max(0,+x[0]||0),Math.max(0,+x[1]||0)]:null;
+  const strictSingle=order.length===1;
+
+  for(const cand of order){
+    if(my!==nav)return;
+    if(cand==='embed'&&S.embeds[t.id]){eps=episodes(t);used='embed';break}
+    if(cand==='tpl'&&S.tpl){eps=episodes(t);used='tpl';break}
+    if(cand==='demo'){eps=episodes(t);used='demo';break}
+    if(cand==='libria'){
+      try{lib=libPick(t,await withTimeout(libP||libriaResolve(t),9000,'таймаут'));if(lib&&!lib.alts)libriaAlts(t)}catch(e){if(my!==nav)return;libErr='AniLibria: '+(e.message||e)}
+      if(my!==nav)return;
+      if(lib&&lib.episodes&&lib.episodes.length){
+        const candEps=lib.episodes.map(e=>({n:e.ordinal,title:e.name&&!/^серия\s*\d+$/i.test(e.name)?e.name:'',dur:Math.max(120,(e.duration>600?e.duration:(e.duration||0)*60)||(t.dur||24)*60)}));
+        const candEp=candEps.find(e=>e.n===qE)||candEps[0];
+        const lm=libriaMedia(lib.episodes.find(e=>e.ordinal===candEp.n)||lib.episodes[0]);
+        if(lm){eps=candEps;libMedia=lm;used='libria';break}
+        libErr='AniLibria: у серии нет прямых ссылок';
+      }else{lib=null;libErr=libErr||'AniLibria: тайтл не найден в базе озвучки'}
+    }
+    if(cand==='cvh'){
+      try{cvh=await withTimeout(cvhP||cvhResolve(t),8000,'таймаут')}catch(e){if(my!==nav)return;cvhErr='VideoHub: '+(e.message||e)}
+      if(my!==nav)return;
+      if(cvh&&cvh.results&&cvh.results.length){
+        cvhSel=Math.max(0,Math.min(S.cvhsel[t.id]!=null?S.cvhsel[t.id]:cvhPick(cvh),cvh.results.length-1));
+        cvhRes=cvh.results[cvhSel];cvhSeasonsAll=cvhSeasons(cvhRes);
+        const wantC=+S.cvhSeason[t.id]||0;
+        const selCS=(qS&&cvhSeasonsAll.find(x=>x.season===qS))||cvhSeasonsAll.find(x=>x.season===wantC)||cvhSeasonsAll.find(x=>x.eps.some(e=>e.n===qE))||cvhSeasonsAll[0]||{season:1,eps:[]};
+        season=selCS.season;S.cvhSeason[t.id]=season;
+        const candEps=selCS.eps.map(e=>({...e,dur:(t.dur||24)*60}));
+        const candEp=candEps.find(e=>e.n===qE)||candEps[0];
+        if(candEp&&candEp.vkId){
+          const cm=await cvhFetchMedia(candEp.vkId,cvhRes.translation);
+          if(my!==nav)return;
+          if(cm){eps=candEps.map(e=>({...e,dur:cm.dur>120?cm.dur:e.dur}));cvhMedia=cm;used='cvh';break}
+        }
+        cvhErr='VideoHub: прямой поток серии недоступен';
+      }else cvhErr=cvhErr||'VideoHub: материал по этому тайтлу не найден';
+    }
+    if(cand==='vost'){
+      try{vost=await withTimeout(vostP||vostResolve(t),8000,'таймаут')}catch(e){if(my!==nav)return;vostErr='AnimeVost: '+(e.message||e)}
+      if(my!==nav)return;
+      if(vost&&vost.episodes&&vost.episodes.length){
+        const candEps=vost.episodes.map(e=>({n:e.n,title:e.name&&!/^\d+\s*сери/i.test(e.name)?e.name:'',dur:(t.dur||24)*60,_vost:e}));
+        const candEp=candEps.find(e=>e.n===qE)||candEps[0];
+        const vm=vostMedia(candEp&&candEp._vost);
+        if(vm){eps=candEps;vostMediaObj=vm;used='vost';break}
+        vostErr='AnimeVost: у серии нет прямых MP4-ссылок';
+      }else vostErr=vostErr||'AnimeVost: материал по этому тайтлу не найден';
+    }
+    if(cand==='yani'){
+      try{yani=await withTimeout(yaniP||yaniResolve(t),8000,'таймаут')}catch(e){if(my!==nav)return;yaniErr='Yani: '+(e.message||e)}
+      if(my!==nav)return;
+      if(yani&&yani.results&&yani.results.length){
+        yaniSel=Math.max(0,Math.min(S.yanisel[t.id]!=null?S.yanisel[t.id]:yaniPick(yani),yani.results.length-1));
+        yaniRes=yani.results[yaniSel];
+        const candEps=(yaniRes.episodes||[]).map(e=>({n:e.n,title:'',dur:(t.dur||24)*60,_yani:e}));
+        const candEp=candEps.find(e=>e.n===qE)||candEps[0];
+        if(candEp&&candEp._yani){
+          const ym2=await yaniFetchMedia(candEp._yani,yaniRes.translation);
+          if(my!==nav)return;
+          if(ym2){eps=candEps;yaniMedia=ym2;used='yani';break}
+        }
+        yaniErr='Yani: серверный декодер потоков Aksor не ответил';
+      }else yaniErr=yaniErr||'Yani: безрекламные потоки для этого тайтла не найдены';
+    }
+    if(cand==='kodik'){
+      const kc=kodikCacheHit(t.id);
+      if(kc){
+        if(kc.data.total>0&&kc.data.results.length){kodik={data:kc.data};kodik.sel=Math.max(0,Math.min(S.kodicsel[t.id]!=null?S.kodicsel[t.id]:kodikPick(kodik.data),kodik.data.results.length-1))}
+        else kodikErr=kc.err||'Kodik: материал по этому тайтлу не найден';
+      }else{
+        try{const data=await withTimeout(kodikFetch(t),strictSingle?4000:5000,'таймаут');if(my!==nav)return;
+          if(data.total>0&&data.results.length){kodik={data};kodik.sel=Math.max(0,Math.min(S.kodicsel[t.id]!=null?S.kodicsel[t.id]:kodikPick(data),data.results.length-1))}
+          else kodikErr='Kodik: материал по этому тайтлу не найден';
+        }catch(e){if(my!==nav)return;kodikErr=e.message==='таймаут'?'Kodik: поиск занимает время — ищем в фоне, страница обновится сама.':('Kodik: '+(e.message||e));kodikBackground(t)}
+      }
+      if(kodik&&kodik.data&&kodik.data.results.length&&kodik.data.results[kodik.sel]){
+        kres=kodik.data.results[kodik.sel];kodikSeasonsAll=kodikSeasons(kres);
+        const want=+S.kodikSeason[t.id]||0;
+        const selS=(qS&&kodikSeasonsAll.find(x=>x.season===qS))||kodikSeasonsAll.find(x=>x.season===want)||kodikSeasonsAll.find(x=>x.eps.some(e=>e.n===qE))||kodikSeasonsAll[0]||{season:1,eps:[]};
+        season=selS.season;S.kodikSeason[t.id]=season;
+        const candEps=selS.eps.map(e=>({...e,dur:(t.dur||24)*60}));
+        if(!candEps.length){kodikErr=kodikErr||'Kodik: у выбранного перевода нет серий — автовоспроизведение остановлено'}
+        else{
+          const candEp=candEps.find(e=>e.n===qE)||candEps[0];
+          const m=candEp&&candEp.link?String(candEp.link).match(/\/(seria|serial|video|season|movie)\/(\d+)\/([a-f0-9]+)/i):null;
+          if(m&&await hasProxy()){
+            try{for(let rr=0;rr<2&&!kodikDirect;rr++){const r=await withTimeout(fetch(PB()+`/kodik/resolve?id=${m[2]}&hash=${m[3]}&type=${m[1]}`),rr?20000:35000,'таймаут');
+              if(r.ok){const j=await r.json();if(j&&j.links)kodikDirect=j}}}catch{}
+            if(my!==nav)return;
+          }else if(m&&strictSingle){noProxy=true;bgResolveM=m}
+          if(kodikDirect){eps=candEps;used='kodik';break}
+          if(strictSingle){eps=candEps;{kpend=true;used='off';kodikErr=kodikErr||'Kodik: прямой поток студии недоступен — рекламный плеер не открываю, автовоспроизведение остановлено'}}
+        }
+      }
+    }
+  }
+  if(!used)used='off';
+  if(!eps||!eps.length)eps=episodes(t);
   watchSrc=used;
   if(!S.lists[t.id]){S.lists[t.id]='watching';save('lists')}
   const ep=eps.find(e=>e.n===qE)||eps[0];
   const ek=e=>hkey(t.id,e.season>1?e.season+'x'+e.n:e.n);
   const key=ek(ep),hist=S.hist[key];
   let nx=eps.find(e=>e.n===ep.n+1),pv=eps.find(e=>e.n===ep.n-1);
-  if(used==='kodik'&&kodikSeasonsAll&&kodikSeasonsAll.length>1){const si=kodikSeasonsAll.findIndex(x=>x.season===season);
-    if(!nx&&kodikSeasonsAll[si+1]&&kodikSeasonsAll[si+1].eps[0]){const e=kodikSeasonsAll[si+1].eps[0];nx={...e,dur:(t.dur||24)*60,_u:`#/watch/${t.id}/${e.season}x${e.n}`}}
-    if(!pv&&si>0&&kodikSeasonsAll[si-1]&&kodikSeasonsAll[si-1].eps.length){const e=kodikSeasonsAll[si-1].eps[kodikSeasonsAll[si-1].eps.length-1];pv={...e,dur:(t.dur||24)*60,_u:`#/watch/${t.id}/${e.season}x${e.n}`}}}
-  /* Kodik: рядом работает прокси — достаём прямой m3u8 и играем в своём плеере (без зависающего iframe) */
-  let kodikDirect=null,noProxy=false,bgResolveM=null,kpend=false;
-  const _rr2=x=>Array.isArray(x)&&x.length>=2?[Math.max(0,+x[0]||0),Math.max(0,+x[1]||0)]:null;
-  if(used==='kodik'&&ep.link){
-    const m=String(ep.link).match(/\/(seria|serial|video|season|movie)\/(\d+)\/([a-f0-9]+)/i);
-    if(m&&await hasProxy()){
-      try{for(let rr=0;rr<2&&!kodikDirect;rr++){const r=await withTimeout(fetch(PB()+`/kodik/resolve?id=${m[2]}&hash=${m[3]}&type=${m[1]}`),rr?20000:35000,'таймаут');
-        if(r.ok){const j=await r.json();if(j&&j.links)kodikDirect=j}}}catch{}
-      if(my!==nav)return}
-    else if(m){noProxy=true;bgResolveM=m}
-  }
-  if(used==='kodik'&&!kodikDirect){kpend=true;used='off';kodikErr=kodikErr||'Kodik: прямой поток студии недоступен — рекламный плеер не открываю, автовоспроизведение остановлено'}
-  let libMedia=null;
-  if(used==='libria'&&lib){libMedia=libriaMedia(lib.episodes.find(e=>e.ordinal===ep.n)||lib.episodes[0]);if(!libMedia){libErr='AniLibria: у серии нет прямых ссылок';used='off'}}
-  const media=kodikDirect?kodikDirectMedia(kodikDirect):libMedia?libMedia:used==='demo'?mediaFor(t,ep.n):used==='tpl'?tplMedia(t,ep.n):null;
+  const activeSeasons=used==='kodik'?kodikSeasonsAll:used==='cvh'?cvhSeasonsAll:null;
+  if(activeSeasons&&activeSeasons.length>1){const si=activeSeasons.findIndex(x=>x.season===season);
+    if(!nx&&activeSeasons[si+1]&&activeSeasons[si+1].eps[0]){const e=activeSeasons[si+1].eps[0];nx={...e,dur:(t.dur||24)*60,_u:`#/watch/${t.id}/${e.season}x${e.n}`}}
+    if(!pv&&si>0&&activeSeasons[si-1]&&activeSeasons[si-1].eps.length){const e=activeSeasons[si-1].eps[activeSeasons[si-1].eps.length-1];pv={...e,dur:(t.dur||24)*60,_u:`#/watch/${t.id}/${e.season}x${e.n}`}}}
+  const media=kodikDirect?kodikDirectMedia(kodikDirect):libMedia?libMedia:cvhMedia?cvhMedia:vostMediaObj?vostMediaObj:yaniMedia?yaniMedia:used==='demo'?mediaFor(t,ep.n):used==='tpl'?tplMedia(t,ep.n):null;
   const embedUrl=used==='embed'?String(S.embeds[t.id]||'').split('{episode}').join(ep.n):null;
-  const chip=(m,l)=>`<button class="chip ${used===m?'on':''}" data-src="${m}">${l}</button>`;
-  const srcStatus0={demo:'Тестовый ролик без рекламы — подключите источник, чтобы смотреть настоящие серии.',tpl:'Играет ваш HLS-источник из настроек.',kodik:kodik?(kodikDirect?`Kodik: прямой поток в плеере AniHub · переводов найдено ${kodik.data.results.length}.`:`Kodik: найдено переводов — ${kodik.data.results.length}, серий — ${eps.length}.`):(kodikDirect?'Kodik: прямой поток готов.':'Kodik: переводов — поиск ещё идёт в фоне, статус обновится сам.'),libria:lib?`AniLibria: релиз «${lib.name}» · прямые потоки 480/720/1080, серий в озвучке — ${eps.length}.`:'AniLibria: поиск релиза…',embed:'Играет ваш внешний плеер (embed).',off:'Автовоспроизведение остановлено — включите источник чипом.'}[used];const srcStatus=(S.anihubDub&&S.anihubDub[t.id]!=null&&used==='kodik'&&kodik&&kodik.data&&kodik.data.results[S.anihubDub[t.id]])?'AniHub · озвучка «'+(kodik.data.results[S.anihubDub[t.id]].translation||'')+'»'+(kodikDirect?' · чистый поток без рекламы':' · перевод Kodik (чистый поток — с запущенным kodik_proxy.py)')  :srcStatus0;
-  const dubCnt=(((lib&&lib.alts)||[]).length)+((kodik&&kodik.data&&kodik.data.results)?kodik.data.results.length:(()=>{const ch=kodikCacheHit(t.id);return (ch&&ch.data&&ch.data.results)?ch.data.results.length:0})());
+  const chip=(m,l,ttl)=>`<button class="chip ${used===m?'on':''}" data-src="${m}"${ttl?` title="${esc(ttl)}"`:''}>${l}</button>`;
+  const srcStatus0={demo:'Тестовый ролик без рекламы — подключите источник, чтобы смотреть настоящие серии.',tpl:'Играет ваш HLS-источник из настроек.',kodik:kodik?(kodikDirect?`Kodik: прямой поток в плеере AniHub · переводов найдено ${kodik.data.results.length}.`:`Kodik: найдено переводов — ${kodik.data.results.length}, серий — ${eps.length}.`):(kodikDirect?'Kodik: прямой поток готов.':'Kodik: переводов — поиск ещё идёт в фоне, статус обновится сам.'),libria:lib?`AniLibria: релиз «${lib.name}» · прямые потоки 480/720/1080, серий в озвучке — ${eps.length}.`:'AniLibria: поиск релиза…',cvh:cvh?`VideoHub: прямой поток без рекламы и без прокси · озвучка «${cvhRes?cvhRes.translation:''}», студий — ${cvh.results.length}.`:'VideoHub: прямой поток без рекламы.',vost:vost?`AnimeVost: прямой MP4-поток 480/720p без рекламы и без прокси · серий — ${eps.length}.`:'AnimeVost: прямой поток без рекламы.',yani:yani?`Yani · озвучка «${yaniRes?yaniRes.translation:''}» · прямой поток 1080p без рекламы, студий — ${yani.results.length}.`:'Yani: прямой поток без рекламы.',embed:'Играет ваш внешний плеер (embed).',off:(cvhErr||vostErr||yaniErr||kodikErr||libErr)?'Автовоспроизведение остановлено — выберите другой безрекламный источник чипом выше.':'Автовоспроизведение остановлено — включите источник чипом.'}[used];const srcStatus=(S.anihubDub&&S.anihubDub[t.id]!=null&&used==='kodik'&&kodik&&kodik.data&&kodik.data.results[S.anihubDub[t.id]])?'AniHub · озвучка «'+(kodik.data.results[S.anihubDub[t.id]].translation||'')+'»'+(kodikDirect?' · чистый поток без рекламы':' · перевод Kodik (чистый поток — с запущенным kodik_proxy.py)')  :srcStatus0;
+  const dubCnt=(lib?1:0)+(((lib&&lib.alts)||[]).length)+((kodik&&kodik.data&&kodik.data.results)?kodik.data.results.length:(()=>{const ch=kodikCacheHit(t.id);return (ch&&ch.data&&ch.data.results)?ch.data.results.length:0})());
   app.innerHTML=`<div class="wrap" style="padding-top:20px;padding-bottom:10px"><nav class="tiny muted" aria-label="Хлебные крошки" style="margin-bottom:14px"><a href="#/catalog">Каталог</a> › <a href="#/title/${t.id}">${esc(t.title)}</a> › <b style="color:var(--ink)">серия ${ep.n}</b></nav>
-  <div class="row between" id="srcbar" style="margin-bottom:12px"><div class="row" style="gap:6px">${dubCnt>0?`<button class="chip ${used==='libria'?'on':''}" data-src="libria" title="Родной плеер AniHub — прямые потоки без рекламы">💠 AniHub</button>`:""}<button class="chip ${used==='kodik'?'on':''}" data-src="kodik">🎬 Kodik</button>${chip('demo','🎞 Демо')}${chip('tpl','📡 Мой HLS')}${chip('embed','🔗 Embed')}</div><small class="muted tiny" style="max-width:46%;text-align:right">${esc(srcStatus)}</small></div>
+  <div class="row between" id="srcbar" style="margin-bottom:12px;gap:8px;flex-wrap:wrap"><div class="row" style="gap:6px;flex-wrap:wrap">${dubCnt>0?`<button class="chip ${used==='libria'?'on':''}" data-src="libria" title="Родной плеер AniHub — прямые потоки без рекламы">💠 AniHub</button>`:""}<button class="chip ${used==='kodik'?'on':''}" data-src="kodik">🎬 Kodik</button>${chip('cvh','⚡ VideoHub','Прямые потоки 360p–1080p во множестве озвучек — без рекламы и без прокси')}${chip('vost','🔥 AnimeVost','Прямые MP4 потоки 480p/720p от AnimeVost — без рекламы и без прокси')}${chip('yani','🍊 Yani','Дополнительные озвучки 1080p с таймкодами опенинга — без рекламы')}${chip('demo','🎞 Демо')}${chip('tpl','📡 Мой HLS')}${chip('embed','🔗 Embed')}</div><small class="muted tiny" style="max-width:46%;text-align:right">${esc(srcStatus)}</small></div>
   
   ${used==='kodik'&&kodik.data.results.length>1?`<label class="f" style="max-width:380px;margin-bottom:12px"><span>Озвучка · Kodik</span><select class="inp" id="ktrans">${kodik.data.results.map((r,i)=>[kodikScore(r),i,r]).sort((x,y)=>y[0]-x[0]).map(([sc,i,r])=>`<option value="${i}" ${i===kodik.sel?'selected':''}>${i===kodik.sel?'▶ ':''}${esc(r.translation)}${sc>=100?' · без рекламы ✓':''}</option>`).join('')}</select></label>`:''}
+  ${used==='cvh'&&cvh&&cvh.results.length>1?`<label class="f" style="max-width:380px;margin-bottom:12px"><span>Озвучка · VideoHub (без рекламы)</span><select class="inp" id="cvhtrans">${cvh.results.map((r,i)=>[altStudioScore(r.translation),i,r]).sort((x,y)=>y[0]-x[0]).map(([,i,r])=>`<option value="${i}" ${i===cvhSel?'selected':''}>${i===cvhSel?'▶ ':''}${esc(r.translation)} · прямой поток ✓</option>`).join('')}</select></label>`:''}
+  ${used==='yani'&&yani&&yani.results.length>1?`<label class="f" style="max-width:380px;margin-bottom:12px"><span>Озвучка · Yani (без рекламы)</span><select class="inp" id="yanitrans">${yani.results.map((r,i)=>[altStudioScore(r.translation),i,r]).sort((x,y)=>y[0]-x[0]).map(([,i,r])=>`<option value="${i}" ${i===yaniSel?'selected':''}>${i===yaniSel?'▶ ':''}${esc(r.translation)} · 1080p без рекламы ✓</option>`).join('')}</select></label>`:''}
   <div style="padding-top:0;display:grid;gap:16px"><div style="min-width:0"><div id="pl"></div>
-  ${kpend?`<div class="warn" id="kdlbar" style="margin:10px 0 0"><b>Прямой поток студии не добыт</b> — прокси не ответил. Рекламный плеер Kodik не открываю: автовоспроизведение остановлено. <button class="btn sm" data-kretry>Повторить</button> <button class="btn sm ghost" data-kopen>Открыть плеер Kodik в новой вкладке</button></div>`:''}
+  ${kpend?`<div class="warn" id="kdlbar" style="margin:10px 0 0"><b>Прямой поток студии не добыт</b> — прокси не ответил. Рекламный плеер Kodik не открываю: автовоспроизведение остановлено. <button class="btn sm" data-kretry>Повторить</button> <button class="btn sm pri" data-alt-src>⚡ Другие источники без рекламы</button> <button class="btn sm ghost" data-kopen>Открыть плеер Kodik в новой вкладке</button></div>`:''}
   ${used==='kodik'&&!kodikDirect&&embedUrl?`<div class="row" id="mirbar" style="gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center"><span class="tiny muted">Плеер не запустился или глючит? Зеркала:</span>${['kodik.info','kodik.cc','aniqit.com','kodik.biz'].map((d,i)=>`<button class="chip ${d===(S.kodikDomain||'kodik.info')?'on':''}" data-mir="${d}">${d}</button>`).join('')}<button class="chip" data-bri>☀ ${S.prefs.brightness>1?Math.round(S.prefs.brightness*100)+'%':'Яркость'}</button><button class="chip" data-nt>↗ В новой вкладке</button></div>`:''}
   ${used==='demo'?`<p class="warn" style="margin:12px 0 0"><b>Демонстрационный видеопоток.</b> Реальный материал для этого тайтла не найден. Попробуйте нажать «🎬 Kodik» ещё раз, обновить публичный токен (Профиль → Настройки → Kodik) или подключить свой источник: лицензионный HLS либо любой embed.${FRAME_HINT?'<br><b style="color:var(--accent)">'+FRAME_HINT+'</b>':''}</p>`:''}
 ${IN_FRAME&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0"><b>Предпросмотр может блокировать встроенный плеер.</b> Если видео ниже не запускается — откройте этот файл напрямую в браузере или воспользуйтесь ссылкой «в новой вкладке» под плеером.</p>`:''}
@@ -1668,14 +1928,18 @@ ${IN_FRAME&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0
   ${used==='demo'&&kodikErr?`<p class="warn" style="margin:12px 0 0">${esc(kodikErr)}</p>`:''}
   ${used==='demo'&&libErr?`<p class="warn" style="margin:12px 0 0">${esc(libErr)}</p>`:''}
   <div class="panel" style="margin-top:14px"><h2 style="font-size:20px">Серия ${ep.n}${esc(epSuffix(ep))}</h2><p class="muted sm" style="margin:6px 0 0">${esc(t.desc.slice(0,300))}${t.desc.length>300?'…':''}</p><div class="row" style="margin-top:12px;gap:14px;font-size:11px;color:var(--muted)"><span>★ ${t.score.toFixed(1)}</span><span>${esc(t.studio)}</span><span>${t.year}</span><span>${statusLabel(t.status)}</span>${used!=='kodik'&&used!=='embed'?`<span>${fmt(ep.dur)}</span>`:''}</div>${hist&&used==='demo'?`<p class="sm muted" style="margin:10px 0 0;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--bg2)">${hist.done?'Серия досмотрена — таймстемп сохранён в истории.':`Сохранённая позиция: ${fmt(hist.pos)} из ${fmt(hist.dur)}.`}</p>`:''}<div class="row" style="margin-top:12px"><a class="btn sm" href="#/title/${t.id}">К тайтлу</a><a class="btn sm" href="#/streaming?create=1&title=${t.id}&ep=${ep.n}">● Создать комнату</a>${used==='demo'?`<span class="tiny muted">Настройки пропуска опенинга/эндинга — в плеере, кнопка ${SICON('gear')}.</span>`:''}</div></div></div>
-  <aside>${used==='kodik'&&kodikSeasonsAll&&kodikSeasonsAll.length>1?`<select class="inp" id="ssn" style="margin-bottom:10px;max-width:280px">${kodikSeasonsAll.map(x=>`<option value="${x.season}" ${x.season===season?'selected':''}>Сезон ${x.season} · ${x.eps.length} сер.</option>`).join('')}</select>`:''}<h2 style="font-size:13px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">${used==='kodik'&&kodikSeasonsAll&&kodikSeasonsAll.length>1?`Сезон ${season} · серии · ${eps.length}`:`Серии · ${eps.length}`}</h2><div class="list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px">${eps.map(e=>{const h=S.hist[ek(e)];return`<a class="ep ${e.n===ep.n?'on':''}" href="#/watch/${t.id}/${e.n}"><span class="n">${e.n}</span><span style="min-width:0;flex:1"><b style="display:block;font-size:12px">Серия ${e.n}${esc(epSuffix(e))}</b><small class="muted tiny">${fmt(e.dur)}${h&&used==='demo'?(h.done?' · досмотрено':' · '+fmt(h.pos)):''}</small>${h&&!h.done&&used==='demo'?`<div class="prog" style="height:3px"><i style="width:${Math.min(100,h.pos/Math.max(1,h.dur)*100)}%"></i></div>`:''}</span>${nx&&e.n===nx.n?'<span class="chip" style="font-size:9px;padding:1px 6px">далее</span>':''}</a>`}).join('')}</div>${nx?`<a class="btn pri" style="width:100%;margin-top:12px" href="#/watch/${t.id}/${nx.n}">Следующая серия ${nx.n} →</a>`:''}</aside></div></div>`;
+  <aside>${activeSeasons&&activeSeasons.length>1?`<select class="inp" id="ssn" style="margin-bottom:10px;max-width:280px">${activeSeasons.map(x=>`<option value="${x.season}" ${x.season===season?'selected':''}>Сезон ${x.season} · ${x.eps.length} сер.</option>`).join('')}</select>`:''}<h2 style="font-size:13px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px">${activeSeasons&&activeSeasons.length>1?`Сезон ${season} · серии · ${eps.length}`:`Серии · ${eps.length}`}</h2><div class="list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px">${eps.map(e=>{const h=S.hist[ek(e)];return`<a class="ep ${e.n===ep.n?'on':''}" href="#/watch/${t.id}/${e.n}"><span class="n">${e.n}</span><span style="min-width:0;flex:1"><b style="display:block;font-size:12px">Серия ${e.n}${esc(epSuffix(e))}</b><small class="muted tiny">${fmt(e.dur)}${h&&used==='demo'?(h.done?' · досмотрено':' · '+fmt(h.pos)):''}</small>${h&&!h.done&&used==='demo'?`<div class="prog" style="height:3px"><i style="width:${Math.min(100,h.pos/Math.max(1,h.dur)*100)}%"></i></div>`:''}</span>${nx&&e.n===nx.n?'<span class="chip" style="font-size:9px;padding:1px 6px">далее</span>':''}</a>`}).join('')}</div>${nx?`<a class="btn pri" style="width:100%;margin-top:12px" href="#/watch/${t.id}/${nx.n}">Следующая серия ${nx.n} →</a>`:''}</aside></div></div>`;
   $('#srcbar').onclick=async e=>{const c=e.target.closest('[data-src]');if(!c)return;const m=c.dataset.src;
     if(m==='demo'){S.sourceMode='demo';save('sourceMode');return router()}
     if(m==='tpl'){if(!S.tpl){toast('Сначала укажите шаблон HLS','Профиль → Настройки → Источник видео','err');location.hash='#/profile/settings';return}S.sourceMode='tpl';save('sourceMode');return router()}
     if(m==='kodik'){S.sourceMode='kodik';save('sourceMode');return router()}
     if(m==='libria'){S.sourceMode='libria';if(S.anihubDub)delete S.anihubDub[t.id];save('anihubDub','sourceMode');return router()}
+    if(m==='cvh'||m==='vost'||m==='yani'){S.sourceMode=m;save('sourceMode');return router()}
     if(m==='embed'){await embedModal(t)}};
-  const ss=$('#ssn');if(ss)ss.onchange=e=>{S.kodikSeason[t.id]=+e.target.value;save('kodikseason');const L=(kodikSeasonsAll.find(x=>x.season===+e.target.value)||{eps:[]}).eps;if(L.some(x=>x.n===qE))router();else location.hash='#/watch/'+t.id+'/'+(+e.target.value)+'x'+((L[0]||{}).n||1)};
+  const ss=$('#ssn');if(ss)ss.onchange=e=>{const sv=+e.target.value;if(used==='cvh'){S.cvhSeason[t.id]=sv;save('cvhseason')}else{S.kodikSeason[t.id]=sv;save('kodikseason')}const L=((activeSeasons||[]).find(x=>x.season===sv)||{eps:[]}).eps;if(L.some(x=>x.n===qE))router();else location.hash='#/watch/'+t.id+'/'+sv+'x'+((L[0]||{}).n||1)};
+  const kdl=$('#kdlbar');if(kdl)kdl.onclick=e=>{if(e.target.closest('[data-alt-src]')){e.stopPropagation();S.sourceMode='auto';save('sourceMode');toast('Ищем на безрекламных источниках','Проверяем VideoHub, AnimeVost и Yani…','ok');router()}};
+  const ct=$('#cvhtrans');if(ct)ct.onchange=e=>{const i=+e.target.value;S.cvhsel[t.id]=i;S.dubpref=(cvh.results[i]||{}).translation||'';save('cvhsel','dubpref');toast('Озвучка запомнена',S.dubpref+' — прямой поток без рекламы','ok');router()};
+  const yt=$('#yanitrans');if(yt)yt.onchange=e=>{const i=+e.target.value;S.yanisel[t.id]=i;S.dubpref=(yani.results[i]||{}).translation||'';save('yanisel','dubpref');toast('Озвучка запомнена',S.dubpref+' — прямой поток без рекламы','ok');router()};
   const mb2=$('#mirbar');if(mb2)mb2.onclick=e=>{const bz=e.target.closest('[data-bri]');
     if(bz){const BRI=[1,1.15,1.3,1.5,1.75];const i=BRI.indexOf(S.prefs.brightness);const nv=BRI[(i+1)%BRI.length];S.prefs.brightness=nv;save('prefs');
       const fr=$('#pl iframe');if(fr)fr.style.filter=nv>1?'brightness('+nv+')':'';bz.textContent=nv>1?'☀ '+Math.round(nv*100)+'%':'☀ Яркость';return}
@@ -1702,22 +1966,25 @@ ${IN_FRAME&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0
       const w=document.getElementById('npxwarn');w&&w.remove();const kw=document.getElementById('kdlbar');kw&&kw.remove();
       const st=document.querySelector('#srcbar small.muted');if(st)st.textContent='Kodik: прямой поток готов — в родном плеере, без рекламы.';
       toast('Чистый поток получен','Kodik-resolve из браузера готов — играем без рекламы','ok')}catch(e){}})()}
-  else if(used==='off'){$('#pl').innerHTML=empty('Автовоспроизведение остановлено','Рабочий источник для этой серии не нашёлся. Повторите поиск — или включите демо-ролик вручную, чтобы проверить плеер.','<span class="row" style="gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn pri" data-try>'+SICON('refresh')+' Искать ещё раз</button><button class="btn ghost" data-demo>'+SICON('next')+' Включить демо</button></span>');
-    const bt=$('#pl').querySelector('[data-try]'),bd=$('#pl').querySelector('[data-demo]');
-    if(bt)bt.onclick=()=>router();if(bd)bd.onclick=()=>{S.sourceMode='demo';save('sourceMode');router()}}
+  else if(used==='off'){$('#pl').innerHTML=empty('Автовоспроизведение остановлено','Рабочий источник для этой серии не нашёлся. Попробуйте другие безрекламные источники (VideoHub, AnimeVost, Yani), повторите поиск — или включите демо-ролик вручную, чтобы проверить плеер.','<span class="row" style="gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn pri" data-try>'+SICON('refresh')+' Искать ещё раз</button><button class="btn" data-alt-src>⚡ Другие источники без рекламы</button><button class="btn ghost" data-demo>'+SICON('next')+' Включить демо</button></span>');
+    const bt=$('#pl').querySelector('[data-try]'),bd=$('#pl').querySelector('[data-demo]'),ba=$('#pl').querySelector('[data-alt-src]');
+    if(bt)bt.onclick=()=>router();if(ba)ba.onclick=()=>{S.sourceMode='auto';save('sourceMode');router()};if(bd)bd.onclick=()=>{S.sourceMode='demo';save('sourceMode');router()}}
   else{const ksk=kodikDirect&&Array.isArray(kodikDirect.skip)?kodikDirect.skip:[];
     const lsk=libMedia?[libMedia.opening,libMedia.ending]:[];
-    const _pri=used==='libria'?[lsk,ksk]:[ksk,lsk];
-    let ranges={intro:_rr2(S.ovr[key]?.intro)||_rr2(_pri[0][0])||_rr2(_pri[1][0])||_rr2(ep.intro)||[0,0],
-      outro:_rr2(S.ovr[key]?.outro)||_rr2(_pri[0][1])||_rr2(_pri[1][1])||_rr2(ep.outro)||[0,0]};
-    ctl=mountPlayer($('#pl'),{title:t.title,sub:`${ep.season>1?`Сезон ${ep.season} · `:''}Серия ${ep.n}${epSuffix(ep)}`,media,dur:ep.dur,poster:t.poster,ranges,resume:tT||(hist&&!hist.done?hist.pos:0),autoStart:!!(kodikDirect||libMedia),
+    const ysk=yaniMedia?[yaniMedia.opening,yaniMedia.ending]:[];
+    const _pri=used==='libria'?[lsk,ysk,ksk]:used==='yani'?[ysk,lsk,ksk]:[ksk,lsk,ysk];
+    let ranges={intro:_rr2(S.ovr[key]?.intro)||_rr2(_pri[0][0])||_rr2(_pri[1][0])||_rr2(_pri[2][0])||_rr2(ep.intro)||[0,0],
+      outro:_rr2(S.ovr[key]?.outro)||_rr2(_pri[0][1])||_rr2(_pri[1][1])||_rr2(_pri[2][1])||_rr2(ep.outro)||[0,0]};
+    ctl=mountPlayer($('#pl'),{title:t.title,sub:`${ep.season>1?`Сезон ${ep.season} · `:''}Серия ${ep.n}${epSuffix(ep)}`,media,dur:ep.dur,poster:t.poster,ranges,resume:tT||(hist&&!hist.done?hist.pos:0),autoStart:!!(kodikDirect||libMedia||cvhMedia||vostMediaObj||yaniMedia),
       next:nx?{n:nx.n,url:nx._u||`#/watch/${t.id}/${nx.n}`,suffix:epSuffix(nx)}:null,prev:pv?{n:pv.n,url:pv._u||`#/watch/${t.id}/${pv.n}`}:null,
       meta:{id:t.id,ep:ep.season>1?ep.season+'x'+ep.n:ep.n,title:t.title,poster:t.poster,epTitle:ep.title},
-         dubs:(used==='libria'||used==='kodik'||used==='off'||(S.anihubDub&&S.anihubDub[t.id]!=null))?(function(){const LA=(lib&&lib.alts)||[];const sel=(S.libalt&&S.libalt[t.id])!=null?S.libalt[t.id]:null;const libMode=used==='libria'||sel!=null;const dd=[{v:'lib',label:'AniLibria'+(sel==null&&lib?' · '+lib.name:''),on:!(S.anihubDub&&S.anihubDub[t.id]!=null)&&sel==null}];LA.forEach((a2,i3)=>dd.push({v:'a:'+i3,label:(a2.name||('Релиз '+(a2.id||'')))+(a2.year?' · '+a2.year:'')+(a2.voice?' · '+a2.voice:''),on:sel===i3}));const kitems=[];const kp=(r2,i2)=>kitems.push({v:'k:'+i2,label:(r2.translation||r2.translation_title||('Перевод '+(i2+1)))+(libMode?' · прямой поток':' · Kodik'),on:S.anihubDub[t.id]===i2});if(kodik&&kodik.data&&kodik.data.results)kodik.data.results.forEach((r2,i2)=>kp(r2,i2));else{const ch=kodikCacheHit(t.id);if(ch&&ch.data&&ch.data.results)ch.data.results.forEach((r2,i2)=>kp(r2,i2))}const RKN=['anilibria','анилибрия','anidub','анидаб','ani dub','studioband','studio band','студийная банда','студия банда','studiobandoz','dream cast','dreamcast','дрим каст','dreamerscast','starfrog','star frog','старфрог','shiza','shiza project','сиза','onibaku','онибаку','miraidub','mirai dub','мирай даб','мираидаб','animevost','анимевост','kansai','кансай','anistar','анистар','aniliberty','анилиберти','amazing dubbing','sovet romantica','совет романтика','animedia','анимедиа','jamicrew','jam club','mei-o-sound','le-despair','ле деспейр','cleor','клеор','кравец','anicinema','stereo sound'];const rkl=x3=>{const s3=String(x3||'').toLowerCase();for(let z3=0;z3<RKN.length;z3++)if(s3.indexOf(RKN[z3])>=0)return z3;return 90};dd.sort((A2,B3)=>((A2.on?0:1)-(B3.on?0:1))||(rkl(A2.label)-rkl(B3.label)));if(kitems.length){kitems.sort((A2,B3)=>((A2.on?0:1)-(B3.on?0:1))||(rkl(A2.label)-rkl(B3.label)));dd.push({div:1,label:libMode?'Другие студии · играем напрямую, без рекламы':'Kodik · другие студии (прямой поток)'});kitems.forEach(x3=>dd.push(x3))}return dd})():null,
-         onDub:v2=>{if(v2==='lib'){delete S.anihubDub[t.id];if(S.libalt)delete S.libalt[t.id];S.sourceMode='libria';save('anihubDub','libalt','sourceMode');router();return};if(String(v2).indexOf('a:')===0){const ai=+String(v2).slice(2);const cc=LS.get('libriacache',{})||{};if(cc[t.id]&&cc[t.id].alts&&cc[t.id].alts[ai]){S.libalt=S.libalt||{};S.libalt[t.id]=ai;delete S.anihubDub[t.id];S.sourceMode='libria';save('libalt','anihubDub','sourceMode');toast('Озвучка · '+cc[t.id].alts[ai].name,'Переключаю поток выбранной студии — без рекламы','ok');router()}return}
+         dubs:(used==='cvh'&&cvh&&cvh.results.length)?cvh.results.map((r,i)=>({v:'c:'+i,label:r.translation+' · VideoHub без рекламы',on:i===cvhSel})).sort((a,b)=>((a.on?0:1)-(b.on?0:1))||(altStudioScore(b.label)-altStudioScore(a.label))):(used==='yani'&&yani&&yani.results.length)?yani.results.map((r,i)=>({v:'y:'+i,label:r.translation+' · Yani без рекламы',on:i===yaniSel})).sort((a,b)=>((a.on?0:1)-(b.on?0:1))||(altStudioScore(b.label)-altStudioScore(a.label))):(used==='libria'||used==='kodik'||used==='off'||(S.anihubDub&&S.anihubDub[t.id]!=null))?(function(){const LA=(lib&&lib.alts)||[];const sel=(S.libalt&&S.libalt[t.id])!=null?S.libalt[t.id]:null;const libMode=used==='libria'||sel!=null;const dd=[{v:'lib',label:'AniLibria'+(sel==null&&lib?' · '+lib.name:''),on:!(S.anihubDub&&S.anihubDub[t.id]!=null)&&sel==null}];LA.forEach((a2,i3)=>dd.push({v:'a:'+i3,label:(a2.name||('Релиз '+(a2.id||'')))+(a2.year?' · '+a2.year:'')+(a2.voice?' · '+a2.voice:''),on:sel===i3}));const kitems=[];const kp=(r2,i2)=>kitems.push({v:'k:'+i2,label:(r2.translation||r2.translation_title||('Перевод '+(i2+1)))+(libMode?' · прямой поток':' · Kodik'),on:S.anihubDub[t.id]===i2});if(kodik&&kodik.data&&kodik.data.results)kodik.data.results.forEach((r2,i2)=>kp(r2,i2));else{const ch=kodikCacheHit(t.id);if(ch&&ch.data&&ch.data.results)ch.data.results.forEach((r2,i2)=>kp(r2,i2))}const RKN=['anilibria','анилибрия','anidub','анидаб','ani dub','studioband','studio band','студийная банда','студия банда','studiobandoz','dream cast','dreamcast','дрим каст','dreamerscast','starfrog','star frog','старфрог','shiza','shiza project','сиза','onibaku','онибаку','miraidub','mirai dub','мирай даб','мираидаб','animevost','анимевост','kansai','кансай','anistar','анистар','aniliberty','анилиберти','amazing dubbing','sovet romantica','совет романтика','animedia','анимедиа','jamicrew','jam club','mei-o-sound','le-despair','ле деспейр','cleor','клеор','кравец','anicinema','stereo sound'];const rkl=x3=>{const s3=String(x3||'').toLowerCase();for(let z3=0;z3<RKN.length;z3++)if(s3.indexOf(RKN[z3])>=0)return z3;return 90};dd.sort((A2,B3)=>((A2.on?0:1)-(B3.on?0:1))||(rkl(A2.label)-rkl(B3.label)));if(kitems.length){kitems.sort((A2,B3)=>((A2.on?0:1)-(B3.on?0:1))||(rkl(A2.label)-rkl(B3.label)));dd.push({div:1,label:libMode?'Другие студии · играем напрямую, без рекламы':'Kodik · другие студии (прямой поток)'});kitems.forEach(x3=>dd.push(x3))}return dd})():null,
+         onDub:v2=>{if(String(v2).indexOf('c:')===0){const ci=+String(v2).slice(2);if(cvh&&cvh.results[ci]){S.cvhsel[t.id]=ci;S.dubpref=cvh.results[ci].translation||'';S.sourceMode='cvh';save('cvhsel','dubpref','sourceMode');toast('Озвучка · '+S.dubpref,'VideoHub — прямой поток без рекламы','ok');router()}return}
+           if(String(v2).indexOf('y:')===0){const yi=+String(v2).slice(2);if(yani&&yani.results[yi]){S.yanisel[t.id]=yi;S.dubpref=yani.results[yi].translation||'';S.sourceMode='yani';save('yanisel','dubpref','sourceMode');toast('Озвучка · '+S.dubpref,'Yani — прямой поток без рекламы','ok');router()}return}
+           if(v2==='lib'){delete S.anihubDub[t.id];if(S.libalt)delete S.libalt[t.id];S.sourceMode='libria';save('anihubDub','libalt','sourceMode');router();return};if(String(v2).indexOf('a:')===0){const ai=+String(v2).slice(2);const cc=LS.get('libriacache',{})||{};if(cc[t.id]&&cc[t.id].alts&&cc[t.id].alts[ai]){S.libalt=S.libalt||{};S.libalt[t.id]=ai;delete S.anihubDub[t.id];S.sourceMode='libria';save('libalt','anihubDub','sourceMode');toast('Озвучка · '+cc[t.id].alts[ai].name,'Переключаю поток выбранной студии — без рекламы','ok');router()}return}
            if(!/^(k:)?\d+$/.test(String(v2)))return;const i2=+String(v2).replace(/^k:/,'');S.anihubDub[t.id]=i2;S.kodicsel[t.id]=i2;S.dubpref=(kodik&&kodik.data&&kodik.data.results[i2]||{}).translation||(kodikCacheHit(t.id)&&kodikCacheHit(t.id).data&&kodikCacheHit(t.id).data.results[i2]||{}).translation||'';S.sourceMode='kodik';save('anihubDub','kodicsel','dubpref','sourceMode');toast('Озвучка · '+(S.dubpref||'Kodik'),'Переключаю поток выбранной студии — без рекламы','ok');router()},
         srcFb:used==='libria'&&kodik?'🎬 Kodik':used==='kodik'&&lib?'🎙 AniLibria':'',
-        onFb:used==='libria'&&kodik?()=>{S.sourceMode='kodik';save('sourceMode');router()}:used==='kodik'&&lib?()=>{S.sourceMode='libria';save('sourceMode');router()}:null,badge:kodikDirect?'<span style="color:var(--cyan)">● Kodik · прямой поток</span>':libMedia?'<span style="color:var(--accent)">● AniLibria · официальный дубляж</span>':'<span style="color:#34d399">без рекламы</span>',
+        onFb:used==='libria'&&kodik?()=>{S.sourceMode='kodik';save('sourceMode');router()}:used==='kodik'&&lib?()=>{S.sourceMode='libria';save('sourceMode');router()}:null,badge:kodikDirect?'<span style="color:var(--cyan)">● Kodik · прямой поток</span>':libMedia?'<span style="color:var(--accent)">● AniLibria · официальный дубляж</span>':cvhMedia?'<span style="color:#f59e0b">● VideoHub · прямой поток без рекламы</span>':vostMediaObj?'<span style="color:#fb7185">● AnimeVost · прямой поток без рекламы</span>':yaniMedia?'<span style="color:#34d399">● Yani · прямой поток без рекламы</span>':'<span style="color:#34d399">без рекламы</span>',
       onRanges:(k,r)=>{ranges={...ranges,[k]:r};S.ovr[key]={...(S.ovr[key]||{}),[k]:r};save('ovr')},
       onReset:()=>{delete S.ovr[key];save('ovr');ranges={intro:ep.intro,outro:ep.outro};ctl.setRanges(ranges);toast('Диапазоны сброшены','Восстановлены значения серии')}})}
     (async()=>{try{const CB=await roomsBase();if(!CB||!t.id)return;const r2=await withTimeout(fetch(CB+'/api/comments/'+t.id),10000,'c');if(!r2.ok)return;const j2=await r2.json();const marks=[];
@@ -2211,6 +2478,8 @@ const hdr=()=>{const r=R.get(code);if(!r)return;const on=Object.keys(r.members).
     let nm=null,bg=null;
     if(kdir&&kdir.links){nm=kodikDirectMedia(kdir);bg='<span style="color:var(--cyan)">● Kodik · прямой поток · совместный просмотр</span>'}
     else if(lib&&lib.episodes.length){const lm=libriaMedia(lib.episodes.find(e=>e.ordinal===ep.n)||lib.episodes[0]);if(lm){nm=lm;bg='<span style="color:var(--accent)">● AniLibria · совместный просмотр</span>'}}
+    if(!nm){try{const cv=await cvhResolve(title);if(cv&&cv.results&&cv.results.length&&nav===my){const cr=cv.results[cvhPick(cv)];const ce=cvhSeasons(cr).flatMap(x=>x.eps);const ci=ce.find(e=>e.n===ep.n)||ce[0];if(ci&&ci.vkId){const cm=await cvhFetchMedia(ci.vkId,cr.translation);if(cm&&nav===my){nm=cm;bg='<span style="color:#f59e0b">● VideoHub · совместный просмотр</span>'}}}}catch{}}
+    if(!nm){try{const vo=await vostResolve(title);if(vo&&vo.episodes&&vo.episodes.length&&nav===my){const ve=vo.episodes.find(e=>e.n===ep.n)||vo.episodes[0];const vm=vostMedia(ve);if(vm){nm=vm;bg='<span style="color:#fb7185">● AnimeVost · совместный просмотр</span>'}}}catch{}}
     if(!nm&&!ctl){$('#pl').innerHTML=empty('Настоящий источник не нашёлся','Для совместного просмотра нужен прямой поток: Kodik — только с запущенным kodik_proxy.py, AniLibria — у этого тайтла не нашлось серий. В одиночном просмотре Kodik работает без прокси. Или включите демо-ролик.','<span class="row" style="gap:8px;justify-content:center;flex-wrap:wrap"><button class="btn pri" data-try>'+SICON('refresh')+' Искать ещё раз</button><button class="btn ghost" data-demo>'+SICON('next')+' Включить демо</button></span>');
       const bt=$('#pl').querySelector('[data-try]'),bd=$('#pl').querySelector('[data-demo]');
       if(bt)bt.onclick=()=>router();if(bd)bd.onclick=()=>{try{const rr0=R.get(code);lastMedia=JSON.stringify([rr0.src||null,rr0.srcj||null,rr0.ep||null,rr0.titleId||null])}catch(e){}mountWith(media)};
@@ -2411,7 +2680,10 @@ function pageAbout(){
   const step=(n,t,d,c1,c2)=>`<div class="panel" style="display:grid;gap:8px;align-content:start"><span style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;background:linear-gradient(140deg,${c1},${c2})">${n}</span><b>${t}</b><p class="sm muted" style="margin:0">${d}</p></div>`;
   const SOURCES=[
    {name:'Kodik',logo:'K',tag:'kodik.info',c:'#3aa0ff',g1:'#0e1e33',g2:'#2b7bd6',url:'https://kodik.info',chip:'HLS · вырезаем рекламные вставки',desc:'Крупнейшая база оцифрованных аниме и фильмов. Мы берём оттуда прямые HLS-потоки и очищаем их от рекламных вставок.'},
-   {name:'AniLibria',logo:'A',tag:'anilibria.top',c:'#ff5f7e',g1:'#331019',g2:'#e8526a',url:'https://anilibria.top',chip:'собственный API · прямые потоки',desc:'Официальный источник чистых потоков от студии AniLibria.'}];
+   {name:'AniLibria',logo:'A',tag:'anilibria.top',c:'#ff5f7e',g1:'#331019',g2:'#e8526a',url:'https://anilibria.top',chip:'собственный API · прямые потоки',desc:'Официальный источник чистых потоков от студии AniLibria.'},
+   {name:'VideoHub',logo:'VH',tag:'cdnvideohub.com',c:'#f59e0b',g1:'#2e1c06',g2:'#d97706',url:'https://cdnvideohub.com',chip:'прямые MP4 360p–1080p · без рекламы',desc:'Независимая мульти-озвучечная база аниме и фильмов: играет напрямую в плеере AniHub без рекламы и без прокси.'},
+   {name:'AnimeVost',logo:'AV',tag:'animevost.org',c:'#fb7185',g1:'#310e18',g2:'#e11d48',url:'https://animevost.org',chip:'официальный API · MP4 без рекламы',desc:'Открытый видеокаталог студии AnimeVost с прямыми HD-потоками без рекламных вставок.'},
+   {name:'Yani · Aksor',logo:'YA',tag:'yani.tv',c:'#34d399',g1:'#07291e',g2:'#059669',url:'https://yani.tv',chip:'1080p + таймкоды опенинга · без рекламы',desc:'Резервная база эпизодов, студий озвучки и таймкодов пропуска опенинга/эндинга.'}];
   const STUDIOS=[
    {name:'AniLibria',logo:'A',tag:'anilibria.top',c:'#ff5f7e',g1:'#331019',g2:'#e8526a',url:'https://anilibria.top',desc:'Официальный дубляж, известен своим качеством.'},
    {name:'AniStar',logo:'★',tag:'anistar.org',c:'#ffb020',g1:'#33210a',g2:'#ff9d1c',url:'https://anistar.org',desc:'Быстрые релизы онгоингов.'},

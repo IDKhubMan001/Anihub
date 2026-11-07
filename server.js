@@ -1286,7 +1286,8 @@ const EGRESS_ALLOW = [
   'anilibria.top', 'aniliberty.top', 'libria.fun',
   'kodik-api.com', 'kodik.dev', 'kodikplayer.com', 'kodik.info', 'kodik.cc', 'kodikcdn.com',
   'solodcdn.com', 'raw.githubusercontent.com',
-  'api.animethemes.moe', 'v.animethemes.moe'
+  'api.animethemes.moe', 'v.animethemes.moe',
+  'cdnvideohub.com', 'animevost.org', 'animetop.info', 'yani.tv', 'yummyani.me', 'aksor.tv'
 ];
 (process.env.EGRESS_EXTRA || '').split(',').filter(Boolean).forEach(d => EGRESS_ALLOW.push(d.trim().toLowerCase()));
 
@@ -1760,6 +1761,220 @@ app.get('/api/live-clip.m3u8', async (req, res) => {
     res.type('application/vnd.apple.mpegurl').send(out.m3u8);
   } catch (e) {
     res.status(502).type('text/plain').send('# err');
+  }
+});
+
+/* ==== v17.44: Дополнительные безрекламные источники (Aksor CMAF→HLS, AnimeVost зеркало) ==== */
+function parseMpdAdaptation(xml, kind) {
+  const re = new RegExp('<AdaptationSet[^>]*contentType="' + kind + '"[^>]*>([\\s\\S]*?)<\\/AdaptationSet>', 'i');
+  const m = String(xml || '').match(re);
+  if (!m) return null;
+  const block = m[1];
+  const repTag = (block.match(/<Representation[^>]*>/i) || [''])[0];
+  const tplTag = (block.match(/<SegmentTemplate[^>]*>/i) || [''])[0];
+  const attr = (s, k) => ((s.match(new RegExp('\\b' + k + '="([^"]*)"', 'i')) || [])[1]) || '';
+  const id = attr(repTag, 'id') || (kind === 'video' ? '0' : '1');
+  const codecs = attr(repTag, 'codecs') || (kind === 'video' ? 'avc1.4d4028' : 'mp4a.40.2');
+  const bandwidth = parseInt(attr(repTag, 'bandwidth'), 10) || (kind === 'video' ? 1800000 : 160000);
+  const width = parseInt(attr(repTag, 'width'), 10) || 1920;
+  const height = parseInt(attr(repTag, 'height'), 10) || 1080;
+  const timescale = Math.max(1, parseInt(attr(tplTag, 'timescale'), 10) || 1000);
+  const startNum = parseInt(attr(tplTag, 'startNumber'), 10) || 1;
+  const initTpl = attr(tplTag, 'initialization') || 'init-stream$RepresentationID$.m4s';
+  const mediaTpl = attr(tplTag, 'media') || 'chunk-stream$RepresentationID$-$Number%05d$.m4s';
+  const fmtName = (tpl, num) => tpl
+    .replace(/\$RepresentationID\$/g, id)
+    .replace(/\$Number(?:%0(\d+)d)?\$/g, (_, pad) => pad ? String(num).padStart(parseInt(pad, 10), '0') : String(num));
+  const segs = [];
+  let num = startNum;
+  const tlMatch = block.match(/<SegmentTimeline>([\s\S]*?)<\/SegmentTimeline>/i);
+  if (tlMatch) {
+    const sRe = /<S\b([^>]*)\/?>/gi;
+    let sm;
+    while ((sm = sRe.exec(tlMatch[1]))) {
+      const d = parseInt(attr(sm[1], 'd'), 10) || 0;
+      const r = parseInt(attr(sm[1], 'r'), 10) || 0;
+      if (d <= 0) continue;
+      for (let i = 0; i <= Math.max(0, Math.min(r, 5000)); i++) {
+        segs.push({ dur: d / timescale, file: fmtName(mediaTpl, num++) });
+      }
+    }
+  }
+  if (!segs.length) return null;
+  return { id, codecs, bandwidth, width, height, initFile: fmtName(initTpl, startNum), segs };
+}
+
+function buildFmp4MediaM3u8(track, dirUrl) {
+  const maxDur = Math.max(4, Math.ceil(Math.max(...track.segs.map(s => s.dur))));
+  const lines = [
+    '#EXTM3U',
+    '#EXT-X-VERSION:7',
+    '#EXT-X-PLAYLIST-TYPE:VOD',
+    '#EXT-X-INDEPENDENT-SEGMENTS',
+    '#EXT-X-TARGETDURATION:' + maxDur,
+    '#EXT-X-MEDIA-SEQUENCE:0',
+    '#EXT-X-MAP:URI="' + dirUrl + track.initFile + '"'
+  ];
+  for (const s of track.segs) {
+    lines.push('#EXTINF:' + s.dur.toFixed(6) + ',');
+    lines.push(dirUrl + s.file);
+  }
+  lines.push('#EXT-X-ENDLIST');
+  return lines.join('\n') + '\n';
+}
+
+async function fetchAksorMpd(rawMpd) {
+  const safe = await egressCheck(rawMpd);
+  const ck = 'mpd:' + safe;
+  let xml = kCacheGet(ck, 30 * 60e3);
+  if (!xml) {
+    const r = await fetch(safe, { headers: { 'User-Agent': KODIK_UA }, signal: AbortSignal.timeout(12000) });
+    if (!r.ok) throw new Error('MPD HTTP ' + r.status);
+    xml = await r.text();
+    kCacheSet(ck, xml);
+  }
+  const dirUrl = safe.replace(/[^/?#]+(\?.*)?$/, '');
+  return { xml, dirUrl, safe };
+}
+
+app.get('/api/aksor/video', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const id = String(req.query.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
+  if (!id) return res.status(400).json({ ok: false, error: 'нужен id видео' });
+  try {
+    const ck = 'aksor:' + id;
+    let data = kCacheGet(ck, 20 * 60e3);
+    if (!data) {
+      const safe = await egressCheck('https://player.aksor.tv/api/video/' + id);
+      const r = await fetch(safe, {
+        headers: { 'User-Agent': KODIK_UA, 'Referer': 'https://player.aksor.tv/', 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(12000)
+      });
+      if (!r.ok) throw new Error('Aksor HTTP ' + r.status);
+      data = await r.json();
+      kCacheSet(ck, data);
+    }
+    const baseUrl = reqPublicBase(req);
+    const q = (data && data.qualities) || {};
+    const qOrder = [['q2k', '1440', '1440p'], ['q1080', '1080', '1080p'], ['q720', '720', '720p'], ['q480', '480', '480p'], ['q360', '360', '360p']];
+    const sources = [];
+    for (const [k, qv, lbl] of qOrder) {
+      const u = q[k];
+      if (!u || typeof u !== 'string') continue;
+      if (/\.mpd(\?|$)/i.test(u)) {
+        sources.push({ quality: qv, label: lbl + ' · Aksor', type: 'hls', url: baseUrl + '/api/aksor/hls.m3u8?mpd=' + encodeURIComponent(u) });
+      } else if (/\.m3u8(\?|$)/i.test(u)) {
+        sources.push({ quality: qv, label: lbl + ' · Aksor', type: 'hls', url: u });
+      } else if (/\.mp4(\?|$)/i.test(u)) {
+        sources.push({ quality: qv, label: lbl + ' · Aksor', type: 'mp4', url: u });
+      }
+    }
+    if (!sources.length) return res.status(404).json({ ok: false, error: 'потоки Aksor не найдены' });
+    const opS = +data.opening_start || 0, opL = +data.opening_length || 0;
+    const edS = +data.ending_start || 0, edL = +data.ending_length || 0;
+    res.json({
+      ok: true,
+      id,
+      studio: String(data.studio_name || 'Русская озвучка'),
+      episode: String(data.episode || ''),
+      isSub: !!data.is_subtitle,
+      opening: opL > 0 ? [Math.round(opS), Math.round(opS + opL)] : null,
+      ending: edL > 0 ? [Math.round(edS), Math.round(edS + edL)] : null,
+      sources
+    });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: String(e && e.message || e) });
+  }
+});
+
+app.get('/api/aksor/hls.m3u8', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const rawMpd = String(req.query.mpd || '');
+    const { xml } = await fetchAksorMpd(rawMpd);
+    const v = parseMpdAdaptation(xml, 'video');
+    const a = parseMpdAdaptation(xml, 'audio');
+    if (!v) return res.status(404).type('text/plain').send('# no video adaptation');
+    const baseUrl = reqPublicBase(req);
+    const enc = encodeURIComponent(rawMpd);
+    const lines = ['#EXTM3U', '#EXT-X-VERSION:7', '#EXT-X-INDEPENDENT-SEGMENTS'];
+    if (a) {
+      lines.push(`#EXT-X-MEDIA:TYPE=AUDIO,GROUP-ID="aud",NAME="Russian",LANGUAGE="ru",DEFAULT=YES,AUTOSELECT=YES,URI="${baseUrl}/api/aksor/audio.m3u8?mpd=${enc}"`);
+      lines.push(`#EXT-X-STREAM-INF:BANDWIDTH=${v.bandwidth + a.bandwidth},RESOLUTION=${v.width}x${v.height},CODECS="${v.codecs},${a.codecs}",AUDIO="aud"`);
+    } else {
+      lines.push(`#EXT-X-STREAM-INF:BANDWIDTH=${v.bandwidth},RESOLUTION=${v.width}x${v.height},CODECS="${v.codecs}"`);
+    }
+    lines.push(`${baseUrl}/api/aksor/video.m3u8?mpd=${enc}`);
+    res.type('application/vnd.apple.mpegurl').send(lines.join('\n') + '\n');
+  } catch (e) {
+    res.status(502).type('text/plain').send('# err: ' + String(e && e.message || e));
+  }
+});
+
+app.get('/api/aksor/video.m3u8', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const { xml, dirUrl } = await fetchAksorMpd(String(req.query.mpd || ''));
+    const v = parseMpdAdaptation(xml, 'video');
+    if (!v) return res.status(404).type('text/plain').send('# no video');
+    res.type('application/vnd.apple.mpegurl').send(buildFmp4MediaM3u8(v, dirUrl));
+  } catch (e) {
+    res.status(502).type('text/plain').send('# err');
+  }
+});
+
+app.get('/api/aksor/audio.m3u8', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const { xml, dirUrl } = await fetchAksorMpd(String(req.query.mpd || ''));
+    const a = parseMpdAdaptation(xml, 'audio');
+    if (!a) return res.status(404).type('text/plain').send('# no audio');
+    res.type('application/vnd.apple.mpegurl').send(buildFmp4MediaM3u8(a, dirUrl));
+  } catch (e) {
+    res.status(502).type('text/plain').send('# err');
+  }
+});
+
+app.get('/api/vost/resolve', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const id = parseInt(req.query.id, 10) || 0;
+    if (id > 0) {
+      const ck = 'vostpl:' + id;
+      let pl = kCacheGet(ck, 30 * 60e3);
+      if (!pl) {
+        const safe = await egressCheck('https://api.animevost.org/v1/playlist');
+        const r = await fetch(safe, {
+          method: 'POST',
+          headers: { 'User-Agent': KODIK_UA, 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: 'id=' + encodeURIComponent(id),
+          signal: AbortSignal.timeout(12000)
+        });
+        if (!r.ok) throw new Error('AnimeVost HTTP ' + r.status);
+        pl = await r.json();
+        kCacheSet(ck, pl);
+      }
+      return res.json({ ok: true, items: Array.isArray(pl) ? pl : [] });
+    }
+    const q = String(req.query.q || '').trim().slice(0, 120);
+    if (!q) return res.status(400).json({ ok: false, error: 'нужен q или id' });
+    const ck = 'vostq:' + q.toLowerCase();
+    let sr = kCacheGet(ck, 20 * 60e3);
+    if (!sr) {
+      const safe = await egressCheck('https://api.animevost.org/v1/search');
+      const r = await fetch(safe, {
+        method: 'POST',
+        headers: { 'User-Agent': KODIK_UA, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'name=' + encodeURIComponent(q),
+        signal: AbortSignal.timeout(12000)
+      });
+      if (!r.ok) throw new Error('AnimeVost HTTP ' + r.status);
+      sr = await r.json();
+      kCacheSet(ck, sr);
+    }
+    res.json({ ok: true, data: (sr && Array.isArray(sr.data)) ? sr.data : [] });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: String(e && e.message || e) });
   }
 });
 
