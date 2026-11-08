@@ -1287,7 +1287,8 @@ const EGRESS_ALLOW = [
   'kodik-api.com', 'kodik.dev', 'kodikplayer.com', 'kodik.info', 'kodik.cc', 'kodikcdn.com',
   'solodcdn.com', 'raw.githubusercontent.com',
   'api.animethemes.moe', 'v.animethemes.moe',
-  'cdnvideohub.com', 'animevost.org', 'animetop.info', 'yani.tv', 'yummyani.me', 'aksor.tv'
+  'cdnvideohub.com', 'animevost.org', 'animetop.info', 'yani.tv', 'yummyani.me', 'aksor.tv',
+  'haglund.dev', 'strem.io', 'opensubtitles.org', 'kitsunekko.net', 'jsdelivr.net', 'unpkg.com'
 ];
 (process.env.EGRESS_EXTRA || '').split(',').filter(Boolean).forEach(d => EGRESS_ALLOW.push(d.trim().toLowerCase()));
 
@@ -1837,6 +1838,55 @@ async function fetchAksorMpd(rawMpd) {
   return { xml, dirUrl, safe };
 }
 
+function parseMpdSubtitles(xml, dirUrl) {
+  const out = [], seen = new Set();
+  const normLang = l => {
+    const s = String(l || '').toLowerCase();
+    if (/^(ru|rus|russian)/.test(s) || /рус/i.test(s)) return 'ru';
+    if (/^(en|eng|english)/.test(s) || /англ/i.test(s)) return 'en';
+    if (/^(ja|jp|jpn|japanese)/.test(s) || /яп/i.test(s)) return 'ja';
+    return s.slice(0, 6) || 'ru';
+  };
+  const adRe = /<AdaptationSet\b([^>]*)>([\s\S]*?)<\/AdaptationSet>/gi;
+  let am;
+  while ((am = adRe.exec(String(xml || '')))) {
+    const aHead = am[1], aBody = am[2];
+    if (/contentType\s*=\s*"(video|audio)"/i.test(aHead)) continue;
+    const aMime = (aHead.match(/mimeType="([^"]+)"/i) || [])[1] || '';
+    const aLang = (aHead.match(/lang="([^"]+)"/i) || [])[1] || '';
+    const aLabel = (aHead.match(/label="([^"]+)"/i) || [])[1] || '';
+    const repRe = /<Representation\b([^>]*)>([\s\S]*?)<\/Representation>/gi;
+    let rm;
+    while ((rm = repRe.exec(aBody))) {
+      const rHead = rm[1], rBody = rm[2];
+      const mime = ((rHead.match(/mimeType="([^"]+)"/i) || [])[1] || aMime).toLowerCase();
+      const baseM = rBody.match(/<BaseURL>([^<]+)<\/BaseURL>/i) || aBody.match(/<BaseURL>([^<]+)<\/BaseURL>/i);
+      if (!baseM) continue;
+      const rawU = baseM[1].trim();
+      const isAss = /ass|ssa/.test(mime) || /\.(ass|ssa)(\?|$)/i.test(rawU);
+      const isVtt = /vtt|srt/.test(mime) || /\.(vtt|srt)(\?|$)/i.test(rawU);
+      if (!isAss && !isVtt) continue;
+      let fullU = rawU;
+      try { fullU = new URL(rawU, dirUrl).href; } catch {}
+      if (seen.has(fullU)) continue;
+      seen.add(fullU);
+      const rLang = (rHead.match(/lang="([^"]+)"/i) || [])[1] || aLang;
+      const rLabel = (rHead.match(/label="([^"]+)"/i) || [])[1] || aLabel;
+      const lang = normLang(rLang || rLabel);
+      const fmt = isAss ? 'ass' : (/\.srt(\?|$)/i.test(fullU) ? 'srt' : 'vtt');
+      const langName = { ru: 'Русские', en: 'Английские', ja: 'Японские' }[lang] || (rLabel || lang.toUpperCase());
+      out.push({
+        id: 'aksor-' + out.length + '-' + lang,
+        lang,
+        format: fmt,
+        label: langName + (rLabel && !/^(ru|rus|en|eng|ja|jpn)$/i.test(rLabel) ? ' · ' + rLabel : '') + ' (' + fmt.toUpperCase() + ')',
+        url: fullU
+      });
+    }
+  }
+  return out;
+}
+
 app.get('/api/aksor/video', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const id = String(req.query.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
@@ -1858,10 +1908,12 @@ app.get('/api/aksor/video', async (req, res) => {
     const q = (data && data.qualities) || {};
     const qOrder = [['q2k', '1440', '1440p'], ['q1080', '1080', '1080p'], ['q720', '720', '720p'], ['q480', '480', '480p'], ['q360', '360', '360p']];
     const sources = [];
+    let firstMpd = '';
     for (const [k, qv, lbl] of qOrder) {
       const u = q[k];
       if (!u || typeof u !== 'string') continue;
       if (/\.mpd(\?|$)/i.test(u)) {
+        if (!firstMpd) firstMpd = u;
         sources.push({ quality: qv, label: lbl + ' · Aksor', type: 'hls', url: baseUrl + '/api/aksor/hls.m3u8?mpd=' + encodeURIComponent(u) });
       } else if (/\.m3u8(\?|$)/i.test(u)) {
         sources.push({ quality: qv, label: lbl + ' · Aksor', type: 'hls', url: u });
@@ -1870,6 +1922,13 @@ app.get('/api/aksor/video', async (req, res) => {
       }
     }
     if (!sources.length) return res.status(404).json({ ok: false, error: 'потоки Aksor не найдены' });
+    let subs = [];
+    if (firstMpd) {
+      try {
+        const { xml, dirUrl } = await fetchAksorMpd(firstMpd);
+        subs = parseMpdSubtitles(xml, dirUrl);
+      } catch {}
+    }
     const opS = +data.opening_start || 0, opL = +data.opening_length || 0;
     const edS = +data.ending_start || 0, edL = +data.ending_length || 0;
     res.json({
@@ -1880,6 +1939,7 @@ app.get('/api/aksor/video', async (req, res) => {
       isSub: !!data.is_subtitle,
       opening: opL > 0 ? [Math.round(opS), Math.round(opS + opL)] : null,
       ending: edL > 0 ? [Math.round(edS), Math.round(edS + edL)] : null,
+      subs,
       sources
     });
   } catch (e) {
@@ -1975,6 +2035,262 @@ app.get('/api/vost/resolve', async (req, res) => {
     res.json({ ok: true, data: (sr && Array.isArray(sr.data)) ? sr.data : [] });
   } catch (e) {
     res.status(502).json({ ok: false, error: String(e && e.message || e) });
+  }
+});
+
+/* ---- v17.45: серверный конвертер ASS/SSA -> VTT + поиск и прокси внешних субтитров (RU / EN / JA) ---- */
+function decodeSubBuffer(buf) {
+  if (!buf || !buf.length) return '';
+  if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) {
+    return new TextDecoder('utf-16le').decode(buf.subarray(2));
+  }
+  if (buf.length >= 2 && buf[0] === 0xfe && buf[1] === 0xff) {
+    return new TextDecoder('utf-16be').decode(buf.subarray(2));
+  }
+  const utf8 = new TextDecoder('utf-8', { fatal: false }).decode(buf).replace(/^\uFEFF/, '');
+  if (utf8.includes('\uFFFD')) {
+    try { return new TextDecoder('windows-1251').decode(buf); } catch {}
+  }
+  return utf8;
+}
+
+function assTimeToSec(str) {
+  const m = String(str || '').trim().match(/^(\d+):(\d{1,2}):(\d{1,2})[.,](\d{1,3})$/);
+  if (!m) return NaN;
+  const frac = m[4].length === 1 ? (+m[4] * 100) : (m[4].length === 2 ? (+m[4] * 10) : +m[4]);
+  return (+m[1]) * 3600 + (+m[2]) * 60 + (+m[3]) + frac / 1000;
+}
+
+function secToVttTime(sec) {
+  const totalMs = Math.max(0, Math.round((+sec || 0) * 1000));
+  const ms = totalMs % 1000;
+  const totalS = Math.floor(totalMs / 1000);
+  const s = totalS % 60;
+  const totalM = Math.floor(totalS / 60);
+  const m = totalM % 60;
+  const h = Math.floor(totalM / 60);
+  return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' +
+    String(s).padStart(2, '0') + '.' + String(ms).padStart(3, '0');
+}
+
+function assToVttServer(rawAss) {
+  const lines = String(rawAss || '').replace(/\r\n?/g, '\n').split('\n');
+  let resX = 1280, resY = 720, sec = '';
+  let styleFmt = ['name', 'fontname', 'fontsize', 'primarycolour', 'secondarycolour', 'outlinecolour', 'backcolour', 'bold', 'italic', 'underline', 'strikeout', 'scalex', 'scaley', 'spacing', 'angle', 'borderstyle', 'outline', 'shadow', 'alignment'];
+  let evtFmt = ['layer', 'start', 'end', 'style', 'name', 'marginl', 'marginr', 'marginv', 'effect', 'text'];
+  const styleAlign = new Map([['default', 2]]);
+  const cues = [];
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line || line.startsWith(';')) continue;
+    const secM = line.match(/^\[([^\]]+)\]$/);
+    if (secM) { sec = secM[1].toLowerCase(); continue; }
+    if (sec === 'script info') {
+      const xm = line.match(/^PlayResX\s*:\s*(\d+)/i);
+      const ym = line.match(/^PlayResY\s*:\s*(\d+)/i);
+      if (xm && +xm[1] > 0) resX = +xm[1];
+      if (ym && +ym[1] > 0) resY = +ym[1];
+    } else if (sec.includes('styles')) {
+      if (/^Format\s*:/i.test(line)) {
+        styleFmt = line.replace(/^Format\s*:/i, '').split(',').map(x => x.trim().toLowerCase());
+      } else if (/^Style\s*:/i.test(line)) {
+        const parts = line.replace(/^Style\s*:/i, '').split(',');
+        const iName = styleFmt.indexOf('name');
+        const iAl = styleFmt.indexOf('alignment');
+        if (iName >= 0 && parts[iName]) {
+          let al = iAl >= 0 ? (parseInt(parts[iAl], 10) || 2) : 2;
+          if (!sec.includes('+') && al >= 5) al = al === 6 ? 8 : (al === 5 ? 7 : (al === 7 ? 9 : 2));
+          styleAlign.set(parts[iName].trim().replace(/^\*+/, '').toLowerCase(), al);
+        }
+      }
+    } else if (sec === 'events') {
+      if (/^Format\s*:/i.test(line)) {
+        evtFmt = line.replace(/^Format\s*:/i, '').split(',').map(x => x.trim().toLowerCase());
+      } else if (/^Dialogue\s*:/i.test(raw.trimStart())) {
+        const rest = raw.trimStart().replace(/^Dialogue\s*:\s*/i, '');
+        const maxC = Math.max(1, evtFmt.length - 1);
+        const cols = [];
+        let cur = 0;
+        for (let i = 0; i < maxC; i++) {
+          const idx = rest.indexOf(',', cur);
+          if (idx === -1) break;
+          cols.push(rest.slice(cur, idx).trim());
+          cur = idx + 1;
+        }
+        cols.push(rest.slice(cur));
+        const iS = evtFmt.indexOf('start'), iE = evtFmt.indexOf('end'), iSt = evtFmt.indexOf('style'), iTx = evtFmt.indexOf('text');
+        const s = assTimeToSec(cols[iS >= 0 ? iS : 1]);
+        const e = assTimeToSec(cols[iE >= 0 ? iE : 2]);
+        const rawText = cols[iTx >= 0 ? iTx : cols.length - 1] || '';
+        if (!Number.isFinite(s) || !Number.isFinite(e) || e <= s || !rawText) continue;
+        if (/\{\\[^}]*\\p[1-9][^}]*\}/.test(rawText) && !/\\p0/.test(rawText)) continue;
+        const stName = String(cols[iSt >= 0 ? iSt : 3] || 'default').replace(/^\*+/, '').toLowerCase();
+        let align = styleAlign.get(stName) || 2;
+        const anM = rawText.match(/\\an([1-9])/);
+        if (anM) align = +anM[1];
+        const posM = rawText.match(/\\pos\(\s*([0-9.]+)\s*,\s*([0-9.]+)\s*\)/);
+        let cleaned = rawText
+          .replace(/\{[^}]*\\p[1-9][^}]*\}[\s\S]*?(\{[^}]*\\p0[^}]*\}|$)/g, '')
+          .replace(/\{\\i1\}/gi, '<i>').replace(/\{\\i0\}/gi, '</i>')
+          .replace(/\{\\b1\}/gi, '<b>').replace(/\{\\b0\}/gi, '</b>')
+          .replace(/\{[^}]*\}/g, '')
+          .replace(/\\[Nn]/g, '\n')
+          .replace(/\\h/g, ' ')
+          .trim();
+        if (!cleaned) continue;
+        const openI = (cleaned.match(/<i>/g) || []).length - (cleaned.match(/<\/i>/g) || []).length;
+        const openB = (cleaned.match(/<b>/g) || []).length - (cleaned.match(/<\/b>/g) || []).length;
+        if (openI > 0) cleaned += '</i>'.repeat(openI);
+        if (openB > 0) cleaned += '</b>'.repeat(openB);
+        const settings = [];
+        if (posM) {
+          const px = Math.max(0, Math.min(100, Math.round((+posM[1] / resX) * 100)));
+          const py = Math.max(0, Math.min(100, Math.round((+posM[2] / resY) * 100)));
+          settings.push('line:' + py + '%', 'position:' + px + '%');
+        } else if (align >= 7) {
+          settings.push('line:8%');
+        } else if (align >= 4) {
+          settings.push('line:50%');
+        }
+        if (align === 1 || align === 4 || align === 7) settings.push('align:start');
+        else if (align === 3 || align === 6 || align === 9) settings.push('align:end');
+        cues.push({ s, e, settings: settings.join(' '), text: cleaned });
+      }
+    }
+  }
+  cues.sort((a, b) => a.s - b.s || a.e - b.e);
+  const out = ['WEBVTT', ''];
+  for (const c of cues) {
+    out.push(secToVttTime(c.s) + ' --> ' + secToVttTime(c.e) + (c.settings ? ' ' + c.settings : ''));
+    out.push(c.text);
+    out.push('');
+  }
+  return out.join('\n');
+}
+
+app.post('/api/subs/ass-to-vtt', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const ass = String((req.body && (req.body.ass || req.body.text)) || '');
+  if (!ass) return res.status(400).json({ ok: false, error: 'нужен текст ASS/SSA' });
+  if (ass.length > 2_000_000) return res.status(413).json({ ok: false, error: 'файл субтитров слишком большой' });
+  const vtt = assToVttServer(ass);
+  res.json({ ok: true, vtt });
+});
+
+app.get('/api/subs/ass-to-vtt', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const rawUrl = String(req.query.url || '').trim();
+    if (!rawUrl) return res.status(400).type('text/plain').send('WEBVTT\n');
+    const safe = await egressCheck(rawUrl);
+    const r = await fetch(safe, { headers: { 'User-Agent': KODIK_UA }, signal: AbortSignal.timeout(12000) });
+    if (!r.ok) throw new Error('Sub HTTP ' + r.status);
+    const buf = new Uint8Array(await r.arrayBuffer());
+    if (buf.length > 3_000_000) throw new Error('Sub file too large');
+    const txt = decodeSubBuffer(buf);
+    res.type('text/vtt; charset=utf-8').send(assToVttServer(txt));
+  } catch (e) {
+    res.status(502).type('text/plain').send('# err: ' + String(e && e.message || e));
+  }
+});
+
+app.get('/api/subs/fetch', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  try {
+    const rawUrl = String(req.query.url || '').trim();
+    if (!rawUrl) return res.status(400).json({ ok: false, error: 'нужен url' });
+    const safe = await egressCheck(rawUrl);
+    const ck = 'subf:' + safe;
+    let txt = kCacheGet(ck, 60 * 60e3);
+    if (!txt) {
+      const r = await fetch(safe, { headers: { 'User-Agent': KODIK_UA }, signal: AbortSignal.timeout(12000) });
+      if (!r.ok) throw new Error('Sub HTTP ' + r.status);
+      const buf = new Uint8Array(await r.arrayBuffer());
+      if (buf.length > 3_000_000) throw new Error('Sub file too large');
+      txt = decodeSubBuffer(buf);
+      kCacheSet(ck, txt);
+    }
+    res.type('text/plain; charset=utf-8').send(txt);
+  } catch (e) {
+    res.status(502).json({ ok: false, error: String(e && e.message || e) });
+  }
+});
+
+app.get('/api/subs/search', async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  const mal = parseInt(req.query.mal, 10) || 0;
+  const ep = Math.max(1, parseInt(req.query.ep, 10) || 1);
+  const seasonHint = Math.max(1, parseInt(req.query.s, 10) || 1);
+  const isMovie = req.query.movie === '1' || req.query.movie === 'true';
+  let imdb = String(req.query.imdb || '').replace(/[^a-zA-Z0-9]/g, '');
+  try {
+    let tmdbSeason = seasonHint;
+    if (!imdb && mal > 0) {
+      const mck = 'arm:' + mal;
+      let ids = kCacheGet(mck, 12 * 3600e3);
+      if (!ids) {
+        const safe = await egressCheck('https://arm.haglund.dev/api/v2/ids?source=myanimelist&id=' + mal);
+        const r = await fetch(safe, { headers: { 'User-Agent': KODIK_UA, 'Accept': 'application/json' }, signal: AbortSignal.timeout(8000) });
+        if (r.ok) {
+          ids = await r.json();
+          kCacheSet(mck, ids);
+        }
+      }
+      if (ids && ids.imdb) imdb = String(ids.imdb).replace(/[^a-zA-Z0-9]/g, '');
+      if (ids && +ids['themoviedb-season'] > 0) tmdbSeason = +ids['themoviedb-season'];
+    }
+    if (!imdb || !/^tt\d+$/.test(imdb)) {
+      return res.json({ ok: true, imdb: '', subs: [] });
+    }
+    const fetchOs = async pathPart => {
+      const ck = 'osub:' + pathPart;
+      let j = kCacheGet(ck, 60 * 60e3);
+      if (!j) {
+        const safe = await egressCheck('https://opensubtitles-v3.strem.io/subtitles/' + pathPart + '.json');
+        const r = await fetch(safe, { headers: { 'User-Agent': KODIK_UA, 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) });
+        if (r.ok) {
+          j = await r.json();
+          kCacheSet(ck, j);
+        }
+      }
+      return (j && Array.isArray(j.subtitles)) ? j.subtitles : [];
+    };
+    let rawSubs = await fetchOs(isMovie ? ('movie/' + imdb) : ('series/' + imdb + ':' + tmdbSeason + ':' + ep));
+    if (!rawSubs.length && !isMovie && tmdbSeason !== 1) {
+      rawSubs = await fetchOs('series/' + imdb + ':1:' + ep);
+    }
+    const langMap = {
+      rus: { code: 'ru', name: '🇷🇺 Русские' },
+      ru: { code: 'ru', name: '🇷🇺 Русские' },
+      eng: { code: 'en', name: '🇬🇧 Английские' },
+      en: { code: 'en', name: '🇬🇧 Английские' },
+      jpn: { code: 'ja', name: '🇯🇵 Японские' },
+      ja: { code: 'ja', name: '🇯🇵 Японские' }
+    };
+    const picked = [];
+    const perLang = { ru: 0, en: 0, ja: 0 };
+    for (const s of rawSubs) {
+      if (!s || typeof s.url !== 'string') continue;
+      const lm = langMap[String(s.lang || '').toLowerCase()];
+      if (!lm || perLang[lm.code] >= 2) continue;
+      perLang[lm.code]++;
+      const fmt = /\.(ass|ssa)(\?|$)/i.test(s.url) ? 'ass' : 'srt';
+      const idx = perLang[lm.code];
+      picked.push({
+        id: 'ext-' + lm.code + (idx > 1 ? '-' + idx : ''),
+        lang: idx === 1 ? lm.code : (lm.code + '-' + idx),
+        baseLang: lm.code,
+        format: fmt,
+        label: lm.name + (idx > 1 ? ' #' + idx : '') + ' (' + fmt.toUpperCase() + ')',
+        url: s.url
+      });
+    }
+    const order = { ru: 0, en: 1, ja: 2 };
+    picked.sort((a, b) => (order[a.baseLang] ?? 9) - (order[b.baseLang] ?? 9));
+    res.json({ ok: true, imdb, season: tmdbSeason, ep, subs: picked });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: String(e && e.message || e), subs: [] });
   }
 });
 
