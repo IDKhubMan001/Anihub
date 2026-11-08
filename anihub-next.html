@@ -743,33 +743,44 @@ const CVH_API=()=>window.__CVH_API||'https://plapi.cdnvideohub.com/api/v1';
 const VOST_API=()=>window.__VOST_API||'https://api.animevost.org/v1';
 const YANI_API=()=>window.__YANI_API||'https://api.yani.tv';
 const OSUB_API=()=>window.__OSUB_API||'https://opensubtitles-v3.strem.io';
-const _cvhVidMem=new Map();const _yaniMetaMem=new Map();const _extSubMem=new Map();
+const ANIZIP_API=()=>window.__ANIZIP_API||'https://api.ani.zip';
+const _cvhVidMem=new Map();const _yaniMetaMem=new Map();const _extSubMem=new Map();const _aniZipMem=new Map();
 async function fetchExtSubs(meta){
   if(!meta)return[];
   const mal=+(meta.mal||meta.id)||0;
   const epStr=String(meta.ep||'1');
   const sx=epStr.includes('x')?epStr.split('x'):null;
-  const season=sx?Math.max(1,+sx[0]||1):Math.max(1,+meta.season||1);
-  const epNum=sx?Math.max(1,+sx[1]||1):Math.max(1,+epStr||1);
-  const isMovie=!!meta.isMovie;
+  let season=sx?Math.max(1,+sx[0]||1):Math.max(1,+meta.season||1);
+  let epNum=sx?Math.max(1,+sx[1]||1):Math.max(1,+epStr||1);
+  let isMovie=!!meta.isMovie;
   const ck=`${mal}:${season}:${epNum}:${isMovie?1:0}`;
   const mem=_extSubMem.get(ck);
   if(mem&&Date.now()-mem.at<30*60e3)return mem.subs;
   try{
-    if(mal>0&&await hasProxy()){
-      const r=await withTimeout(fetch(PB()+`/api/subs/search?mal=${mal}&s=${season}&ep=${epNum}${isMovie?'&movie=1':''}`),8000,'таймаут');
-      if(r.ok){
-        const j=await r.json();
-        if(j&&Array.isArray(j.subs)){
-          const subs=parseRawSubList(j.subs,'ext');
-          _extSubMem.set(ck,{at:Date.now(),subs});
-          return subs;
+    /* 1. Прямой безпроксийный CORS-резолв прямо из браузера (api.ani.zip + opensubtitles-v3.strem.io, оба ACAO: *) */
+    let imdb=meta.imdb||'';
+    if(!imdb&&mal>0){
+      let az=_aniZipMem.get(mal);
+      if(az===undefined){
+        try{
+          const rz=await withTimeout(fetch(ANIZIP_API()+'/mappings?mal_id='+mal,{headers:{'Accept':'application/json'}}),5500,'таймаут');
+          az=rz.ok?await rz.json():null;
+        }catch(e){az=null}
+        _aniZipMem.set(mal,az);
+      }
+      if(az&&az.mappings&&az.mappings.imdb_id){
+        imdb=String(az.mappings.imdb_id);
+        if(az.mappings.type==='MOVIE')isMovie=true;
+        const epInfo=!sx&&az.episodes&&(az.episodes[String(epNum)]||az.episodes[epNum]);
+        if(epInfo){
+          if(+epInfo.seasonNumber>0)season=+epInfo.seasonNumber;
+          if(+epInfo.episodeNumber>0)epNum=+epInfo.episodeNumber;
         }
       }
     }
-    if(meta.imdb&&/^tt\d+$/.test(meta.imdb)){
-      const path=isMovie?('movie/'+meta.imdb):('series/'+meta.imdb+':'+season+':'+epNum);
-      const r2=await withTimeout(fetch(OSUB_API()+'/subtitles/'+path+'.json'),6000,'таймаут');
+    if(imdb&&/^tt\d+$/.test(imdb)){
+      const path=isMovie?('movie/'+imdb):('series/'+imdb+':'+season+':'+epNum);
+      const r2=await withTimeout(fetch(OSUB_API()+'/subtitles/'+path+'.json'),6500,'таймаут');
       if(r2.ok){
         const j2=await r2.json();
         const allow={rus:'ru',ru:'ru',eng:'en',en:'en',jpn:'ja',ja:'ja'};
@@ -779,9 +790,23 @@ async function fetchExtSubs(meta){
           if(!c||cnt[c]>=1||!s.url)continue;
           cnt[c]++;picked.push({lang:c,baseLang:c,url:s.url});
         }
-        const subs=parseRawSubList(picked,'ext');
-        _extSubMem.set(ck,{at:Date.now(),subs});
-        return subs;
+        if(picked.length){
+          const subs=parseRawSubList(picked,'ext');
+          _extSubMem.set(ck,{at:Date.now(),subs});
+          return subs;
+        }
+      }
+    }
+    /* 2. Серверный фоллбек через наш бэкенд /api/subs/search */
+    if(mal>0&&await hasProxy()){
+      const r=await withTimeout(fetch(PB()+`/api/subs/search?mal=${mal}&s=${season}&ep=${epNum}${isMovie?'&movie=1':''}`),8000,'таймаут');
+      if(r.ok){
+        const j=await r.json();
+        if(j&&Array.isArray(j.subs)){
+          const subs=parseRawSubList(j.subs,'ext');
+          _extSubMem.set(ck,{at:Date.now(),subs});
+          return subs;
+        }
       }
     }
   }catch(e){}

@@ -1288,7 +1288,7 @@ const EGRESS_ALLOW = [
   'solodcdn.com', 'raw.githubusercontent.com',
   'api.animethemes.moe', 'v.animethemes.moe',
   'cdnvideohub.com', 'animevost.org', 'animetop.info', 'yani.tv', 'yummyani.me', 'aksor.tv',
-  'haglund.dev', 'strem.io', 'opensubtitles.org', 'kitsunekko.net', 'jsdelivr.net', 'unpkg.com'
+  'haglund.dev', 'strem.io', 'opensubtitles.org', 'kitsunekko.net', 'jsdelivr.net', 'unpkg.com', 'ani.zip'
 ];
 (process.env.EGRESS_EXTRA || '').split(',').filter(Boolean).forEach(d => EGRESS_ALLOW.push(d.trim().toLowerCase()));
 
