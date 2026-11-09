@@ -116,8 +116,9 @@ footer.foot{margin-top:90px;border-top:1px solid var(--line);background:var(--bg
 .player{position:relative;width:100%;aspect-ratio:16/9;background:#000;border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow);user-select:none;color:#fff}
 .player video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
 .player iframe.kframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
-.player .sub{position:absolute;left:50%;transform:translateX(-50%);max-width:88%;padding:.25em .6em;border-radius:6px;text-align:center;font-weight:600;line-height:1.35;white-space:pre-line;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.6);z-index:3}
-.player .ass-layer{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:3}.player .ass-layer[hidden]{display:none!important}
+.player .sub{position:absolute;left:50%;transform:translateX(-50%);max-width:88%;padding:.25em .6em;border-radius:6px;text-align:center;font-weight:600;line-height:1.35;white-space:pre-line;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.85);z-index:4}.player .sub[hidden],.player .sub-top[hidden]{display:none!important}
+.player .sub-top{position:absolute;left:50%;top:7%;transform:translateX(-50%);max-width:88%;padding:.2em .55em;border-radius:6px;text-align:center;font-weight:600;line-height:1.32;white-space:pre-line;pointer-events:none;text-shadow:0 1px 3px rgba(0,0,0,.85);z-index:4}
+.player .ass-layer,.player .ass-libjass{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:4}.player .ass-layer[hidden],.player .ass-libjass[hidden]{display:none!important}
 .player .ass-cue{position:absolute;max-width:92%;padding:.12em .42em;border-radius:5px;font-weight:700;line-height:1.32;white-space:pre-line;pointer-events:none;text-shadow:-1.5px -1.5px 0 #000,1.5px -1.5px 0 #000,-1.5px 1.5px 0 #000,1.5px 1.5px 0 #000,0 2px 6px rgba(0,0,0,.75)}
 .libjass-wrapper{position:relative;overflow:hidden}.libjass-subs{position:absolute;overflow:hidden;line-height:0}.libjass-subs,.libjass-subs *{pointer-events:none;-webkit-animation-fill-mode:both!important;animation-fill-mode:both!important}.libjass-subs.paused *{-webkit-animation-play-state:paused!important;animation-play-state:paused!important}.libjass-subs .an{position:absolute}.libjass-subs .an1,.libjass-subs .an2,.libjass-subs .an3{bottom:0}.libjass-subs .an4,.libjass-subs .an5,.libjass-subs .an6{display:table;width:100%;height:100%}.libjass-subs .an4>*,.libjass-subs .an5>*,.libjass-subs .an6>*{display:table-cell;vertical-align:middle}.libjass-subs .an7,.libjass-subs .an8,.libjass-subs .an9{top:0}.libjass-subs .an1,.libjass-subs .an4,.libjass-subs .an7{text-align:left}.libjass-subs .an2,.libjass-subs .an5,.libjass-subs .an8{text-align:center}.libjass-subs .an3,.libjass-subs .an6,.libjass-subs .an9{text-align:right}.libjass-subs div[data-dialogue-id]>span{-webkit-perspective-origin:center;-webkit-perspective:400px;perspective-origin:center;perspective:400px}.libjass-font-measure{position:absolute;visibility:hidden;border:0;margin:0;padding:0;line-height:normal}.libjass-filters{display:block}
 .sublang-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 13px;margin-bottom:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);font-size:12px}
@@ -351,7 +352,7 @@ footer.foot{border-top:1px solid var(--line)}
 <script>/* APP */
 (()=>{
 'use strict';
-const BUILD='2026-11-07 v18-preview · внешние и встроенные субтитры SRT/ASS/VTT (libjass + ASS-движок), выбор RU/EN/JA при отсутствии озвучки';
+const BUILD='2026-10-10 v18-preview · субтитры 2.0: живой ManualClock libjass, автоперевод дорожек RU/EN/JA, AniList/AniLibria маппинг, HLS/PiP-треки';
 const STUDIO_SNAPSHOT={"date":"10.10.2026","days":[{"name":"Понедельник","entries":[{"time":"16:10","title":"Я влюбился в тебя, когда ты бежала в лунной ночи"},{"time":"16:30","title":"Тайная битва за престол сильнейшего принца-дуралея"},{"time":"18:10","title":"Разгневанная леди поклялась отомстить"},{"time":"18:15","title":"Мир танцует"},{"time":"18:30","title":"Аккуратная и симпатичная девочка в моей новой школе"},{"time":"18:40","title":"Рыцарь-скелет вступает в параллельный мир 2"},{"time":"18:55","title":"Необъятный океан 3"},{"time":"20:20","title":"Игра лжецов"},{"time":"21:15","title":"Отверженная святая и её гастрономическое путешествие в другом мире"}]},{"name":"Вторник","entries":[{"time":"13:10","title":"Призрак в доспехах"},{"time":"17:10","title":"Забывчивая святая дева неосознанно изливает свою силу"},{"time":"22:55","title":"Непревзойдённый"},{"time":"19:15","title":"Истинные чудотворные рыцари 2"},{"time":"22:05","title":"Красная река"},{"time":"23:00","title":"Виктория с множеством козырей"}]},{"name":"Среда","entries":[{"time":"15:45","title":"Клеватесс 2"},{"time":"17:05","title":"Военная хроника маленькой девочки 2"},{"time":"18:00","title":"Мир отомэ-игр — это тяжелый мир для мобов 2"},{"time":"18:10","title":"Героиня? Святая? Нет, я всемогущая горничная!"},{"time":"19:45","title":"Для тебя во всём цвету 2"},{"time":"20:10","title":"Крестьянин 999-го уровня"},{"time":"20:20","title":"Тройной шторм"},{"time":"20:40","title":"Старик из деревни становится Святым мечом"}]},{"name":"Четверг","entries":[{"time":"09:45","title":"Для тебя во всём цвету 2"},{"time":"16:15","title":"Дара из Рэйвы"},{"time":"16:30","title":"Бродячие псы: Шуточные истории 2"},{"time":"18:25","title":"Ура мечте! Бесконечная мечта"},{"time":"18:45","title":"Пыль Мёбиуса"},{"time":"19:45","title":"Табакошка"},{"time":"19:50","title":"Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры"},{"time":"20:00","title":"Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга"},{"time":"21:05","title":"Монстрик Карамелька"}]},{"name":"Пятница","entries":[{"time":"18:20","title":"Прошло десять лет с момента, как я стал легендой"},{"time":"18:30","title":"О моём перерождении в слизь 4"},{"time":"19:00","title":"Население приграничного владения начинается с нуля"},{"time":"19:10","title":"Нарисуй это, потом умри"},{"time":"20:10","title":"Пожалуйста, простите моих младших братьев"},{"time":"20:15","title":"Адский режим 2"},{"time":"20:45","title":"Юный лорд — мастер побега 2"},{"time":"22:10","title":"Слёзы Бога"}]},{"name":"Суббота","entries":[{"time":"13:10","title":"Добро пожаловать в ад, Ирума! 4"},{"time":"14:10","title":"Власть книжного червя 4"},{"time":"16:45","title":"Чёрный факел"},{"time":"17:55","title":"Рекомендация старшеклассника Ивамото"},{"time":"20:15","title":"Шатёр чародея"},{"time":"20:35","title":"Шоу для взрослых: Цирк «Подсолнух»"},{"time":"20:40","title":"Следующий герцог, который скажет: «Я не хочу любить тебя», будет любить тебя по какой-то причине"},{"time":"20:50","title":"Невеста демона"},{"time":"20:55","title":"Лиричная волшебница Наноха: Опередители — Огненный выстрел возмездия"},{"time":"21:00","title":"Кот и дракон"},{"time":"21:10","title":"Ханаори хочет драться даже после перерождения"},{"time":"21:40","title":"Забота об одарённой девушке"},{"time":"22:30","title":"Мао"},{"time":"22:50","title":"Цугаи загробного мира"}]},{"name":"Воскресенье","entries":[{"time":"10:10","title":"Компания «Маги-Люмьер» 2"},{"time":"11:55","title":"Вперёд, отряд мистики!"},{"time":"12:00","title":"Прощай, Лара"},{"time":"12:10","title":"Ты и я полные противоположности"},{"time":"12:20","title":"Железный котелок Жана!"},{"time":"16:25","title":"Самый сильный в мире заступник"},{"time":"17:40","title":"История электричества в двадцатом веке"},{"time":"17:50","title":"Сто девушек 3"},{"time":"18:40","title":"Дигимоны: Битбрейк"},{"time":"18:50","title":"Реинкарнация безработного 3"},{"time":"19:20","title":"Чёрная кошка и класс ведьм"},{"time":"19:40","title":"Хоть я и бездарная злодейка"},{"time":"20:10","title":"Лазурный путь: Малый вперёд! 2"}]}]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -564,8 +565,8 @@ const BUILTIN_TOKEN='56a768d08f43091901c44b54fe970049';
 const withTimeout=(p,ms,msg)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error(msg||'таймаут')),ms))]);
 function dek(tkn){try{const h=Math.floor(tkn.length/2);const p1=atob(tkn.slice(0,h).split('').reverse().join(''));const p2=atob(tkn.slice(h).split('').reverse().join(''));return p2+p1}catch(e){return null}}
 function kodikTok(){return S.kodikToken||LS.get('kodikPub','')||BUILTIN_TOKEN}
-let proxyOk=null,proxyChk=0;
-async function hasProxy(){if(proxyOk!==null&&Date.now()-proxyChk<(proxyOk?36e5:45e3))return proxyOk;try{const r=await withTimeout(fetch(PB()+'/kodik-proxy/search?token=probe&limit=1'),12000,'probe');proxyOk=r.status!==404}catch{proxyOk=false}proxyChk=Date.now();return proxyOk}
+let proxyOk=null,proxyChk=0,proxyProbeP=null;
+async function hasProxy(){if(proxyOk!==null&&Date.now()-proxyChk<(proxyOk?36e5:45e3))return proxyOk;if(proxyProbeP)return proxyProbeP;proxyProbeP=(async()=>{try{const r=await withTimeout(fetch(PB()+'/kodik-proxy/search?token=probe&limit=1'),6500,'probe');const ct=(r.headers&&r.headers.get&&r.headers.get('content-type'))||'';proxyOk=r.status!==404&&r.status!==503&&r.status!==504&&!(r.status>=500&&/text\/html/i.test(ct))}catch{proxyOk=false}proxyChk=Date.now();proxyProbeP=null;return proxyOk})();return proxyProbeP}
 async function kodikApiGet(u){
   const uu=new URL(u);
   /* рядом работает kodik_proxy.py (локально или на сервере) — идём через него, без CORS-проблем */
@@ -720,7 +721,7 @@ function parseRawSubList(arr,prefix='sub'){
     const base=normSubLang(rawL||'ru');
     const cnt=(usedLang.get(base)||0)+1;usedLang.set(base,cnt);
     const lang=cnt===1?base:(base+'-'+cnt);
-    const fmt=(x&&typeof x==='object'&&x.format)||(/\.(ass|ssa)(\?|#|$)/i.test(url)?'ass':(/\.srt(\?|#|$)/i.test(url)?'srt':'vtt'));
+    const fmt=(x&&typeof x==='object'&&x.format)||(/\.(ass|ssa)(\?|#|$)/i.test(url)||/^data:text\/x-(ssa|ass)/i.test(url)?'ass':(/\.vtt(\?|#|$)/i.test(url)||/^data:text\/vtt/i.test(url)?'vtt':'srt'));
     const defNm={ru:'🇷🇺 Русские',en:'🇬🇧 Английские',ja:'🇯🇵 Японские'}[base]||('Субтитры '+(i+1));
     const rawNm=x&&typeof x==='object'?String(x.label||x.name||''):'';
     const label=rawNm?rawNm.slice(0,48):(defNm+(cnt>1?' #'+cnt:'')+' ('+String(fmt).toUpperCase()+')');
@@ -744,65 +745,99 @@ const VOST_API=()=>window.__VOST_API||'https://api.animevost.org/v1';
 const YANI_API=()=>window.__YANI_API||'https://api.yani.tv';
 const OSUB_API=()=>window.__OSUB_API||'https://opensubtitles-v3.strem.io';
 const ANIZIP_API=()=>window.__ANIZIP_API||'https://api.ani.zip';
-const _cvhVidMem=new Map();const _yaniMetaMem=new Map();const _extSubMem=new Map();const _aniZipMem=new Map();
+const SUB_TR_API=()=>window.__SUB_TR_API||'https://clients5.google.com/translate_a/t';
+const _cvhVidMem=new Map();const _yaniMetaMem=new Map();const _extSubMem=new Map();const _extSubInflight=new Map();const _aniZipMem=new Map();const _subTrMem=new Map();
 async function fetchExtSubs(meta){
   if(!meta)return[];
-  const mal=+(meta.mal||meta.id)||0;
+  let mal=+(meta.mal||meta.shiki||(meta.src!=='libria'&&meta.src!=='anilist'?meta.id:0))||0;
+  let aniId=+(meta.anilistId||(meta.src==='anilist'?meta.id:0))||0;
   const epStr=String(meta.ep||'1');
   const sx=epStr.includes('x')?epStr.split('x'):null;
   let season=sx?Math.max(1,+sx[0]||1):Math.max(1,+meta.season||1);
   let epNum=sx?Math.max(1,+sx[1]||1):Math.max(1,+epStr||1);
+  let absEp=0;
   let isMovie=!!meta.isMovie;
-  const ck=`${mal}:${season}:${epNum}:${isMovie?1:0}`;
+  const ck=`${mal||('a'+aniId)||('t'+meta.id)}:${season}:${epNum}:${isMovie?1:0}`;
   const mem=_extSubMem.get(ck);
   if(mem&&Date.now()-mem.at<30*60e3)return mem.subs;
+  if(_extSubInflight.has(ck))return _extSubInflight.get(ck);
+  const job=(async()=>{
   try{
+    if(!mal&&!aniId&&(meta.title||meta.titleEn||meta.alt)){
+      try{
+        const ym=await yaniFind(meta);
+        if(ym&&ym.remote_ids&&+ym.remote_ids.shikimori_id>0)mal=+ym.remote_ids.shikimori_id;
+      }catch(e){}
+      if(!mal){
+        const qNm=String(meta.titleEn||String(meta.alt||'').split('/')[0]||meta.title||'').trim();
+        if(qNm){
+          try{
+            const ad=await anilistQ('query($s:String){Media(type:ANIME,search:$s,isAdult:false){id idMal}}',{s:qNm});
+            if(ad&&ad.Media){mal=+ad.Media.idMal||0;aniId=+ad.Media.id||0}
+          }catch(e){}
+        }
+      }
+    }
     /* 1. Прямой безпроксийный CORS-резолв прямо из браузера (api.ani.zip + opensubtitles-v3.strem.io, оба ACAO: *) */
     let imdb=meta.imdb||'';
-    if(!imdb&&mal>0){
-      let az=_aniZipMem.get(mal);
+    if(!imdb&&(mal>0||aniId>0)){
+      const azKey=mal>0?('m:'+mal):('a:'+aniId);
+      let az=_aniZipMem.get(azKey);
       if(az===undefined){
         try{
-          const rz=await withTimeout(fetch(ANIZIP_API()+'/mappings?mal_id='+mal,{headers:{'Accept':'application/json'}}),5500,'таймаут');
+          const qs=mal>0?('mal_id='+mal):('anilist_id='+aniId);
+          const rz=await withTimeout(fetch(ANIZIP_API()+'/mappings?'+qs,{headers:{'Accept':'application/json'}}),5500,'таймаут');
           az=rz.ok?await rz.json():null;
         }catch(e){az=null}
-        _aniZipMem.set(mal,az);
+        _aniZipMem.set(azKey,az);
       }
-      if(az&&az.mappings&&az.mappings.imdb_id){
-        imdb=String(az.mappings.imdb_id);
-        if(az.mappings.type==='MOVIE')isMovie=true;
-        const epInfo=!sx&&az.episodes&&(az.episodes[String(epNum)]||az.episodes[epNum]);
-        if(epInfo){
-          if(+epInfo.seasonNumber>0)season=+epInfo.seasonNumber;
-          if(+epInfo.episodeNumber>0)epNum=+epInfo.episodeNumber;
+      if(az&&az.mappings){
+        if(!mal&&+az.mappings.mal_id>0)mal=+az.mappings.mal_id;
+        if(az.mappings.imdb_id){
+          imdb=String(az.mappings.imdb_id);
+          if(az.mappings.type==='MOVIE')isMovie=true;
+          const epInfo=!sx&&az.episodes&&(az.episodes[String(epNum)]||az.episodes[epNum]);
+          if(epInfo){
+            if(+epInfo.seasonNumber>0)season=+epInfo.seasonNumber;
+            if(+epInfo.episodeNumber>0)epNum=+epInfo.episodeNumber;
+            if(+epInfo.absoluteEpisodeNumber>0)absEp=+epInfo.absoluteEpisodeNumber;
+          }
         }
       }
     }
     if(imdb&&/^tt\d+$/.test(imdb)){
-      const path=isMovie?('movie/'+imdb):('series/'+imdb+':'+season+':'+epNum);
-      const r2=await withTimeout(fetch(OSUB_API()+'/subtitles/'+path+'.json'),6500,'таймаут');
-      if(r2.ok){
+      const allow={rus:'ru',ru:'ru',eng:'en',en:'en',jpn:'ja',ja:'ja'};
+      const cnt={ru:0,en:0,ja:0},picked=[];
+      const pullOs=async pth=>{
+        const r2=await withTimeout(fetch(OSUB_API()+'/subtitles/'+pth+'.json'),6500,'таймаут');
+        if(!r2.ok)return;
         const j2=await r2.json();
-        const allow={rus:'ru',ru:'ru',eng:'en',en:'en',jpn:'ja',ja:'ja'};
-        const cnt={ru:0,en:0,ja:0},picked=[];
         for(const s of (j2&&j2.subtitles)||[]){
           const c=allow[String(s&&s.lang||'').toLowerCase()];
           if(!c||cnt[c]>=1||!s.url)continue;
-          cnt[c]++;picked.push({lang:c,baseLang:c,url:s.url});
-        }
-        if(picked.length){
-          const subs=parseRawSubList(picked,'ext');
-          _extSubMem.set(ck,{at:Date.now(),subs});
-          return subs;
-        }
+          cnt[c]++;picked.push({lang:c,baseLang:c,format:/\.(ass|ssa)(\?|$)/i.test(s.url)?'ass':'srt',url:s.url});
+        }};
+      await pullOs(isMovie?('movie/'+imdb):('series/'+imdb+':'+season+':'+epNum));
+      if(!isMovie&&absEp>0&&(season!==1||absEp!==epNum)&&(!cnt.ru||!cnt.en||!cnt.ja)){
+        await pullOs('series/'+imdb+':1:'+absEp);
+      }
+      if(!picked.length&&!isMovie&&season!==1){
+        await pullOs('series/'+imdb+':1:'+epNum);
+      }
+      if(picked.length){
+        const order={ru:0,en:1,ja:2};
+        picked.sort((a,b)=>(order[a.baseLang]??9)-(order[b.baseLang]??9));
+        const subs=parseRawSubList(picked,'ext');
+        _extSubMem.set(ck,{at:Date.now(),subs});
+        return subs;
       }
     }
     /* 2. Серверный фоллбек через наш бэкенд /api/subs/search */
-    if(mal>0&&await hasProxy()){
-      const r=await withTimeout(fetch(PB()+`/api/subs/search?mal=${mal}&s=${season}&ep=${epNum}${isMovie?'&movie=1':''}`),8000,'таймаут');
+    if((mal>0||aniId>0)&&await hasProxy()){
+      const r=await withTimeout(fetch(PB()+`/api/subs/search?mal=${mal}&anilist=${aniId}&s=${season}&ep=${epNum}${isMovie?'&movie=1':''}`),8000,'таймаут');
       if(r.ok){
         const j=await r.json();
-        if(j&&Array.isArray(j.subs)){
+        if(j&&Array.isArray(j.subs)&&j.subs.length){
           const subs=parseRawSubList(j.subs,'ext');
           _extSubMem.set(ck,{at:Date.now(),subs});
           return subs;
@@ -811,7 +846,64 @@ async function fetchExtSubs(meta){
     }
   }catch(e){}
   _extSubMem.set(ck,{at:Date.now(),subs:[]});
-  return[]}
+  return[]})().finally(()=>_extSubInflight.delete(ck));
+  _extSubInflight.set(ck,job);
+  return job}
+async function translateCueBatch(lines,sl,tl){
+  if(!lines.length)return[];
+  try{
+    const body=new URLSearchParams();
+    lines.forEach(l=>body.append('q',l));
+    const u=SUB_TR_API()+`?client=dict-chrome-ex&sl=${encodeURIComponent(sl||'auto')}&tl=${encodeURIComponent(tl)}`;
+    const r=await withTimeout(fetch(u,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body.toString()}),8000,'tr');
+    if(r.ok){
+      const j=await r.json();
+      if(Array.isArray(j)&&j.length===lines.length){
+        return j.map((x,i)=>String(Array.isArray(x)?x[0]:x||lines[i]).trim());
+      }
+    }
+  }catch(e){}
+  try{
+    const joined=lines.join('\n ||| \n');
+    if(joined.length<=480){
+      const r2=await withTimeout(fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(joined)}&langpair=${encodeURIComponent((sl||'en')+'|'+tl)}`),6500,'tr2');
+      if(r2.ok){
+        const j2=await r2.json();
+        const tx=j2&&j2.responseData&&j2.responseData.translatedText;
+        if(tx){const sp=String(tx).split(/\s*\|\|\|\s*/);if(sp.length===lines.length)return sp.map(s=>s.trim())}
+      }
+    }
+  }catch(e){}
+  return null}
+async function translateSubCues(srcCues,sl,tl,cacheId,aroundSec,onStep){
+  if(!Array.isArray(srcCues)||!srcCues.length)return[];
+  const mKey=`${cacheId}:${tl}`;
+  const mem=_subTrMem.get(mKey);
+  if(mem&&mem.length===srcCues.length)return mem;
+  const out=srcCues.map(c=>({...c}));
+  const CHUNK=75,total=out.length;
+  const batches=[];
+  let startIdx=0;
+  if(Number.isFinite(aroundSec)&&aroundSec>5){
+    const found=out.findIndex(c=>c.e>=aroundSec-10);
+    if(found>0)startIdx=Math.floor(found/CHUNK)*CHUNK;
+  }
+  for(let i=startIdx;i<total;i+=CHUNK)batches.push([i,Math.min(total,i+CHUNK)]);
+  for(let i=0;i<startIdx;i+=CHUNK)batches.push([i,Math.min(startIdx,i+CHUNK)]);
+  let anyOk=false;
+  for(let bi=0;bi<batches.length;bi++){
+    const[a,b]=batches[bi];
+    const slice=out.slice(a,b).map(c=>String(c.text||'').replace(/\n+/g,' / '));
+    const tr=await translateCueBatch(slice,sl,tl);
+    if(!tr){if(!anyOk)return null;break}
+    anyOk=true;
+    for(let k=0;k<tr.length;k++){
+      out[a+k]={...out[a+k],text:String(tr[k]||slice[k]).replace(/\s*\/\s*/g,'\n')};
+    }
+    if(onStep&&!onStep(out,bi===batches.length-1))return out;
+  }
+  if(anyOk)_subTrMem.set(mKey,out);
+  return anyOk?out:null}
 function altStudioScore(nm){
   const s=String(nm||'').toLowerCase();
   if(S.dubpref&&s===String(S.dubpref).toLowerCase())return 1000;
@@ -1039,7 +1131,7 @@ async function embedModal(t){const d=ask('Embed-плеер для тайтла',
   await d.pr}
 
 /* ------------------------------ плеер ------------------------------ */
-const vttParse=v=>{const out=[],bl=String(v||'').replace(/\r/g,'').split(/\n\n+/);
+const vttParse=v=>{const out=[],bl=String(v||'').replace(/[\u200e\u200f\u202a-\u202e\u2066-\u2069]/g,'').replace(/\r/g,'').split(/\n\n+/);
   for(const b of bl){const ln=b.split('\n').filter(x=>x.trim());const ti=ln.find(x=>x.includes('-->'));if(!ti)continue;
     const m=ti.match(/(\d{1,2}):(\d{2}):(\d{2})[.,](\d{3})\s*-->\s*(\d{1,2}):(\d{2}):(\d{2})[.,](\d{3})/);
     const mShort=!m?ti.match(/(\d{1,2}):(\d{2})[.,](\d{3})\s*-->\s*(\d{1,2}):(\d{2})[.,](\d{3})/):null;
@@ -1047,7 +1139,10 @@ const vttParse=v=>{const out=[],bl=String(v||'').replace(/\r/g,'').split(/\n\n+/
     const sec=([h,mi,s,ms])=>+h*3600+ +mi*60+ +s+ +ms/1000;
     const sT=m?sec([m[1],m[2],m[3],m[4]]):sec([0,mShort[1],mShort[2],mShort[3]]);
     const eT=m?sec([m[5],m[6],m[7],m[8]]):sec([0,mShort[4],mShort[5],mShort[6]]);
-    const txt=ln.slice(ln.indexOf(ti)+1).join('\n').replace(/<[^>]+>/g,'').trim();if(txt)out.push({s:sT,e:eT,text:txt})}
+    const rawBody=ln.slice(ln.indexOf(ti)+1).join('\n');
+    const top=/\{\\an[789]\b/i.test(rawBody)||/\bline\s*:\s*([0-9]|1[0-9])%/i.test(ti);
+    const txt=rawBody.replace(/\\[Nn]/g,'\n').replace(/\\h/g,'\u00A0').replace(/\{[^}]*\}/g,'').replace(/<[^>]+>/g,'').trim();
+    if(txt)out.push({s:sT,e:eT,text:txt,top})}
   return out};
 const srt2vtt=t=>'WEBVTT\n\n'+String(t||'').replace(/^\uFEFF/,'').replace(/\r/g,'').replace(/^WEBVTT.*$/m,'').replace(/^\d+\s*$/gm,'').replace(/(\d{1,2}:\d{2}:\d{2}),(\d{3})/g,'$1.$2');
 const isAssContent=(txt,u='',fmt='')=>fmt==='ass'||/\.(ass|ssa)(\?|#|$)/i.test(String(u||''))||/^data:text\/x-(ssa|ass)/i.test(String(u||''))||/\[Script Info\]|\[V4\+?\s*Styles\]|\nDialogue\s*:/i.test(String(txt||''));
@@ -1128,17 +1223,48 @@ function ass2vtt(rawAss){
   const p=assParse(rawAss);
   const fT=sec=>{const ms=Math.max(0,Math.round(sec*1000)),s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000)%60,h=Math.floor(ms/3600000);return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms%1000).padStart(3,'0')}`};
   return 'WEBVTT\n\n'+p.cues.map(c=>`${fT(c.s)} --> ${fT(c.e)}\n${c.text}`).join('\n\n')}
+const _CP1252={0x20AC:0x80,0x201A:0x82,0x0192:0x83,0x201E:0x84,0x2026:0x85,0x2020:0x86,0x2021:0x87,0x02C6:0x88,0x2030:0x89,0x0160:0x8A,0x2039:0x8B,0x0152:0x8C,0x017D:0x8E,0x2018:0x91,0x2019:0x92,0x201C:0x93,0x201D:0x94,0x2022:0x95,0x2013:0x96,0x2014:0x97,0x02DC:0x98,0x2122:0x99,0x0161:0x9A,0x203A:0x9B,0x0153:0x9C,0x017E:0x9E,0x0178:0x9F};
+function fixSubMojibake(str){
+  if(!str||!/[ÃÂÐÑãäåæçèéï][\x80-\xff\u0152-\u2122]/.test(str))return str;
+  const bytes=new Uint8Array(str.length);
+  for(let i=0;i<str.length;i++){
+    const c=str.charCodeAt(i);
+    if(c<=0xff)bytes[i]=c;
+    else if(_CP1252[c]!==undefined)bytes[i]=_CP1252[c];
+    else return str;
+  }
+  try{return new TextDecoder('utf-8',{fatal:true}).decode(bytes)}catch(e){return str}}
+function decodeSubBytes(buf){
+  if(!buf)return '';
+  const u8=buf instanceof Uint8Array?buf:new Uint8Array(buf);
+  if(!u8.byteLength)return '';
+  if(u8.length>=2&&u8[0]===0xff&&u8[1]===0xfe){try{return new TextDecoder('utf-16le').decode(u8.subarray(2))}catch(e){}}
+  if(u8.length>=2&&u8[0]===0xfe&&u8[1]===0xff){try{return new TextDecoder('utf-16be').decode(u8.subarray(2))}catch(e){}}
+  try{
+    const utf8=new TextDecoder('utf-8',{fatal:true}).decode(u8).replace(/^\uFEFF/,'');
+    return fixSubMojibake(utf8);
+  }catch(e){
+    try{return new TextDecoder('windows-1251').decode(u8)}catch(e2){}
+    return new TextDecoder('utf-8').decode(u8).replace(/^\uFEFF/,'');
+  }}
 async function rawSubFetch(u){
   if(/^data:/i.test(String(u||''))){
     const ci=u.indexOf(',');if(ci===-1)return '';
     const head=u.slice(0,ci),body=u.slice(ci+1);
-    return /;base64/i.test(head)?decodeURIComponent(escape(atob(body))):decodeURIComponent(body)}
+    return fixSubMojibake(/;base64/i.test(head)?decodeURIComponent(escape(atob(body))):decodeURIComponent(body))}
   try{
-    const r=await fetch(u);if(r.ok)return await r.text();
+    const r=await fetch(u);
+    if(r.ok){
+      if(typeof r.arrayBuffer==='function'){const ab=await r.arrayBuffer();return decodeSubBytes(ab)}
+      return fixSubMojibake(await r.text());
+    }
   }catch(e){}
   if(await hasProxy()){
     const r2=await fetch(PB()+'/api/subs/fetch?url='+encodeURIComponent(u));
-    if(r2.ok)return await r2.text();
+    if(r2.ok){
+      if(typeof r2.arrayBuffer==='function'){const ab2=await r2.arrayBuffer();return decodeSubBytes(ab2)}
+      return fixSubMojibake(await r2.text());
+    }
   }
   throw new Error('Не удалось загрузить файл субтитров')}
 async function subText(u){const t=await rawSubFetch(u);if(isAssContent(t,u))return ass2vtt(t);return /^\s*WEBVTT/.test(t)?t:srt2vtt(t)}
@@ -1163,7 +1289,7 @@ function mountPlayer(box,o){
   const _rr=x=>Array.isArray(x)&&x.length>=2?[Math.max(0,+x[0]||0),Math.max(0,+x[1]||0)]:[0,0];
   let ranges={intro:_rr(o.ranges&&o.ranges.intro),outro:_rr(o.ranges&&o.ranges.outro)};
   box.classList.add('player');box.tabIndex=-1;
-  box.innerHTML=`<video playsinline preload="metadata"${o.poster?` poster="${esc(o.poster)}"`:''}></video><div class="ass-layer" hidden></div><div class="sub" hidden></div>
+  box.innerHTML=`<video playsinline preload="metadata"${o.poster?` poster="${esc(o.poster)}"`:''}></video><div class="ass-libjass" hidden></div><div class="ass-layer" hidden></div><div class="sub-top" hidden></div><div class="sub" hidden></div>
   <div class="ptop"><div><b>${esc(o.title)}</b><small>${esc(o.sub||'')}</small></div><div class="pb">${o.badge||''}<span class="qb"></span></div></div>
   <button class="bigplay" aria-label="Воспроизвести">${SICON('next')}</button><div class="spin" hidden><span class="stxt">Загружаем поток…</span><button class="sx" data-sx aria-label="Скрыть">✕</button></div><div class="perr" hidden></div>
   <button class="skipbtn" hidden></button><div class="cd" hidden></div><div class="tbadge">⏱ 0:00</div>
@@ -1172,7 +1298,7 @@ function mountPlayer(box,o){
   <div class="row"><button data-c="play" aria-label="Пауза / Смотреть">${SICON('pause')}</button><button data-c="b10" aria-label="Назад 10 секунд">⟲ 10</button><button data-c="f10" aria-label="Вперёд 10 секунд">10 ⟳</button><button data-c="bri" aria-label="Яркость">☀</button><button data-c="prev" ${o.prev?'':'hidden'} aria-label="Предыдущая серия">⏮</button><button data-c="nextep" ${o.next?'':'hidden'} aria-label="Следующая серия">⏭</button><button data-c="mute" aria-label="Звук">${SICON('vol')}</button><input class="vol" type="range" min="0" max="1" step=".05" aria-label="Громкость"><span class="tm"></span><span class="sp"></span>
   ${o.dubs&&o.dubs.length?'<button data-c="dub" aria-label="Озвучка" title="Озвучка · без рекламы">'+SICON('mic')+'</button>':''}<button data-c="cc" aria-label="Субтитры">${SICON('cc')}</button><button data-c="rate" aria-label="Скорость"></button><button data-c="skip" aria-label="Пропустить опенинг">${SICON('skipd')}</button><button data-c="share" aria-label="Поделиться моментом">🔗</button><button data-c="shot" aria-label="Скриншот кадра">${SICON('shot')}</button><button data-c="pip" aria-label="Картинка в картинке">${SICON('comp')}</button><button data-c="mark" aria-label="Закладка момента">🔖</button><button data-c="set" aria-label="Настройки">${SICON('gear')}</button><button data-c="fs" aria-label="Полный экран">⛶</button></div></div>
   <aside class="pset" hidden aria-label="Настройки плеера"></aside>`;
-  const v=$('video',box),assEl=$('.ass-layer',box),subEl=$('.sub',box),spin=$('.spin',box),perr=$('.perr',box),skipB=$('.skipbtn',box),cd=$('.cd',box),set=$('.pset',box),big=$('.bigplay',box);
+  const v=$('video',box),assEl=$('.ass-libjass',box),assFb=$('.ass-layer',box),subTopEl=$('.sub-top',box),subEl=$('.sub',box),spin=$('.spin',box),perr=$('.perr',box),skipB=$('.skipbtn',box),cd=$('.cd',box),set=$('.pset',box),big=$('.bigplay',box);
   const openDubPick=async()=>{if(!o.dubs||!o.dubs.length)return;const d=ask('Озвучка ('+o.dubs.length+') — все без рекламы',o.dubs.map(x3=>x3.div?'<div class="tiny muted" style="margin:10px 0 2px;text-align:center">'+esc(x3.label)+'</div>':'<button class="chip '+(x3.on?'on':'')+'" data-dubv="'+esc(String(x3.v))+'" style="display:block;width:100%;text-align:left;margin-top:6px">'+(x3.on?'▶ ':'')+esc(x3.label)+'</button>').join(''));d.m.addEventListener('click',e=>{const c3=e.target.closest('[data-dubv]');if(c3){d.close(true);o.onDub&&o.onDub(c3.dataset.dubv)}});await d.pr};
 
   let hls=null,audio=aud.find(a=>a.id===P.audio)||((P.audioLang&&P.audioLang!=='auto')?aud.find(a=>a.lang===P.audioLang):null)||aud[0],quality=P.quality,levels=[],cues=[],dur=o.dur||1,introDone=false,cdTimer=null,applying=false,lastSync=0,idleT=0,lastSave=0,dead=false,outroFired=false;
@@ -1181,6 +1307,19 @@ function mountPlayer(box,o){
   function destroyHls(){if(hls){try{hls.destroy()}catch{}hls=null}}
   let mp4Tried=false,watchdog=null;
   function tryMp4(reason){if(mp4&&quality!=='mp4'&&!mp4Tried){mp4Tried=true;quality='mp4';toast('Поток недоступен',reason+' — пробуем MP4…');load(v.currentTime||0)}else showErr(reason)}
+  const syncHlsSubTracks=()=>{
+    if(!hls||!Array.isArray(hls.subtitleTracks)||!hls.subtitleTracks.length)return;
+    let changed=false;
+    hls.subtitleTracks.forEach((ht,idx)=>{
+      const base=normSubLang(ht.lang||ht.name||'ru');
+      const id='hls-'+idx;
+      if(subsT.some(x=>x.id===id))return;
+      const defNm={ru:'🇷🇺 Русские',en:'🇬🇧 Английские',ja:'🇯🇵 Японские'}[base]||(ht.name||('Дорожка '+(idx+1)));
+      const lang=subsT.some(x=>x.lang===base)?(base+'-hls'+idx):base;
+      subsT.push({id,lang,baseLang:base,format:'hls',label:defNm+' (HLS)',hlsIdx:idx});
+      changed=true;
+    });
+    if(changed){if(P.subLang&&!cues.length&&!assDoc)loadSubs();if(settingsOpen)renderSet()}};
   function load(keep){
     const u=url();if(!u)return;spin.hidden=false;$('.stxt',box).textContent='Загружаем поток…';perr.hidden=true;destroyHls();clearTimeout(watchdog);const at=keep??(o.resume>5?o.resume:0);
     watchdog=setTimeout(()=>{if(dead||v.readyState>=1)return;
@@ -1192,7 +1331,18 @@ function mountPlayer(box,o){
       .catch(()=>{spin.hidden=true})})};
     v.addEventListener('loadedmetadata',onMeta,{once:true});
     if(/\.m3u8(\?|#|$)/i.test(u)&&window.Hls&&Hls.isSupported()){
-      hls=new Hls({enableWorker:true,backBufferLength:60});hls.on(Hls.Events.MANIFEST_PARSED,(_,d)=>{levels=d.levels.map(l=>l.height||0).filter(Boolean).sort((a,b)=>b-a);applyQuality();if(settingsOpen)renderSet()});
+      hls=new Hls({enableWorker:true,backBufferLength:60,renderTextTracksNatively:false});
+      hls.on(Hls.Events.MANIFEST_PARSED,(_,d)=>{levels=d.levels.map(l=>l.height||0).filter(Boolean).sort((a,b)=>b-a);applyQuality();syncHlsSubTracks();if(settingsOpen)renderSet()});
+      if(Hls.Events.SUBTITLE_TRACKS_UPDATED)hls.on(Hls.Events.SUBTITLE_TRACKS_UPDATED,()=>syncHlsSubTracks());
+      if(Hls.Events.CUES_PARSED)hls.on(Hls.Events.CUES_PARSED,(_,d)=>{
+        const want=findSubTrack(P.subLang);
+        if(!want||want.hlsIdx==null||!d||!Array.isArray(d.cues))return;
+        let added=false;
+        d.cues.forEach(q=>{
+          const s=+q.startTime,e=+q.endTime,txt=String(q.text||'').replace(/\{[^}]*\}/g,'').replace(/<[^>]+>/g,'').trim();
+          if(Number.isFinite(s)&&Number.isFinite(e)&&txt&&!cues.some(x=>Math.abs(x.s-s)<0.05&&x.text===txt)){cues.push({s,e,text:txt});added=true}
+        });
+        if(added){cues.sort((a,b)=>a.s-b.s);subLoading=false;syncNativeTrack();paintSub()}});
       hls.on(Hls.Events.FRAG_BUFFERED,()=>{if(v.readyState>=1)clearTimeout(watchdog)});
       hls.on(Hls.Events.ERROR,(_,d)=>{if(!d.fatal)return;const r=hls._r||(hls._r={n:0,m:0});clearTimeout(watchdog);
       if(d.type===Hls.ErrorTypes.NETWORK_ERROR&&r.n<3){r.n++;try{hls.startLoad()}catch(e){}return}
@@ -1224,7 +1374,7 @@ function mountPlayer(box,o){
     if(selL){const nv=selL.value;if(['ru','en','ja'].includes(nv))P.prefSubLang=nv;setPref('subLang',nv);return}
     const sf=e.target.closest('[data-suf]');if(sf&&sf.files&&sf.files[0]){const f=sf.files[0],rd=new FileReader();
     rd.onload=()=>{
-      const raw=String(rd.result||'');
+      const raw=(rd.result&&typeof rd.result==='object')?decodeSubBytes(rd.result):fixSubMojibake(String(rd.result||''));
       const assMode=isAssContent(raw,f.name);
       const du=assMode?('data:text/x-ssa;charset=utf-8,'+encodeURIComponent(raw)):('data:text/vtt;charset=utf-8,'+encodeURIComponent(/^\s*WEBVTT/.test(raw)?raw:srt2vtt(raw)));
       S.subsURL=S.subsURL||{};
@@ -1234,7 +1384,7 @@ function mountPlayer(box,o){
       }
       save('subsURL');syncCustomTrack();setPref('subLang','custom');
       toast('Свои субтитры включены',f.name.slice(0,28)+' · '+(assMode?'ASS/SSA':'SRT/VTT'),'ok')};
-    rd.readAsText(f);return}});
+    if(typeof rd.readAsArrayBuffer==='function')rd.readAsArrayBuffer(f);else rd.readAsText(f);return}});
   set.addEventListener('click',async e=>{
     if(e.target.closest('[data-sux]')){if(o.meta){delete S.subsURL[o.meta.id];delete S.subsURL[o.meta.id+'_name'];if(subKeyEp){delete S.subsURL[subKeyEp];delete S.subsURL[subKeyEp+'_name']}save('subsURL');syncCustomTrack();if(P.subLang==='custom')setPref('subLang','');else renderSet();toast('Свои субтитры убраны')}return}
     if(e.target.closest('[data-suload]')){const u=$('[data-su]',set).value.trim();if(!/^https?:\/\/|^data:/i.test(u))return toast('Нужна ссылка http(s) на .srt / .ass / .vtt','','err');
@@ -1260,13 +1410,49 @@ function doShot(){try{const c=document.createElement('canvas');c.width=v.videoWi
     else prompt('Скопируйте ссылку на момент:',u)}
   function addMark(){if(o.noHist||!o.meta){toast('В комнате закладки отключены');return}const t=Math.round(v.currentTime);if(S.marks.some(m=>m.key===hkey(o.meta.id,o.meta.ep)&&m.t===t))return;S.marks.push({id:uid(),key:hkey(o.meta.id,o.meta.ep),tid:o.meta.id,ep:o.meta.ep,title:o.meta.title,t,at:Date.now()});save('marks');toast('Закладка сохранена',`${fmt(t)} · ${o.meta.title}`,'ok');paintMarks();if(settingsOpen)renderSet()}
   function paintMarks(){$('.marks',box).innerHTML=myMarks().map(m=>`<span style="left:${m.t/dur*100}%" title="${fmt(m.t)}">🔖</span>`).join('')}
-  let assDoc=null,assRenderer=null,assClock=null,assUsingLibjass=false,assRO=null,extSubFetched=false,subLoadSeq=0;
+  let assDoc=null,assRenderer=null,assClock=null,assUsingLibjass=false,assLibjassReady=false,assRO=null,extSubFetched=false,subLoadSeq=0,subLoading=false,subStatus='',nativeTrackBlob='',inNativeView=false;
+  function revokeNativeBlob(){if(nativeTrackBlob){try{URL.revokeObjectURL(nativeTrackBlob)}catch(e){}nativeTrackBlob=''}}
+  function syncNativeTrackMode(){
+    try{
+      const tt=v.textTracks;if(!tt)return;
+      for(let i=0;i<tt.length;i++){
+        if(tt[i].label==='AniHub Sub'){tt[i].mode=(P.subLang&&inNativeView)?'showing':'hidden'}
+        else if(tt[i].mode==='showing')tt[i].mode='hidden';
+      }
+    }catch(e){}}
+  function syncNativeTrack(){
+    revokeNativeBlob();
+    const old=$('track[data-ah-track]',v);if(old)old.remove();
+    const srcArr=assDoc?assDoc.cues:cues;
+    if(!P.subLang||!srcArr||!srcArr.length||typeof Blob==='undefined'||typeof URL==='undefined'||!URL.createObjectURL)return;
+    try{
+      const fT=sec=>{const ms=Math.max(0,Math.round(sec*1000)),s=Math.floor(ms/1000)%60,m=Math.floor(ms/60000)%60,h=Math.floor(ms/3600000);return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms%1000).padStart(3,'0')}`};
+      const vttStr='WEBVTT\n\n'+srcArr.map(c=>`${fT(c.s)} --> ${fT(c.e)}\n${c.text}`).join('\n\n');
+      nativeTrackBlob=URL.createObjectURL(new Blob([vttStr],{type:'text/vtt'}));
+      const trEl=document.createElement('track');
+      trEl.kind='subtitles';trEl.label='AniHub Sub';trEl.srclang=String(P.subLang).slice(0,2)||'ru';
+      trEl.setAttribute('data-ah-track','1');trEl.src=nativeTrackBlob;
+      v.appendChild(trEl);
+      syncNativeTrackMode();
+    }catch(e){}}
+  function syncAssClock(mode){
+    if(!assUsingLibjass||!assClock)return;
+    try{
+      if(assClock.enable)assClock.enable();
+      if(assClock.setRate)assClock.setRate(v.playbackRate||1);
+      if(assClock.seek){
+        if(mode==='pause'&&assClock.pause)assClock.pause();
+        else if(!v.paused&&assClock.play)assClock.play();
+        assClock.seek(v.currentTime||0);
+      }
+    }catch(e){}}
   function destroyAss(){
-    assUsingLibjass=false;
+    assUsingLibjass=false;assLibjassReady=false;
     if(assRO){try{assRO.disconnect()}catch(e){}assRO=null}
     if(assClock){try{assClock.disable&&assClock.disable()}catch(e){}assClock=null}
     assRenderer=null;
-    if(assEl){assEl.innerHTML='';assEl.hidden=true}}
+    if(assEl){assEl.innerHTML='';assEl.hidden=true}
+    if(assFb){assFb.innerHTML='';assFb.hidden=true}}
   function resizeAss(){
     if(!assUsingLibjass||!assRenderer||!box)return;
     const bw=box.clientWidth||1280,bh=box.clientHeight||720;
@@ -1288,72 +1474,160 @@ function doShot(){try{const c=document.createElement('canvas');c.width=v.videoWi
         const parsed=await lj.ASS.fromString(rawTxt);
         if(dead||seq!==subLoadSeq)return;
         assEl.hidden=false;assEl.innerHTML='';
-        assClock=new lj.renderers.VideoClock(v);
+        assClock=lj.renderers.ManualClock?new lj.renderers.ManualClock():new lj.renderers.VideoClock(v);
         assRenderer=new lj.renderers.WebRenderer(parsed,assClock,assEl,new lj.renderers.RendererSettings({enableSvg:false}));
         assUsingLibjass=true;
-        resizeAss();
-        if(typeof ResizeObserver!=='undefined'){assRO=new ResizeObserver(()=>resizeAss());assRO.observe(box)}
+        const onReady=()=>{if(dead||seq!==subLoadSeq)return;assLibjassReady=true;resizeAss();syncAssClock();paintSub()};
+        if(assRenderer&&typeof assRenderer.addEventListener==='function'){
+          try{assRenderer.addEventListener('ready',onReady)}catch(e){}
+        }
+        resizeAss();syncAssClock();
+        setTimeout(()=>{if(!dead&&seq===subLoadSeq&&assUsingLibjass){assLibjassReady=true;resizeAss();syncAssClock();paintSub()}},120);
+        if(typeof ResizeObserver!=='undefined'){assRO=new ResizeObserver(()=>{resizeAss();syncAssClock()});assRO.observe(box)}
         return;
       }catch(e){destroyAss()}
     }
-    assEl.hidden=false;paintSub()}
+    paintSub()}
   function findSubTrack(code){
     if(!code)return null;
     return subsT.find(s=>s.lang===code)||subsT.find(s=>s.baseLang===code)||null}
+  async function fetchTrackCues(tr){
+    if(!tr)return[];
+    if(Array.isArray(tr.cues)&&tr.cues.length)return tr.cues;
+    if(!tr.url)return[];
+    const ck='subraw:'+tr.url.slice(0,120);
+    let raw=!tr.url.startsWith('data:')?LS.get(ck,null):null;
+    if(!raw){
+      raw=await rawSubFetch(tr.url);
+      if(!tr.url.startsWith('data:')&&raw.length<350000){try{LS.set(ck,raw)}catch(e){}}
+    }
+    if(isAssContent(raw,tr.url,tr.format))return assParse(raw).cues.map(c=>({s:c.s,e:c.e,text:c.text,top:c.align>=7}));
+    return vttParse(/^\s*WEBVTT/.test(raw)?raw:srt2vtt(raw))}
   const loadSubs=()=>{
     const seq=++subLoadSeq;
-    destroyAss();assDoc=null;cues=[];
+    destroyAss();assDoc=null;cues=[];subLoading=false;subStatus='';revokeNativeBlob();
+    if(hls&&typeof hls.subtitleTrack==='number')hls.subtitleTrack=-1;
     if(!P.subLang){paintSub();return}
     const want=findSubTrack(P.subLang);
+    if(want&&Array.isArray(want.cues)&&want.cues.length){
+      cues=want.cues;subStatus=`✓ Активны (${cues.length} фраз)`;syncNativeTrack();paintSub();if(settingsOpen)renderSet();return}
+    if(want&&want.hlsIdx!=null&&hls){
+      subLoading=true;subStatus='⏳ Читаем встроенные HLS-субтитры потока…';
+      try{hls.subtitleDisplay=false;hls.subtitleTrack=want.hlsIdx}catch(e){}
+      paintSub();if(settingsOpen)renderSet();return}
     if(!want&&['ru','en','ja'].includes(P.subLang)&&o.meta&&!extSubFetched){
-      extSubFetched=true;
+      extSubFetched=true;subLoading=true;subStatus='⏳ Ищем субтитры к серии…';
       fetchExtSubs(o.meta).then(ext=>{
         if(dead||seq!==subLoadSeq)return;
         if(Array.isArray(ext)&&ext.length){
-          ext.forEach(tr=>{if(!subsT.some(x=>x.url===tr.url||x.lang===tr.lang))subsT.push(tr)});
+          ext.forEach(tr=>{
+            const autoIdx=subsT.findIndex(x=>x.lang===tr.lang&&x.format==='auto');
+            if(autoIdx>=0)subsT.splice(autoIdx,1);
+            if(!subsT.some(x=>x.url===tr.url||x.lang===tr.lang))subsT.push(tr);
+          });
           if(settingsOpen)renderSet();
-          loadSubs();return;
         }
-        cues=demoCues(P.subLang);paintSub();
-      }).catch(()=>{});
-      paintSub();return}
+        loadSubs();
+      }).catch(()=>{if(!dead&&seq===subLoadSeq){subLoading=false;loadSubs()}});
+      paintSub();if(settingsOpen)renderSet();return}
     if(want&&want.url){
       const ck='subraw:'+want.url.slice(0,120);
       const applyRaw=raw=>{
         if(dead||seq!==subLoadSeq||findSubTrack(P.subLang)!==want)return;
+        subLoading=false;
         if(isAssContent(raw,want.url,want.format)){
-          want.format='ass';assDoc=assParse(raw);subEl.hidden=true;
-          mountLibjass(raw,seq);paintSub();if(settingsOpen)renderSet();
+          want.format='ass';assDoc=assParse(raw);subEl.hidden=true;subTopEl.hidden=true;
+          subStatus=`✓ ASS/SSA активен (${assDoc.cues.length} фраз)`;
+          syncNativeTrack();mountLibjass(raw,seq);paintSub();if(settingsOpen)renderSet();
         }else{
-          const vtt=/^\s*WEBVTT/.test(raw)?raw:srt2vtt(raw);
-          cues=vttParse(vtt);paintSub();
+          want.format=/^\s*WEBVTT/.test(raw)?'vtt':'srt';
+          const vtt=want.format==='vtt'?raw:srt2vtt(raw);
+          cues=vttParse(vtt);want.cues=cues;
+          subStatus=cues.length?`✓ Загружено ${cues.length} фраз`:'Файл субтитров пуст';
+          syncNativeTrack();paintSub();if(settingsOpen)renderSet();
         }};
       const hit=!want.url.startsWith('data:')?LS.get(ck,null):null;
       if(hit){applyRaw(hit);return}
+      subLoading=true;subStatus='⏳ Скачиваем субтитры…';
       rawSubFetch(want.url).then(raw=>{
         if(!want.url.startsWith('data:')&&raw.length<350000){try{LS.set(ck,raw)}catch(e){}}
         applyRaw(raw);
       }).catch(()=>{
+        if(dead||seq!==subLoadSeq)return;
+        subLoading=false;
         if(want.format==='ass'&&/^https?:/i.test(want.url)){
           fetch(PB()+'/api/subs/ass-to-vtt?url='+encodeURIComponent(want.url)).then(r=>r.ok?r.text():'').then(vtt=>{
-            if(vtt&&seq===subLoadSeq){cues=vttParse(vtt);paintSub()}
+            if(vtt&&seq===subLoadSeq){cues=vttParse(vtt);subStatus=`✓ Загружено ${cues.length} фраз`;syncNativeTrack();paintSub();if(settingsOpen)renderSet()}
           }).catch(()=>{});
-        }
+        }else{subStatus='Не удалось скачать субтитры — загрузите свой .srt / .ass ниже';paintSub();if(settingsOpen)renderSet()}
       });
-      paintSub();return}
-    cues=demoCues(want?want.lang:P.subLang);paintSub()};
+      paintSub();if(settingsOpen)renderSet();return}
+    /* Если для реального потока нет готовой дорожки выбранного языка (напр. RU или JA), но есть реальная дорожка серии на другом языке — мгновенно переводим таймкоды серии по CORS */
+    if(!want&&!M.demo&&['ru','en','ja'].includes(P.subLang)){
+      const targetLang=P.subLang;
+      const donor=findSubTrack('en')||findSubTrack('ru')||findSubTrack('ja')||subsT.find(s=>!s.custom&&(s.url||(s.cues&&s.cues.length)));
+      if(donor&&donor.baseLang!==targetLang){
+        subLoading=true;
+        const langNm={ru:'🇷🇺 Русские',en:'🇬🇧 Английские',ja:'🇯🇵 Японские'}[targetLang]||targetLang;
+        subStatus=`⏳ Переводим субтитры серии → ${langNm}…`;
+        (async()=>{
+          try{
+            const donorCues=await fetchTrackCues(donor);
+            if(dead||seq!==subLoadSeq||!donorCues.length){subLoading=false;subStatus='Субтитры для этой серии не найдены — загрузите свой .srt / .ass';paintSub();if(settingsOpen)renderSet();return}
+            const cacheId=(donor.url||o.meta?.id||'ep').slice(0,120);
+            const trCues=await translateSubCues(donorCues,donor.baseLang||'en',targetLang,cacheId,v.currentTime,(stepCues,done)=>{
+              if(dead||seq!==subLoadSeq||P.subLang!==targetLang)return false;
+              cues=stepCues.slice();subLoading=!done;
+              subStatus=done?`✓ ${langNm} (автоперевод · ${cues.length} фраз)`:`⏳ Переводим серию… готово фраз: ${cues.length}`;
+              if(done)syncNativeTrack();
+              paintSub();if(settingsOpen)renderSet();
+              return true;
+            });
+            if(dead||seq!==subLoadSeq)return;
+            subLoading=false;
+            if(trCues&&trCues.length){
+              cues=trCues;
+              if(!findSubTrack(targetLang)){
+                subsT.push({id:'auto-'+targetLang,lang:targetLang,baseLang:targetLang,format:'auto',autoFrom:donor.baseLang,label:`${langNm} (АВТО)`,cues:trCues});
+              }
+              subStatus=`✓ ${langNm} (автоперевод · ${cues.length} фраз)`;
+              syncNativeTrack();paintSub();if(settingsOpen)renderSet();
+            }else{
+              cues=donorCues;
+              subStatus=`Показаны исходные (${(donor.baseLang||'en').toUpperCase()}) · ${cues.length} фраз`;
+              syncNativeTrack();paintSub();if(settingsOpen)renderSet();
+            }
+          }catch(e){
+            if(dead||seq!==subLoadSeq)return;
+            subLoading=false;subStatus='Субтитры не найдены — загрузите свой файл .srt / .ass ниже';paintSub();if(settingsOpen)renderSet();
+          }
+        })();
+        paintSub();if(settingsOpen)renderSet();return}
+    }
+    if(M.demo){
+      cues=demoCues(want?want.lang:P.subLang);
+      subStatus=`Демо-субтитры (${cues.length} фраз)`;
+      syncNativeTrack();paintSub();return}
+    subStatus='Внешние субтитры к этой серии не найдены — загрузите свой .srt / .ass в настройках';
+    paintSub();if(settingsOpen)renderSet()};
   function paintSub(){
-    if(!P.subLang){subEl.hidden=true;if(!assUsingLibjass&&assEl)assEl.hidden=true;return}
+    if(!P.subLang){subEl.hidden=true;subEl.textContent='';subTopEl.hidden=true;subTopEl.textContent='';if(assFb){assFb.hidden=true;assFb.innerHTML=''}if(!assUsingLibjass&&assEl)assEl.hidden=true;return}
     if(assDoc){
-      subEl.hidden=true;
-      if(assUsingLibjass)return;
+      subEl.hidden=true;subEl.textContent='';subTopEl.hidden=true;subTopEl.textContent='';
+      if(assUsingLibjass)syncAssClock();
       const act=assDoc.cues.filter(x=>v.currentTime>=x.s&&v.currentTime<=x.e);
-      assEl.hidden=!act.length;
-      if(!act.length){assEl.innerHTML='';return}
+      if(assUsingLibjass&&assLibjassReady){
+        const ljSub=$('.libjass-subs',assEl);
+        const ljHasDom=!act.length||(ljSub&&ljSub.textContent&&ljSub.textContent.trim().length>0);
+        if(ljHasDom){if(assFb){assFb.innerHTML='';assFb.hidden=true}return}
+      }
+      if(!assFb)return;
+      assFb.hidden=!act.length;
+      if(!act.length){assFb.innerHTML='';return}
       const bh=box.clientHeight||450,scale=(bh/Math.max(240,assDoc.resY||720))*((P.subSize||100)/100);
       const useCustomCol=P.subColor&&P.subColor!=='#ffffff';
       const useCustomBg=P.subBg&&P.subBg!=='rgba(0,0,0,.65)';
-      assEl.innerHTML=act.map(c=>{
+      assFb.innerHTML=act.map(c=>{
         const fs=Math.max(12,Math.round((c.fontSize||42)*scale));
         const col=useCustomCol?P.subColor:(c.color||'#ffffff');
         const bg=c.pos?'transparent':(useCustomBg?P.subBg:'rgba(0,0,0,.35)');
@@ -1374,10 +1648,27 @@ function doShot(){try{const c=document.createElement('canvas');c.width=v.videoWi
         return `<div class="ass-cue" style="${st}">${esc(c.text)}</div>`;
       }).join('');
       return}
+    if(assFb)assFb.hidden=true;
     if(assEl&&!assUsingLibjass)assEl.hidden=true;
-    if(!cues.length){subEl.hidden=true;return}
-    const c=cues.filter(x=>v.currentTime>=x.s&&v.currentTime<=x.e);subEl.hidden=!c.length;if(!c.length)return;
-    subEl.textContent=c.map(x=>x.text).join('\n');subEl.style.fontSize=Math.max(12,Math.round((box.clientHeight||450)*.042*P.subSize/100))+'px';subEl.style.color=P.subColor;subEl.style.background=P.subBg;subEl.style.top=subEl.style.bottom='auto';if(P.subPos==='top')subEl.style.top='8%';else if(P.subPos==='middle')subEl.style.bottom='44%';else subEl.style.bottom='12%'}
+    const fsz=Math.max(12,Math.round((box.clientHeight||450)*.042*P.subSize/100))+'px';
+    if(!cues.length){
+      subTopEl.hidden=true;subTopEl.textContent='';
+      if(subLoading){
+        subEl.hidden=false;subEl.textContent='⏳ Загружаем субтитры…';
+        subEl.style.fontSize=fsz;subEl.style.color='#ffffff';subEl.style.background='rgba(0,0,0,.68)';
+        subEl.style.top='auto';subEl.style.bottom='12%';
+      }else{subEl.hidden=true;subEl.textContent=''}
+      return}
+    const actAll=cues.filter(x=>v.currentTime>=x.s&&v.currentTime<=x.e);
+    const topCues=P.subPos==='bottom'?actAll.filter(x=>x.top):[];
+    const botCues=P.subPos==='bottom'?actAll.filter(x=>!x.top):actAll;
+    subTopEl.hidden=!topCues.length;
+    if(topCues.length){
+      subTopEl.textContent=topCues.map(x=>x.text).join('\n');
+      subTopEl.style.fontSize=fsz;subTopEl.style.color=P.subColor;subTopEl.style.background=P.subBg;
+    }else subTopEl.textContent='';
+    subEl.hidden=!botCues.length;if(!botCues.length){subEl.textContent='';return}
+    subEl.textContent=botCues.map(x=>x.text).join('\n');subEl.style.fontSize=fsz;subEl.style.color=P.subColor;subEl.style.background=P.subBg;subEl.style.top=subEl.style.bottom='auto';if(P.subPos==='top')subEl.style.top='8%';else if(P.subPos==='middle')subEl.style.bottom='44%';else subEl.style.bottom='12%'}
   const paintRate=()=>{$('[data-c=rate]',box).textContent=P.rate+'x'};
   const paintVol=()=>{const m=v.muted||v.volume===0;$('[data-c=mute]',box).innerHTML=m?SICON('mute'):SICON('vol');$('input.vol',box).value=m?0:v.volume};
   function paint(){
@@ -1396,11 +1687,16 @@ function doShot(){try{const c=document.createElement('canvas');c.width=v.videoWi
   }
   function publish(){if(!o.onSync||applying||!o.canControl())return;const n=Date.now();if(n-lastSync<600)return;lastSync=n;o.onSync({t:v.currentTime,playing:!v.paused,rate:v.playbackRate})}
   const syLabel=()=>{const s=$('.sy',box);if(s)s.textContent=o.canControl()?'Синхронизация: вы управляете':'Синхронизация: управляет стример'};
-  v.addEventListener('timeupdate',paint);v.addEventListener('waiting',()=>spin.hidden=false);v.addEventListener('loadedmetadata',paint);v.addEventListener('progress',paint);v.addEventListener('canplay',paint);try{paint()}catch(e){}v.addEventListener('playing',()=>spin.hidden=true);
-  v.addEventListener('play',()=>{big.hidden=true;$('[data-c=play]',box).textContent='⏸';publish();wake()});
-  v.addEventListener('pause',()=>{big.hidden=false;$('[data-c=play]',box).innerHTML=SICON('pause');publish();saveHist();box.classList.remove('idle')});
-  v.addEventListener('seeked',publish);v.addEventListener('ratechange',()=>{publish();paintRate()});v.addEventListener('volumechange',paintVol);
-  v.addEventListener('loadedmetadata',()=>{if(Number.isFinite(v.duration)&&v.duration>0){dur=v.duration;paintMarks();paint()}});
+  v.addEventListener('timeupdate',paint);v.addEventListener('waiting',()=>spin.hidden=false);v.addEventListener('loadedmetadata',paint);v.addEventListener('progress',paint);v.addEventListener('canplay',paint);try{paint()}catch(e){}v.addEventListener('playing',()=>{spin.hidden=true;syncAssClock('play')});
+  v.addEventListener('play',()=>{big.hidden=true;$('[data-c=play]',box).textContent='⏸';syncAssClock('play');publish();wake()});
+  v.addEventListener('pause',()=>{big.hidden=false;$('[data-c=play]',box).innerHTML=SICON('pause');syncAssClock('pause');publish();saveHist();box.classList.remove('idle')});
+  v.addEventListener('seeking',()=>{syncAssClock();paintSub()});
+  v.addEventListener('seeked',()=>{syncAssClock();paintSub();publish()});v.addEventListener('ratechange',()=>{syncAssClock();publish();paintRate()});v.addEventListener('volumechange',paintVol);
+  v.addEventListener('enterpictureinpicture',()=>{inNativeView=true;syncNativeTrackMode()});
+  v.addEventListener('leavepictureinpicture',()=>{inNativeView=false;syncNativeTrackMode()});
+  v.addEventListener('webkitbeginfullscreen',()=>{inNativeView=true;syncNativeTrackMode()});
+  v.addEventListener('webkitendfullscreen',()=>{inNativeView=false;syncNativeTrackMode()});
+  v.addEventListener('loadedmetadata',()=>{if(Number.isFinite(v.duration)&&v.duration>0){dur=v.duration;paintMarks();resizeAss();paint()}});
   v.addEventListener('ended',()=>{saveHist(true);startCd()});
   v.addEventListener('error',()=>{if(v.src||hls){spin.hidden=true;clearTimeout(watchdog);if(/\.m3u8/i.test(v.currentSrc||v.src||''))tryMp4('Видео не загрузилось');else showErr('Не удалось загрузить видео. Попробуйте другое качество или дорожку.')}});
   function wake(){box.classList.remove('idle');clearTimeout(idleT);if(!v.paused)idleT=setTimeout(()=>box.classList.add('idle'),2800)}
@@ -1410,12 +1706,13 @@ function doShot(){try{const c=document.createElement('canvas');c.width=v.videoWi
   const fs=()=>document.fullscreenElement?document.exitFullscreen():box.requestFullscreen?.().catch(()=>{});
   const bar=$('.bar',box);bar.addEventListener('click',e=>{const r=bar.getBoundingClientRect();seek((e.clientX-r.left)/r.width*dur)});bar.addEventListener('keydown',e=>{if(e.key==='ArrowRight')seek(v.currentTime+5);if(e.key==='ArrowLeft')seek(v.currentTime-5)});
   $('input.vol',box).addEventListener('input',e=>{const n=+e.target.value;P.volume=n;v.volume=n;v.muted=n===0;save('prefs')});
-  $('.pctl',box).addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b)return;({play:toggle,b10:()=>seek(v.currentTime-10),f10:()=>seek(v.currentTime+10),prev:()=>o.prev&&(location.hash=o.prev.url),bri:()=>briUp(),share:()=>doShare(),shot:()=>doShot(),nextep:()=>o.next&&(location.hash=o.next.url),mute:()=>{v.muted=!v.muted},cc:()=>setPref('subLang',P.subLang?'':(subsT[0]?.lang||P.prefSubLang||'ru')),rate:()=>setPref('rate',P.rate>=2?.5:+(P.rate+.25).toFixed(2)),skip:()=>hasIntro()?skipIntro():skipOutro(),mark:addMark,pip:()=>document.pictureInPictureElement?document.exitPictureInPicture():v.requestPictureInPicture?.().catch(()=>toast('PiP недоступен','','err')),dub:()=>openDubPick(),set:()=>{settingsOpen=!settingsOpen;set.hidden=!settingsOpen;if(settingsOpen)renderSet()},fs}[b.dataset.c])()});
+  const pickCcLang=()=>P.subLang?'':(findSubTrack('custom')?'custom':(P.prefSubLang||'ru'));
+  $('.pctl',box).addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b)return;({play:toggle,b10:()=>seek(v.currentTime-10),f10:()=>seek(v.currentTime+10),prev:()=>o.prev&&(location.hash=o.prev.url),bri:()=>briUp(),share:()=>doShare(),shot:()=>doShot(),nextep:()=>o.next&&(location.hash=o.next.url),mute:()=>{v.muted=!v.muted},cc:()=>setPref('subLang',pickCcLang()),rate:()=>setPref('rate',P.rate>=2?.5:+(P.rate+.25).toFixed(2)),skip:()=>hasIntro()?skipIntro():skipOutro(),mark:addMark,pip:()=>document.pictureInPictureElement?document.exitPictureInPicture():v.requestPictureInPicture?.().catch(()=>toast('PiP недоступен','','err')),dub:()=>openDubPick(),set:()=>{settingsOpen=!settingsOpen;set.hidden=!settingsOpen;if(settingsOpen)renderSet()},fs}[b.dataset.c])()});
   let settingsOpen=false;
   const BRI=[1,1.15,1.3,1.5,1.75];
   function briUp(){const i=BRI.indexOf(P.brightness);setPref('brightness',BRI[(i+1)%BRI.length])}
   function paintBri(){const b=$('[data-c=bri]',box);if(b)b.textContent=P.brightness>1?'☀'+Math.round(P.brightness*100)+'%':'☀'}
-  function setPref(k,val){if(k==='subLang'&&['ru','en','ja'].includes(val))P.prefSubLang=val;P[k]=val;save('prefs');if(k==='rate')v.playbackRate=val;if(k==='brightness'){v.style.filter=val>1?'brightness('+val+')':'';paintBri()}if(k==='quality'){const before=url();quality=val;const after=url();if(after!==before)load(v.currentTime);else applyQuality()}if(k==='audio'){const a=aud.find(x=>x.id===val);if(a){audio=a;if(a.lang){P.audioLang=a.lang;save('prefs')}load(v.currentTime)}}if(k==='subLang'){loadSubs();o.onSubLang?.(val)}if(['subColor','subBg','subPos'].includes(k)&&assDoc){destroyAss();assEl.hidden=false}resizeAss();paintSub();paintRate();$('.qb',box).textContent=quality==='auto'?'AUTO':quality==='mp4'?'MP4':quality+'p';$('[data-c=cc]',box).classList.toggle('on',!!P.subLang);if(settingsOpen)renderSet()}
+  function setPref(k,val){if(k==='subLang'&&['ru','en','ja'].includes(val))P.prefSubLang=val;P[k]=val;save('prefs');if(k==='rate')v.playbackRate=val;if(k==='brightness'){v.style.filter=val>1?'brightness('+val+')':'';paintBri()}if(k==='quality'){const before=url();quality=val;const after=url();if(after!==before)load(v.currentTime);else applyQuality()}if(k==='audio'){const a=aud.find(x=>x.id===val);if(a){audio=a;if(a.lang){P.audioLang=a.lang;save('prefs')}load(v.currentTime)}}if(k==='subLang'){loadSubs();o.onSubLang?.(val)}if(['subColor','subBg','subPos'].includes(k)&&assDoc){destroyAss()}resizeAss();paintSub();paintRate();$('.qb',box).textContent=quality==='auto'?'AUTO':quality==='mp4'?'MP4':quality+'p';$('[data-c=cc]',box).classList.toggle('on',!!P.subLang);if(settingsOpen)renderSet()}
   const opt=(k,val,label)=>`<button data-p="${k}" data-v="${esc(val)}" class="${String(P[k])===String(val)?'on':''}">${esc(label)}</button>`;
   const tog=(k,label,hint,dis)=>`<button class="tg ${P[k]?'on':''}" data-t="${k}" role="switch" aria-checked="${P[k]}"${dis?' disabled style="opacity:.45;pointer-events:none"':''}><span>${esc(label)}${hint?`<small class="muted tiny">${esc(hint)}</small>`:''}</span><i class="sw"></i></button>`;
   const rng=(lab,key,r,en)=>`<div class="rng" style="${en?'':'opacity:.45'};${r&&r[1]>r[0]?'':'pointer-events:none'}"><div class="row between"><b class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em">${lab}</b><span class="tiny" style="color:var(--accent);font-weight:700">${r&&r[1]>r[0]?fmt(r[0])+' → '+fmt(r[1])+' ('+Math.max(0,r[1]-r[0])+' сек)':'нет таймкодов у серии'}</span></div><div class="g"><label class="f"><span><small>Начало, сек</small></span><input type="number" min="0" data-r="${key}0" value="${r[0]}" ${en?'':'disabled'}></label><label class="f"><span><small>Конец, сек</small></span><input type="number" min="0" data-r="${key}1" value="${r[1]}" ${en?'':'disabled'}></label></div></div>`;
@@ -1433,8 +1730,11 @@ function doShot(){try{const c=document.createElement('canvas');c.width=v.videoWi
       const extra=subsT.filter(s=>!['ru','en','ja'].includes(s.lang));
       const curUrl=(subKeyEp&&S.subsURL?.[subKeyEp])||S.subsURL?.[o.meta?.id]||'';
       const curUrlShow=/^data:/i.test(curUrl)?'':curUrl;
-      const fmtBadge=code=>{const tr=findSubTrack(code);return tr&&tr.format?` (${String(tr.format).toUpperCase()})`:''};
-      return `<label class="f"><span>Язык субтитров</span><select class="inp" data-sublang-sel aria-label="Язык субтитров"><option value="" ${!P.subLang?'selected':''}>Выкл (без субтитров)</option>${std.map(([code,nm])=>`<option value="${code}" ${P.subLang===code?'selected':''}>${nm}${esc(fmtBadge(code))}</option>`).join('')}${extra.map(s=>`<option value="${esc(s.lang)}" ${P.subLang===s.lang?'selected':''}>${esc(s.label)}</option>`).join('')}</select></label><div class="opts" style="margin-top:6px">${opt('subLang','','Выкл')}${std.map(([code,nm])=>opt('subLang',code,nm+fmtBadge(code))).join('')}${extra.map(s=>opt('subLang',s.lang,s.label)).join('')}</div>
+      const fmtBadge=code=>{const tr=findSubTrack(code);if(!tr||!tr.format)return '';return tr.format==='auto'?' (АВТО)':` (${String(tr.format).toUpperCase()})`};
+      const allSrc=assDoc?assDoc.cues:cues;
+      const nextCue=P.subLang&&allSrc.length?allSrc.find(x=>x.e>=v.currentTime):null;
+      const nextHint=nextCue&&(v.currentTime<nextCue.s)?` · ближайшая реплика на ${fmt(nextCue.s)}`:'';
+      return `<label class="f"><span>Язык субтитров</span><select class="inp" data-sublang-sel aria-label="Язык субтитров"><option value="" ${!P.subLang?'selected':''}>Выкл (без субтитров)</option>${std.map(([code,nm])=>`<option value="${code}" ${P.subLang===code?'selected':''}>${nm}${esc(fmtBadge(code))}</option>`).join('')}${extra.map(s=>`<option value="${esc(s.lang)}" ${P.subLang===s.lang?'selected':''}>${esc(s.label)}</option>`).join('')}</select></label><div class="opts" style="margin-top:6px">${opt('subLang','','Выкл')}${std.map(([code,nm])=>opt('subLang',code,nm+fmtBadge(code))).join('')}${extra.map(s=>opt('subLang',s.lang,s.label)).join('')}</div>${P.subLang&&subStatus?`<p class="tiny" data-sub-status style="margin:4px 0 0;color:${allSrc.length?'var(--cyan)':'var(--muted)'}">${esc(subStatus+nextHint)}</p>`:''}
     <div class="rng" style="margin-top:8px"><b class="tiny muted" style="text-transform:uppercase;letter-spacing:.1em">Внешние субтитры (.srt · .ass · .vtt)</b><div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><label class="btn sm pri" data-subupload style="cursor:pointer">📁 Загрузить свои субтитры<input type="file" data-suf accept=".srt,.ass,.ssa,.vtt,.txt,text/vtt" hidden></label>${curUrl?'<button class="btn sm ghost" data-sux>✕ Сбросить свои</button>':''}</div><div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><input class="inp" data-su placeholder="Или прямая ссылка на .srt / .ass / .vtt" value="${esc(curUrlShow)}" style="flex:1;min-width:170px"><button class="btn sm" data-suload>Подключить</button></div><p class="tiny muted" style="margin:6px 0 0">Поддерживаются сложные аниме-субтитры <b>.ass / .ssa</b> (libjass + встроенный ASS-движок со стилями и позиционированием), а также <b>.srt</b> и <b>.vtt</b>.</p></div>
     <label class="f" style="margin-top:8px"><span>Размер <small>${P.subSize}%</small></span><input type="range" min="60" max="200" step="10" value="${P.subSize}" data-ssize></label><div class="opts">${['#ffffff','#ffe066','#7ce0d3','#ff8fb1','#9ecbff'].map(c=>`<button data-p="subColor" data-v="${c}" class="${P.subColor===c?'on':''}" style="background:${c};width:28px;height:28px;padding:0" aria-label="${c}"></button>`).join('')}</div><div class="opts">${[['rgba(0,0,0,.65)','Полупрозрачный'],['rgba(0,0,0,.92)','Плотный'],['rgba(0,0,0,0)','Без фона'],['rgba(20,40,90,.8)','Синий'],['rgba(216,30,91,.75)','Акцент']].map(([c,l])=>opt('subBg',c,l)).join('')}</div><div class="opts">${[['top','Сверху'],['middle','По центру'],['bottom','Снизу']].map(([k,l])=>opt('subPos',k,l)).join('')}</div>`})()}</section>
     <section><h4>🔖 Закладки</h4><div class="row"><button class="btn sm pri" data-addmark>Отметить ${fmt(v.currentTime)}</button><span class="tiny muted">Клавиша B</span></div>${myMarks().map(m=>`<div class="row between" style="border:1px solid var(--line);border-radius:9px;padding:6px 10px"><button class="btn sm ghost" data-seek="${m.t}" style="color:var(--accent)">${fmt(m.t)}</button><button class="btn sm ghost" data-delmark="${m.id}" aria-label="Удалить">✕</button></div>`).join('')||'<p class="tiny muted" style="margin:0">Закладок пока нет.</p>'}</section>
@@ -1443,7 +1743,7 @@ function doShot(){try{const c=document.createElement('canvas');c.width=v.videoWi
   set.addEventListener('input',e=>{const t=e.target;if(t.matches('[data-delay]')){P.autoDelay=+t.value;save('prefs');t.closest('label').querySelector('small').textContent=P.autoDelay+' сек'}if(t.matches('[data-ssize]')){P.subSize=+t.value;save('prefs');t.closest('label').querySelector('small').textContent=P.subSize+'%';resizeAss();paintSub()}});
   set.addEventListener('change',e=>{const t=e.target;if(!t.matches('[data-r]'))return;const k=t.dataset.r.slice(0,-1),g=n=>+$(`[data-r=${k}${n}]`,set).value;ranges={...ranges,[k]:clampRange(g(0),g(1))};o.onRanges?.(k,ranges[k]);renderSet();paint()});
   const key=e=>{if(!P.hotkeys||dead||!document.body.contains(box))return;const tg=e.target;if(tg&&(['INPUT','TEXTAREA','SELECT'].includes(tg.tagName)||tg.isContentEditable))return;const k=e.key;
-    const m={' ':toggle,k:toggle,K:toggle,ArrowRight:()=>seek(v.currentTime+5),ArrowLeft:()=>seek(v.currentTime-5),l:()=>seek(v.currentTime+10),L:()=>seek(v.currentTime+10),j:()=>seek(v.currentTime-10),J:()=>seek(v.currentTime-10),ArrowUp:()=>{P.volume=Math.min(1,v.volume+.1);v.volume=P.volume;save('prefs')},ArrowDown:()=>{P.volume=Math.max(0,v.volume-.1);v.volume=P.volume;save('prefs')},m:()=>{v.muted=!v.muted},M:()=>{v.muted=!v.muted},f:fs,F:fs,s:skipIntro,S:skipIntro,e:skipOutro,E:skipOutro,b:addMark,B:addMark,c:()=>setPref('subLang',P.subLang?'':(subsT[0]?.lang||P.prefSubLang||'ru')),C:()=>setPref('subLang',P.subLang?'':(subsT[0]?.lang||P.prefSubLang||'ru')),n:()=>o.next&&(location.hash=o.next.url),N:()=>o.next&&(location.hash=o.next.url),p:()=>o.prev&&(location.hash=o.prev.url),P:()=>o.prev&&(location.hash=o.prev.url),'[':()=>setPref('rate',Math.max(.5,+(P.rate-.25).toFixed(2))),']':()=>setPref('rate',Math.min(2,+(P.rate+.25).toFixed(2)))}[k];
+    const m={' ':toggle,k:toggle,K:toggle,ArrowRight:()=>seek(v.currentTime+5),ArrowLeft:()=>seek(v.currentTime-5),l:()=>seek(v.currentTime+10),L:()=>seek(v.currentTime+10),j:()=>seek(v.currentTime-10),J:()=>seek(v.currentTime-10),ArrowUp:()=>{P.volume=Math.min(1,v.volume+.1);v.volume=P.volume;save('prefs')},ArrowDown:()=>{P.volume=Math.max(0,v.volume-.1);v.volume=P.volume;save('prefs')},m:()=>{v.muted=!v.muted},M:()=>{v.muted=!v.muted},f:fs,F:fs,s:skipIntro,S:skipIntro,e:skipOutro,E:skipOutro,b:addMark,B:addMark,c:()=>setPref('subLang',pickCcLang()),C:()=>setPref('subLang',pickCcLang()),n:()=>o.next&&(location.hash=o.next.url),N:()=>o.next&&(location.hash=o.next.url),p:()=>o.prev&&(location.hash=o.prev.url),P:()=>o.prev&&(location.hash=o.prev.url),'[':()=>setPref('rate',Math.max(.5,+(P.rate-.25).toFixed(2))),']':()=>setPref('rate',Math.min(2,+(P.rate+.25).toFixed(2)))}[k];
     if(m){if(k.startsWith('Arrow')||k===' ')e.preventDefault();m();wake()}else if(/^[0-9]$/.test(k))seek(dur*(+k/10))};
   window.addEventListener('keydown',key);
   const unload=()=>saveHist();window.addEventListener('beforeunload',unload);document.addEventListener('visibilitychange',()=>{if(document.hidden&&!dead)saveHist()});
@@ -1456,17 +1756,19 @@ function doShot(){try{const c=document.createElement('canvas');c.width=v.videoWi
       let added=false;
       for(const tr of (Array.isArray(list)?list:[])){
         if(!tr||!tr.url)continue;
-        if(subsT.some(x=>x.url===tr.url||(x.lang===tr.lang&&!x.url.startsWith('data:'))))continue;
+        const autoIdx=subsT.findIndex(x=>x.lang===tr.lang&&x.format==='auto');
+        if(autoIdx>=0)subsT.splice(autoIdx,1);
+        if(subsT.some(x=>x.url===tr.url||(x.lang===tr.lang&&!x.url?.startsWith('data:'))))continue;
         subsT.push(tr);added=true;
       }
+      extSubFetched=true;
       if(autoLang&&!P.subLang){
-        const pick=findSubTrack(autoLang)?autoLang:(findSubTrack('ru')?'ru':(findSubTrack('en')?'en':(findSubTrack('ja')?'ja':autoLang)));
-        setPref('subLang',pick);return;
+        setPref('subLang',autoLang);return;
       }
       if(added){if(P.subLang)loadSubs();if(settingsOpen)renderSet()}},
     setSubLang(lang){setPref('subLang',lang)},
     getSubs:()=>subsT.slice(),
-    destroy(){dead=true;saveHist();destroyAss();clearInterval(cdTimer);clearTimeout(idleT);window.removeEventListener('keydown',key);window.removeEventListener('beforeunload',unload);destroyHls();try{v.pause();v.removeAttribute('src');v.load()}catch{}}}
+    destroy(){dead=true;saveHist();destroyAss();revokeNativeBlob();clearInterval(cdTimer);clearTimeout(idleT);window.removeEventListener('keydown',key);window.removeEventListener('beforeunload',unload);destroyHls();try{v.pause();v.removeAttribute('src');v.load()}catch{}}}
 }
 
 /* ------------------------------ разметка карточек ------------------------------ */
@@ -2491,7 +2793,7 @@ ${IN_FRAME&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0
   const syncTopSubUi=lang=>{
     const sel=$('#sublangtop');if(sel&&sel.value!==String(lang||''))sel.value=String(lang||'');
     $$('#sublangbar [data-topsub]').forEach(b=>b.classList.toggle('on',b.dataset.topsub===lang))};
-  const watchMeta={id:t.id,mal:+(t.mal||(t.src!=='libria'?t.id:0))||0,season:ep.season||season||1,isMovie:t.kind==='movie'||(t.eps===1&&ep.dur>3000),ep:ep.season>1?ep.season+'x'+ep.n:ep.n,title:t.title,poster:t.poster,epTitle:ep.title||''};
+  const watchMeta={id:t.id,src:t.src||'',mal:+(t.mal||t.shiki||(t.src!=='libria'&&t.src!=='anilist'?t.id:0))||0,shiki:+(t.shiki||0),anilistId:t.src==='anilist'?+t.id||0:0,season:ep.season||season||1,isMovie:t.kind==='movie'||(t.eps===1&&ep.dur>3000),ep:ep.season>1?ep.season+'x'+ep.n:ep.n,title:t.title,titleEn:t.titleEn||'',alt:t.alt||'',year:t.year||0,poster:t.poster,epTitle:ep.title||''};
   const mb2=$('#mirbar');if(mb2)mb2.onclick=e=>{const bz=e.target.closest('[data-bri]');
     if(bz){const BRI=[1,1.15,1.3,1.5,1.75];const i=BRI.indexOf(S.prefs.brightness);const nv=BRI[(i+1)%BRI.length];S.prefs.brightness=nv;save('prefs');
       const fr=$('#pl iframe');if(fr)fr.style.filter=nv>1?'brightness('+nv+')':'';bz.textContent=nv>1?'☀ '+Math.round(nv*100)+'%':'☀ Яркость';return}
@@ -2514,7 +2816,8 @@ ${IN_FRAME&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0
         ranges:{intro:_rr2(S.ovr[key]?.intro)||(Array.isArray(j.skip)?_rr2(j.skip[0]):null)||_rr2(ep.intro)||[0,0],
           outro:_rr2(S.ovr[key]?.outro)||(Array.isArray(j.skip)?_rr2(j.skip[1]):null)||_rr2(ep.outro)||[0,0]},resume:tT||(hist&&!hist.done?hist.pos:0),autoStart:true,
         next:nx?{n:nx.n,url:nx._u||`#/watch/${t.id}/${nx.n}`,suffix:epSuffix(nx)}:null,prev:pv?{n:pv.n,url:pv._u||`#/watch/${t.id}/${pv.n}`}:null,
-        meta:{id:t.id,ep:ep.season>1?ep.season+'x'+ep.n:ep.n,title:t.title,poster:t.poster,epTitle:ep.title||''},badge:'<span style="color:var(--cyan)">● Kodik · прямой поток</span>'});
+        meta:watchMeta,onSubLang:syncTopSubUi,badge:'<span style="color:var(--cyan)">● Kodik · прямой поток</span>'});
+      fetchExtSubs(watchMeta).then(ext=>{if(nav===my&&ctl&&ctl.addSubs&&Array.isArray(ext)&&ext.length)ctl.addSubs(ext,'')}).catch(()=>{});
       const w=document.getElementById('npxwarn');w&&w.remove();const kw=document.getElementById('kdlbar');kw&&kw.remove();
       const st=document.querySelector('#srcbar small.muted');if(st)st.textContent='Kodik: прямой поток готов — в родном плеере, без рекламы.';
       toast('Чистый поток получен','Kodik-resolve из браузера готов — играем без рекламы','ok')}catch(e){}})()}
@@ -2546,7 +2849,7 @@ ${IN_FRAME&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0
       if(slTop)slTop.onchange=e=>{const nv=e.target.value;if(['ru','en','ja'].includes(nv))S.prefs.prefSubLang=nv;if(ctl&&ctl.setSubLang)ctl.setSubLang(nv);syncTopSubUi(nv)};
       slBar.onclick=e=>{const bt=e.target.closest('[data-topsub]');if(!bt)return;const nv=bt.dataset.topsub;S.prefs.prefSubLang=nv;if(ctl&&ctl.setSubLang)ctl.setSubLang(nv);syncTopSubUi(nv)};
     }
-    if(ctl&&ctl.addSubs&&watchMeta.mal>0){
+    if(ctl&&ctl.addSubs&&watchMeta&&(watchMeta.mal>0||watchMeta.anilistId>0||watchMeta.title)){
       fetchExtSubs(watchMeta).then(ext=>{
         if(my!==nav||!ctl||!Array.isArray(ext)||!ext.length)return;
         ctl.addSubs(ext,activeSubStream?(S.prefs.subLang||S.prefs.prefSubLang||'ru'):'');
@@ -3015,8 +3318,10 @@ const hdr=()=>{const r=R.get(code);if(!r)return;const on=Object.keys(r.members).
       if(v.currentTime>liveSt.t+8){try{v.currentTime=liveSt.t+0.5}catch(e){}}
       else if(v.currentTime<liveSt.t-10){try{v.currentTime=liveSt.t+0.5}catch(e){}}}},5000);
   const ranges0=ep?{intro:S.ovr[hkey(title.id,ep.n)]?.intro||ep.intro,outro:S.ovr[hkey(title.id,ep.n)]?.outro||ep.outro}:{intro:[0,0],outro:[0,0]};
-  const mountWith=(m,bg)=>{ctl=mountPlayer($('#pl'),{title:r1.titleName||r1.title,sub:ep?`Серия ${ep.n}${epSuffix(ep)}`:'Пользовательский источник',media:m,dur:ep?.dur||0,ranges:ep?ranges0:{intro:[0,0],outro:[0,0]},next:null,noHist:true,
+  const roomSubMeta=title&&ep?{id:title.id,src:title.src||'',mal:+(title.mal||title.shiki||(title.src!=='libria'&&title.src!=='anilist'?title.id:0))||0,shiki:+(title.shiki||0),anilistId:title.src==='anilist'?+title.id||0:0,season:1,isMovie:title.kind==='movie'||(title.eps===1&&ep.dur>3000),ep:ep.n,title:title.title,titleEn:title.titleEn||'',alt:title.alt||'',year:title.year||0,poster:title.poster,epTitle:ep.title||''}:null;
+  const mountWith=(m,bg)=>{ctl=mountPlayer($('#pl'),{title:r1.titleName||r1.title,sub:ep?`Серия ${ep.n}${epSuffix(ep)}`:'Пользовательский источник',media:m,dur:ep?.dur||0,ranges:ep?ranges0:{intro:[0,0],outro:[0,0]},next:null,noHist:true,meta:roomSubMeta,
     badge:bg||(r1.status==='ended'&&r1.rec&&r1.rec.t>0?'<span style="background:var(--muted)!important;color:#fff">▶ запись эфира · 0:00–'+fmtT(r1.rec.t)+'</span>':'<span style="background:var(--live)!important;color:#fff">● прямой эфир</span>'),canControl:canCtl,onSync:async st=>{bc?.postMessage({t:'sync',code,uid:ME.id,name:S.name,st});try{const sb=await roomsBase();if(sb)srvAct(code,'sync',{st,uid:ME.id,name:S.name});else cloudSend(code,{type:'sync',st,uid:ME.id,name:S.name})}catch{}},onRanges:()=>{},onReset:()=>{}});
+    if(roomSubMeta&&ctl&&ctl.addSubs)fetchExtSubs(roomSubMeta).then(ext=>{if(nav===my&&ctl&&ctl.addSubs&&Array.isArray(ext)&&ext.length)ctl.addSubs(ext,'')}).catch(()=>{});
     if(bc)bc.postMessage({t:'ask',code,uid:ME.id});
     if(r1.hostId===ME.id&&m&&m.sources&&m.sources[0]&&m.sources[0].url){const u=m.sources[0].url;
       const k=m.kodikDirect?'kodik':(bg&&String(bg).includes('AniLibria'))?'libria':m.demo?'demo':(r1.custom&&u===r1.custom)?'custom':'demo';

@@ -2039,6 +2039,18 @@ app.get('/api/vost/resolve', async (req, res) => {
 });
 
 /* ---- v17.45: серверный конвертер ASS/SSA -> VTT + поиск и прокси внешних субтитров (RU / EN / JA) ---- */
+const CP1252_REV = { 0x20AC: 0x80, 0x201A: 0x82, 0x0192: 0x83, 0x201E: 0x84, 0x2026: 0x85, 0x2020: 0x86, 0x2021: 0x87, 0x02C6: 0x88, 0x2030: 0x89, 0x0160: 0x8A, 0x2039: 0x8B, 0x0152: 0x8C, 0x017D: 0x8E, 0x2018: 0x91, 0x2019: 0x92, 0x201C: 0x93, 0x201D: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97, 0x02DC: 0x98, 0x2122: 0x99, 0x0161: 0x9A, 0x203A: 0x9B, 0x0153: 0x9C, 0x017E: 0x9E, 0x0178: 0x9F };
+function fixMojibakeServer(str) {
+  if (!str || !/[ÃÂÐÑãäåæçèéï][\x80-\xff\u0152-\u2122]/.test(str)) return str;
+  const bytes = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    if (c <= 0xff) bytes[i] = c;
+    else if (CP1252_REV[c] !== undefined) bytes[i] = CP1252_REV[c];
+    else return str;
+  }
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch { return str; }
+}
 function decodeSubBuffer(buf) {
   if (!buf || !buf.length) return '';
   if (buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xfe) {
@@ -2047,11 +2059,13 @@ function decodeSubBuffer(buf) {
   if (buf.length >= 2 && buf[0] === 0xfe && buf[1] === 0xff) {
     return new TextDecoder('utf-16be').decode(buf.subarray(2));
   }
-  const utf8 = new TextDecoder('utf-8', { fatal: false }).decode(buf).replace(/^\uFEFF/, '');
-  if (utf8.includes('\uFFFD')) {
+  try {
+    const utf8 = new TextDecoder('utf-8', { fatal: true }).decode(buf).replace(/^\uFEFF/, '');
+    return fixMojibakeServer(utf8);
+  } catch {
     try { return new TextDecoder('windows-1251').decode(buf); } catch {}
+    return new TextDecoder('utf-8', { fatal: false }).decode(buf).replace(/^\uFEFF/, '');
   }
-  return utf8;
 }
 
 function assTimeToSec(str) {
@@ -2220,12 +2234,39 @@ app.get('/api/subs/fetch', async (req, res) => {
 app.get('/api/subs/search', async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   const mal = parseInt(req.query.mal, 10) || 0;
-  const ep = Math.max(1, parseInt(req.query.ep, 10) || 1);
+  const anilist = parseInt(req.query.anilist, 10) || 0;
+  let ep = Math.max(1, parseInt(req.query.ep, 10) || 1);
   const seasonHint = Math.max(1, parseInt(req.query.s, 10) || 1);
-  const isMovie = req.query.movie === '1' || req.query.movie === 'true';
+  let isMovie = req.query.movie === '1' || req.query.movie === 'true';
   let imdb = String(req.query.imdb || '').replace(/[^a-zA-Z0-9]/g, '');
   try {
     let tmdbSeason = seasonHint;
+    let absEp = 0;
+    if (!imdb && (mal > 0 || anilist > 0)) {
+      const azKey = mal > 0 ? ('az:m:' + mal) : ('az:a:' + anilist);
+      let az = kCacheGet(azKey, 12 * 3600e3);
+      if (!az) {
+        try {
+          const qs = mal > 0 ? ('mal_id=' + mal) : ('anilist_id=' + anilist);
+          const safeAz = await egressCheck('https://api.ani.zip/mappings?' + qs);
+          const rz = await fetch(safeAz, { headers: { 'User-Agent': KODIK_UA, 'Accept': 'application/json' }, signal: AbortSignal.timeout(8000) });
+          if (rz.ok) {
+            az = await rz.json();
+            kCacheSet(azKey, az);
+          }
+        } catch {}
+      }
+      if (az && az.mappings && az.mappings.imdb_id) {
+        imdb = String(az.mappings.imdb_id).replace(/[^a-zA-Z0-9]/g, '');
+        if (az.mappings.type === 'MOVIE') isMovie = true;
+        const epInfo = az.episodes && (az.episodes[String(ep)] || az.episodes[ep]);
+        if (epInfo && seasonHint === 1) {
+          if (+epInfo.seasonNumber > 0) tmdbSeason = +epInfo.seasonNumber;
+          if (+epInfo.episodeNumber > 0) ep = +epInfo.episodeNumber;
+          if (+epInfo.absoluteEpisodeNumber > 0) absEp = +epInfo.absoluteEpisodeNumber;
+        }
+      }
+    }
     if (!imdb && mal > 0) {
       const mck = 'arm:' + mal;
       let ids = kCacheGet(mck, 12 * 3600e3);
@@ -2257,6 +2298,10 @@ app.get('/api/subs/search', async (req, res) => {
       return (j && Array.isArray(j.subtitles)) ? j.subtitles : [];
     };
     let rawSubs = await fetchOs(isMovie ? ('movie/' + imdb) : ('series/' + imdb + ':' + tmdbSeason + ':' + ep));
+    if (!isMovie && absEp > 0 && (tmdbSeason !== 1 || absEp !== ep)) {
+      const absSubs = await fetchOs('series/' + imdb + ':1:' + absEp);
+      if (absSubs.length) rawSubs = rawSubs.concat(absSubs);
+    }
     if (!rawSubs.length && !isMovie && tmdbSeason !== 1) {
       rawSubs = await fetchOs('series/' + imdb + ':1:' + ep);
     }
