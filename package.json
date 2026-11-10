@@ -1,8 +1,8 @@
 {
   "name": "anihub-rooms",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "AniHub · signaling-сервер комнат (ping + Socket.IO + WebRTC relay)",
+  "description": "AniHub · signaling-сервер комнат + внешняя PostgreSQL БД (Supabase/Neon) и облачный Storage без локального диска",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "express": "^4.19.2",
+    "pg": "^8.13.1",
     "socket.io": "^4.7.5"
   }
 }

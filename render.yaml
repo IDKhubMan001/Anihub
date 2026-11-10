@@ -1,10 +1,21 @@
-# Render deploy: Web Service → этот репозиторий → настройки подхватятся отсюда
+# Render deploy: Web Service → без локального хранения на диске (БД: Supabase/Neon PostgreSQL, картинки: Supabase Storage / R2)
 services:
   - type: web
     name: anihub-rooms
     runtime: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm install --omit=dev --no-audit --no-fund && npm cache clean --force
     startCommand: node server.js
     healthCheckPath: /api/health
     autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_BUCKET
+        value: avatars

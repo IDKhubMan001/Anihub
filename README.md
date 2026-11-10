@@ -61,3 +61,14 @@
 **Кнопки в шапке комнаты:** `🖥 Показать экран` (getDisplayMedia → WebRTC каждому зрителю),
 `📷 + Камера (PiP)` — маленькое окно камеры в углу поверх экрана. Зрители видят сцену
 прямого эфира под плеером и тег `● SCREEN SHARE` рядом с ником ведущего.
+
+## Вариант 4. Внешняя база данных и облако картинок (v17.47 — 0 байт на диске Render)
+
+Начиная с `v17.47`, `server.js` **ничего не сохраняет на диск Render**: все старые `.json`/`.log` дампы вычищаются при старте автоматически, а аккаунты (`users`), комментарии (`comments`), история просмотра (`history` с SQL-триггером автоматического удаления старых серий тайтла), друзья и ЛС хранятся во внешней PostgreSQL БД **Supabase** (а аватарки выгружаются напрямую в публичный бакет **Supabase Storage**).
+
+Переменные окружения в Render (**Environment**):
+- `DATABASE_URL` — строка подключения PostgreSQL из Supabase (*Connect → Transaction pooler*, порт `6543`);
+- `SUPABASE_URL` — Project URL проекта (`https://xxxx.supabase.co`);
+- `SUPABASE_SERVICE_ROLE_KEY` — ключ `service_role` из *Project Settings → API*;
+- `SUPABASE_BUCKET` — `avatars` (создаётся автоматически при первом старте `server.js`, как и все таблицы из `supabase_schema.sql`).
+

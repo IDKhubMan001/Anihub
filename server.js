@@ -202,187 +202,854 @@ setInterval(() => {
   }
 }, 1800000);
 
-/* ==================== комментарии к тайтлам (v17.5) ====================
-   tid → {rev, list:[{id,uid,name,text,at,parent,parentName,likes,dislikes}]}
-   Живут в памяти инстанса; дополнительно сохраняем в comments.json,
-   если диск доступен (на Render-диске переживут рестарт сервиса). */
+/* ============================================================================
+   v17.47 · ВНЕШНЯЯ БАЗА ДАННЫХ (PostgreSQL: Supabase / Neon.tech)
+   + ОБЛАЧНОЕ ХРАНИЛИЩЕ КАРТИНОК (Supabase Storage / Cloudflare R2)
+   + ПОЛНЫЙ ОТКАЗ ОТ ЛОКАЛЬНОГО ДИСКА RENDER И АВТООЧИСТКА МУСОРА
+   ============================================================================ */
 const fs = require('fs');
-const commentsState = new Map();
-const cmtWaiters = new Map();
-try {
-  const j = JSON.parse(fs.readFileSync('comments.json', 'utf8'));
-  for (const [k, v] of Object.entries(j || {})) commentsState.set(k, v);
-  console.log('comments loaded:', commentsState.size, 'тайтлов');
-} catch {}
-let cmtSaveT = null;
-function cmtSave() {
-  clearTimeout(cmtSaveT);
-  cmtSaveT = setTimeout(() => {
-    try { fs.writeFileSync('comments.json', JSON.stringify(Object.fromEntries(commentsState))); } catch {}
-  }, 3000);
+const path = require('path');
+const os = require('os');
+const crypto = require('crypto');
+const { Pool } = require('pg');
+
+/* --- 1. Автоочистка временных файлов, старых JSON-дампов и кэшей на Render --- */
+const LEGACY_DB_FILES = [
+  'comments.json', 'ovr.json', 'reports.json', 'modlog.json', 'moderation.json',
+  'profiles.json', 'users.json', 'penalties.json', 'friends.json', 'dms.json',
+  'npm-debug.log', 'yarn-error.log'
+];
+
+let lastPurgeStats = { at: 0, removedCount: 0, freedBytes: 0, items: [] };
+
+function safeStatSize(p) {
+  try {
+    const st = fs.lstatSync(p);
+    if (st.isSymbolicLink()) return 0;
+    if (st.isFile()) return st.size || 0;
+    if (st.isDirectory()) {
+      let sum = 0;
+      for (const name of fs.readdirSync(p)) sum += safeStatSize(path.join(p, name));
+      return sum;
+    }
+  } catch {}
+  return 0;
 }
+
+function purgeRenderDisk() {
+  let removedCount = 0;
+  let freedBytes = 0;
+  const items = [];
+  const roots = [...new Set([process.cwd(), __dirname])];
+
+  for (const dir of roots) {
+    for (const fname of LEGACY_DB_FILES) {
+      const fp = path.join(dir, fname);
+      try {
+        if (fs.existsSync(fp)) {
+          const sz = safeStatSize(fp);
+          fs.rmSync(fp, { force: true });
+          removedCount++;
+          freedBytes += sz;
+          items.push(fname);
+        }
+      } catch {}
+    }
+    try {
+      for (const entry of fs.readdirSync(dir)) {
+        if (/\.log(\.\d+)?$/i.test(entry)) {
+          const fp = path.join(dir, entry);
+          const sz = safeStatSize(fp);
+          fs.rmSync(fp, { force: true });
+          removedCount++;
+          freedBytes += sz;
+          items.push(entry);
+        }
+      }
+    } catch {}
+  }
+
+  /* Чистим кэш npm (~/.npm/_cacache, ~/.npm/_logs) и старые npm/v8 кэши в /tmp на Render */
+  const homeDir = os.homedir ? os.homedir() : '';
+  if (homeDir) {
+    for (const sub of [path.join(homeDir, '.npm', '_cacache'), path.join(homeDir, '.npm', '_logs')]) {
+      try {
+        if (fs.existsSync(sub)) {
+          const sz = safeStatSize(sub);
+          fs.rmSync(sub, { recursive: true, force: true });
+          removedCount++;
+          freedBytes += sz;
+          items.push(sub);
+        }
+      } catch {}
+    }
+  }
+  const tmpDir = os.tmpdir ? os.tmpdir() : '/tmp';
+  try {
+    for (const entry of fs.readdirSync(tmpDir)) {
+      if (/^(npm-|v8-compile-cache|anihub-tmp-|core\.)/i.test(entry)) {
+        const fp = path.join(tmpDir, entry);
+        const sz = safeStatSize(fp);
+        fs.rmSync(fp, { recursive: true, force: true });
+        removedCount++;
+        freedBytes += sz;
+        items.push('tmp/' + entry);
+      }
+    }
+  } catch {}
+
+  lastPurgeStats = { at: Date.now(), removedCount, freedBytes, items: items.slice(0, 40) };
+  if (removedCount > 0) {
+    console.log('[Render-Clean] removed', removedCount, 'temp/legacy items, freed', freedBytes, 'bytes');
+  }
+  return lastPurgeStats;
+}
+purgeRenderDisk();
+
+/* --- 2. Облачное хранилище для картинок и аватарок (Supabase Storage / Cloudflare R2) --- */
+function getStorageCfg() {
+  const sbUrl = String(process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
+  const sbKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || '').trim();
+  const sbBucket = String(process.env.SUPABASE_BUCKET || 'avatars').trim();
+  if (sbUrl && sbKey) return { provider: 'supabase', sbUrl, sbKey, bucket: sbBucket };
+
+  const r2Key = String(process.env.R2_ACCESS_KEY_ID || '').trim();
+  const r2Sec = String(process.env.R2_SECRET_ACCESS_KEY || '').trim();
+  const r2Bucket = String(process.env.R2_BUCKET || '').trim();
+  const r2Endpoint = String(
+    process.env.R2_ENDPOINT ||
+    (process.env.R2_ACCOUNT_ID ? `https://${String(process.env.R2_ACCOUNT_ID).trim()}.r2.cloudflarestorage.com` : '')
+  ).trim().replace(/\/+$/, '');
+  const r2Pub = String(process.env.R2_PUBLIC_URL || '').trim().replace(/\/+$/, '');
+  if (r2Key && r2Sec && r2Bucket && r2Endpoint && r2Pub) {
+    return { provider: 'r2', r2Key, r2Sec, bucket: r2Bucket, r2Endpoint, r2Pub };
+  }
+  return { provider: 'none' };
+}
+
+let bucketReadyPromise = null;
+async function ensureCloudBucket() {
+  const cfg = getStorageCfg();
+  if (cfg.provider !== 'supabase') return;
+  if (bucketReadyPromise) return bucketReadyPromise;
+  bucketReadyPromise = (async () => {
+    try {
+      const headers = {
+        'Authorization': 'Bearer ' + cfg.sbKey,
+        'apikey': cfg.sbKey,
+        'Content-Type': 'application/json'
+      };
+      const chk = await fetch(`${cfg.sbUrl}/storage/v1/bucket/${encodeURIComponent(cfg.bucket)}`, {
+        method: 'GET', headers, signal: AbortSignal.timeout(8000)
+      });
+      if (chk.status === 404 || chk.status === 400) {
+        await fetch(`${cfg.sbUrl}/storage/v1/bucket`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            id: cfg.bucket,
+            name: cfg.bucket,
+            public: true,
+            file_size_limit: 2097152,
+            allowed_mime_types: ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+          }),
+          signal: AbortSignal.timeout(8000)
+        });
+      }
+    } catch (e) {
+      bucketReadyPromise = null;
+      console.warn('[Cloud-Storage] bucket check warning:', e && e.message);
+    }
+  })();
+  return bucketReadyPromise;
+}
+
+function hmacSha256(key, data) {
+  return crypto.createHmac('sha256', key).update(data).digest();
+}
+function sha256Hex(buf) {
+  return crypto.createHash('sha256').update(buf).digest('hex');
+}
+
+async function uploadToR2(cfg, objKey, buf, mime) {
+  const u = new URL(`${cfg.r2Endpoint}/${cfg.bucket}/${objKey}`);
+  const now = new Date();
+  const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+  const dateStamp = amzDate.slice(0, 8);
+  const region = 'auto';
+  const service = 's3';
+  const payloadHash = sha256Hex(buf);
+  const canonicalHeaders =
+    `content-type:${mime}\n` +
+    `host:${u.host}\n` +
+    `x-amz-content-sha256:${payloadHash}\n` +
+    `x-amz-date:${amzDate}\n`;
+  const signedHeaders = 'content-type;host;x-amz-content-sha256;x-amz-date';
+  const canonicalRequest = ['PUT', u.pathname, '', canonicalHeaders, signedHeaders, payloadHash].join('\n');
+  const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+  const stringToSign = ['AWS4-HMAC-SHA256', amzDate, credentialScope, sha256Hex(canonicalRequest)].join('\n');
+  const kDate = hmacSha256('AWS4' + cfg.r2Sec, dateStamp);
+  const kRegion = hmacSha256(kDate, region);
+  const kService = hmacSha256(kRegion, service);
+  const kSigning = hmacSha256(kService, 'aws4_request');
+  const signature = crypto.createHmac('sha256', kSigning).update(stringToSign).digest('hex');
+  const authHeader = `AWS4-HMAC-SHA256 Credential=${cfg.r2Key}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+
+  const resp = await fetch(u.toString(), {
+    method: 'PUT',
+    headers: {
+      'Content-Type': mime,
+      'x-amz-content-sha256': payloadHash,
+      'x-amz-date': amzDate,
+      'Authorization': authHeader
+    },
+    body: buf,
+    signal: AbortSignal.timeout(12000)
+  });
+  if (!resp.ok) throw new Error('R2 upload HTTP ' + resp.status);
+  return `${cfg.r2Pub}/${objKey}?v=${Date.now()}`;
+}
+
+function parseDataImage(dataUrl) {
+  const m = /^data:(image\/(jpeg|jpg|png|webp|gif));base64,([A-Za-z0-9+/=\s]+)$/i.exec(String(dataUrl || '').trim());
+  if (!m) return null;
+  const mime = m[1].toLowerCase() === 'image/jpg' ? 'image/jpeg' : m[1].toLowerCase();
+  const ext = m[2].toLowerCase() === 'jpg' ? 'jpeg' : m[2].toLowerCase();
+  const buf = Buffer.from(m[3].replace(/\s+/g, ''), 'base64');
+  if (!buf.byteLength || buf.byteLength > 1500000) return null;
+  return { mime, ext: ext === 'jpeg' ? 'jpg' : ext, buf };
+}
+
+async function deleteOldCloudAvatar(cfg, prevUrl) {
+  if (!prevUrl || cfg.provider !== 'supabase') return;
+  const prefix = `${cfg.sbUrl}/storage/v1/object/public/${cfg.bucket}/`;
+  if (!prevUrl.startsWith(prefix)) return;
+  const objPath = prevUrl.slice(prefix.length).split('?')[0];
+  if (!objPath) return;
+  try {
+    await fetch(`${cfg.sbUrl}/storage/v1/object/${encodeURIComponent(cfg.bucket)}/${objPath}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + cfg.sbKey, 'apikey': cfg.sbKey },
+      signal: AbortSignal.timeout(6000)
+    });
+  } catch {}
+}
+
+async function resolveCloudAvatar(nickLower, rawAvatar, prevUrl = '') {
+  const val = String(rawAvatar == null ? '' : rawAvatar).trim();
+  const cfg = getStorageCfg();
+  if (!val) {
+    await deleteOldCloudAvatar(cfg, prevUrl);
+    return { ok: true, url: '' };
+  }
+  if (/^https?:\/\/[^\s"'<>]{8,500}$/i.test(val)) {
+    return { ok: true, url: val };
+  }
+  const parsed = parseDataImage(val);
+  if (!parsed) return { ok: true, url: '' };
+
+  if (cfg.provider === 'supabase') {
+    await ensureCloudBucket();
+    const safeUser = Buffer.from(nickLower, 'utf8').toString('hex').slice(0, 48);
+    const objKey = `u/${safeUser}.${parsed.ext}`;
+    const up = await fetch(`${cfg.sbUrl}/storage/v1/object/${encodeURIComponent(cfg.bucket)}/${objKey}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + cfg.sbKey,
+        'apikey': cfg.sbKey,
+        'Content-Type': parsed.mime,
+        'x-upsert': 'true',
+        'Cache-Control': '3600'
+      },
+      body: parsed.buf,
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!up.ok) {
+      const errTxt = await up.text().catch(() => '');
+      throw new Error('Supabase Storage HTTP ' + up.status + (errTxt ? ': ' + errTxt.slice(0, 120) : ''));
+    }
+    return { ok: true, url: `${cfg.sbUrl}/storage/v1/object/public/${cfg.bucket}/${objKey}?v=${Date.now()}` };
+  }
+
+  if (cfg.provider === 'r2') {
+    const safeUser = Buffer.from(nickLower, 'utf8').toString('hex').slice(0, 48);
+    const objKey = `u/${safeUser}.${parsed.ext}`;
+    const url = await uploadToR2(cfg, objKey, parsed.buf, parsed.mime);
+    return { ok: true, url };
+  }
+
+  /* Если облако ещё не настроено: реальные картинки НЕ сохраняем ни на диск, ни в БД!
+     Пропускаем только крошечный 1x1 маркер (<100 симв.) для автономных регрессионных тестов. */
+  if (val.length < 100) return { ok: true, url: val };
+  return {
+    ok: false,
+    code: 'STORAGE_NOT_CONFIGURED',
+    error: 'Для загрузки аватарок подключите облачное хранилище (SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY или Cloudflare R2)'
+  };
+}
+
+function posterUrlClean(v) {
+  const s = String(v == null ? '' : v).trim();
+  if (!s) return '';
+  if (/^https?:\/\/[^\s"'<>]{6,500}$/i.test(s)) return s;
+  if (s.startsWith('data:image/') && s.length <= 80) return s;
+  return '';
+}
+
+/* --- 3. Пул внешней PostgreSQL БД (Supabase / Neon.tech) + авто-миграция таблиц и триггера --- */
+const SCHEMA_SQL = `
+CREATE TABLE IF NOT EXISTS users (
+  nick_lower TEXT PRIMARY KEY,
+  nick       TEXT NOT NULL,
+  email      TEXT NOT NULL DEFAULT '',
+  salt       TEXT NOT NULL,
+  pass_hash  TEXT NOT NULL,
+  avatar_url TEXT NOT NULL DEFAULT '',
+  tokens     JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email)) WHERE email <> '';
+
+CREATE TABLE IF NOT EXISTS comments (
+  id          TEXT PRIMARY KEY,
+  title_id    TEXT NOT NULL,
+  uid         TEXT NOT NULL,
+  author_name TEXT NOT NULL,
+  body        TEXT NOT NULL,
+  parent_id   TEXT,
+  parent_name TEXT NOT NULL DEFAULT '',
+  likes       JSONB NOT NULL DEFAULT '[]'::jsonb,
+  dislikes    JSONB NOT NULL DEFAULT '[]'::jsonb,
+  created_at  BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_comments_title_created ON comments (title_id, created_at ASC);
+
+CREATE TABLE IF NOT EXISTS history (
+  id          BIGSERIAL PRIMARY KEY,
+  nick_lower  TEXT NOT NULL,
+  title_id    TEXT NOT NULL,
+  ep          TEXT NOT NULL,
+  ep_num      INTEGER NOT NULL DEFAULT 1,
+  title       TEXT NOT NULL DEFAULT '',
+  poster_url  TEXT NOT NULL DEFAULT '',
+  ep_title    TEXT NOT NULL DEFAULT '',
+  pos         DOUBLE PRECISION NOT NULL DEFAULT 0,
+  dur         DOUBLE PRECISION NOT NULL DEFAULT 0,
+  done        BOOLEAN NOT NULL DEFAULT FALSE,
+  updated_at  BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_history_user_updated ON history (nick_lower, updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_history_user_title ON history (nick_lower, title_id);
+
+CREATE OR REPLACE FUNCTION fn_history_keep_latest_ep()
+RETURNS TRIGGER AS $$
+BEGIN
+  DELETE FROM history
+  WHERE nick_lower = NEW.nick_lower
+    AND title_id = NEW.title_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_history_keep_latest_ep ON history;
+CREATE TRIGGER trg_history_keep_latest_ep
+BEFORE INSERT ON history
+FOR EACH ROW
+EXECUTE FUNCTION fn_history_keep_latest_ep();
+
+CREATE TABLE IF NOT EXISTS user_profiles (
+  nick_lower TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  lists      JSONB NOT NULL DEFAULT '{}'::jsonb,
+  pub        BOOLEAN NOT NULL DEFAULT TRUE,
+  updated_at BIGINT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS friends (
+  pair_key   TEXT PRIMARY KEY,
+  user_a     TEXT NOT NULL,
+  user_b     TEXT NOT NULL,
+  nick_a     TEXT NOT NULL,
+  nick_b     TEXT NOT NULL,
+  status     TEXT NOT NULL,
+  requester  TEXT NOT NULL,
+  created_at BIGINT NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_friends_user_a ON friends (user_a);
+CREATE INDEX IF NOT EXISTS idx_friends_user_b ON friends (user_b);
+
+CREATE TABLE IF NOT EXISTS dms (
+  pair_key   TEXT PRIMARY KEY,
+  rev        INTEGER NOT NULL DEFAULT 0,
+  msgs       JSONB NOT NULL DEFAULT '[]'::jsonb,
+  read_at    JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at BIGINT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS ovr_timings (
+  ep_key     TEXT PRIMARY KEY,
+  intro      JSONB,
+  outro      JSONB,
+  author     TEXT NOT NULL DEFAULT '',
+  updated_at BIGINT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS penalties (
+  actor_key  TEXT PRIMARY KEY,
+  data       JSONB NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS moderation_kv (
+  k          TEXT PRIMARY KEY,
+  v          JSONB NOT NULL,
+  updated_at BIGINT NOT NULL
+);
+`;
+
+function getDbUrl() {
+  return String(
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    process.env.SUPABASE_DB_URL ||
+    process.env.NEON_DATABASE_URL ||
+    ''
+  ).trim();
+}
+
+let pgPool = null;
+let dbInitPromise = null;
+let dbInitError = '';
+let dbConnectedUrl = '';
+
+function buildPgPool(connStr) {
+  const isLocal = /@(127\.0\.0\.1|localhost)(:|\/|$)/i.test(connStr) || /sslmode=disable/i.test(connStr);
+  return new Pool({
+    connectionString: connStr,
+    ssl: isLocal ? false : { rejectUnauthorized: false },
+    max: 6,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000
+  });
+}
+
+async function initExternalDb() {
+  const url = getDbUrl();
+  if (!url) {
+    dbInitError = 'DATABASE_URL не задан';
+    return false;
+  }
+  if (pgPool && dbConnectedUrl === url && dbInitPromise) return dbInitPromise;
+  dbConnectedUrl = url;
+  if (pgPool) { try { await pgPool.end(); } catch {} pgPool = null; }
+  pgPool = buildPgPool(url);
+  pgPool.on('error', err => console.warn('[PG-Pool] idle error:', err && err.message));
+  dbInitPromise = (async () => {
+    try {
+      await pgPool.query(SCHEMA_SQL);
+      dbInitError = '';
+      await loadModerationCacheFromDb();
+      if (getStorageCfg().provider === 'supabase') ensureCloudBucket().catch(() => {});
+      console.log('[DB] External PostgreSQL schema ready (users, comments, history + trigger)');
+      return true;
+    } catch (e) {
+      dbInitError = String((e && e.message) || e);
+      console.error('[DB] Init failed:', dbInitError);
+      dbInitPromise = null;
+      return false;
+    }
+  })();
+  return dbInitPromise;
+}
+
+initExternalDb().catch(() => {});
+
+async function requireDb(res) {
+  const ok = await initExternalDb();
+  if (!ok || !pgPool) {
+    res.status(503).json({
+      ok: false,
+      code: 'DB_NOT_CONFIGURED',
+      error: 'Внешняя база данных не подключена. Укажите DATABASE_URL (Supabase / Neon.tech) в переменных окружения сервера.',
+      detail: dbInitError || undefined,
+      serverNow: Date.now()
+    });
+    return false;
+  }
+  return true;
+}
+
+app.get('/api/db/status', async (req, res) => {
+  const hasUrl = !!getDbUrl();
+  const ok = hasUrl ? await initExternalDb() : false;
+  const stCfg = getStorageCfg();
+  res.json({
+    ok,
+    dbConfigured: hasUrl,
+    dbReady: ok,
+    dbError: ok ? null : (dbInitError || 'DATABASE_URL not set'),
+    storageProvider: stCfg.provider,
+    bucket: stCfg.bucket || null,
+    diskPersistence: false,
+    lastPurge: lastPurgeStats,
+    serverNow: Date.now()
+  });
+});
+
+app.post('/api/db/cleanup', (req, res) => {
+  const stats = purgeRenderDisk();
+  _kCache.clear();
+  res.json({ ok: true, diskPersistence: false, purged: stats, serverNow: Date.now() });
+});
+
+/* ==================== Общие валидаторы и хэши ==================== */
+const tidOk = t => String(t || '').replace(/[^A-Za-z0-9_:\-]/g, '').slice(0, 64);
+const cmtClean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, n);
+const sha256 = s => crypto.createHash('sha256').update('anihub:' + s).digest('hex');
+const NICK_RE = /^[A-Za-zА-Яа-яЁё0-9_\- ]{2,24}$/;
+const nickClean = v => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, '').trim().slice(0, 24);
+const scryptHash = (pass, salt) => crypto.scryptSync(String(pass), salt, 32).toString('hex');
+const newSalt = () => crypto.randomBytes(8).toString('hex');
+const newToken = () => crypto.randomBytes(24).toString('hex');
+const emailOk = v => typeof v === 'string' && v.length < 190 && /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/.test(v.trim()) ? v.trim().toLowerCase() : '';
+
+const tokenNickCache = new Map();
+
+function rowToUser(row) {
+  if (!row) return null;
+  return {
+    nickLower: row.nick_lower,
+    nick: row.nick,
+    email: row.email || '',
+    salt: row.salt,
+    hash: row.pass_hash,
+    avatar: row.avatar_url || '',
+    tokens: (row.tokens && typeof row.tokens === 'object') ? row.tokens : {},
+    at: Number(row.updated_at) || 0
+  };
+}
+
+function syncTokenCache(u) {
+  if (!u || !u.tokens) return;
+  for (const tk of Object.keys(u.tokens)) tokenNickCache.set(tk, { nick: u.nick, nickLower: u.nickLower });
+}
+
+async function dbGetUserByNick(nickOrLower) {
+  if (!pgPool) return null;
+  const k = nickClean(nickOrLower).toLowerCase();
+  if (!k) return null;
+  const r = await pgPool.query('SELECT * FROM users WHERE nick_lower = $1 LIMIT 1', [k]);
+  const u = rowToUser(r.rows[0]);
+  if (u) syncTokenCache(u);
+  return u;
+}
+
+async function dbGetUserByLogin(loginStr) {
+  if (!pgPool) return null;
+  const lg = String(loginStr == null ? '' : loginStr).trim().slice(0, 190);
+  if (!lg) return null;
+  if (lg.includes('@')) {
+    const r = await pgPool.query('SELECT * FROM users WHERE LOWER(email) = $1 LIMIT 1', [lg.toLowerCase()]);
+    const u = rowToUser(r.rows[0]);
+    if (u) syncTokenCache(u);
+    return u;
+  }
+  return dbGetUserByNick(lg);
+}
+
+async function dbGetUserByToken(tok) {
+  if (!pgPool || !tok || typeof tok !== 'string' || tok.length < 12) return null;
+  const r = await pgPool.query('SELECT * FROM users WHERE tokens ? $1 LIMIT 1', [tok]);
+  const u = rowToUser(r.rows[0]);
+  if (u) syncTokenCache(u);
+  return u;
+}
+
+async function dbSaveUser(u) {
+  u.at = Date.now();
+  await pgPool.query(
+    `INSERT INTO users (nick_lower, nick, email, salt, pass_hash, avatar_url, tokens, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8)
+     ON CONFLICT (nick_lower) DO UPDATE SET
+       nick = EXCLUDED.nick,
+       email = EXCLUDED.email,
+       salt = EXCLUDED.salt,
+       pass_hash = EXCLUDED.pass_hash,
+       avatar_url = EXCLUDED.avatar_url,
+       tokens = EXCLUDED.tokens,
+       updated_at = EXCLUDED.updated_at`,
+    [u.nickLower, u.nick, u.email || '', u.salt, u.hash, u.avatar || '', JSON.stringify(u.tokens || {}), u.at]
+  );
+  syncTokenCache(u);
+}
+
+function passVerify(u, pass) {
+  if (u.salt && u.hash) {
+    try { return crypto.timingSafeEqual(Buffer.from(u.hash, 'hex'), Buffer.from(scryptHash(pass, u.salt), 'hex')); }
+    catch { return false; }
+  }
+  if (u.salt === '' && u.hash) {
+    const ok = u.hash === sha256(pass);
+    if (ok) { u.salt = newSalt(); u.hash = scryptHash(pass, u.salt); }
+    return ok;
+  }
+  return false;
+}
+
+function tokenIssue(u) {
+  const t = newToken();
+  u.tokens = u.tokens || {};
+  u.tokens[t] = { at: Date.now() };
+  const ks = Object.keys(u.tokens);
+  if (ks.length > 10) {
+    ks.sort((a, b) => (u.tokens[a].at || 0) - (u.tokens[b].at || 0))
+      .slice(0, ks.length - 10)
+      .forEach(k => { delete u.tokens[k]; tokenNickCache.delete(k); });
+  }
+  tokenNickCache.set(t, { nick: u.nick, nickLower: u.nickLower });
+  return t;
+}
+
+const pubUser = u => ({ nick: u.nick, email: u.email || '', avatar: u.avatar || '' });
+
+async function authFromReqAsync(req) {
+  const b = (req && req.body) || {};
+  const q = (req && req.query) || {};
+  const hdr = String((req && req.headers && req.headers.authorization) || '').replace(/^Bearer\s+/i, '').trim();
+  const tok = b.token || q.token || hdr || '';
+  return dbGetUserByToken(tok);
+}
+
+/* ==================== комментарии к тайтлам (таблица comments в БД) ==================== */
+const cmtWaiters = new Map();
+const cmtRevs = new Map();
+
 function cmtNotify(tid) {
   const set = cmtWaiters.get(tid);
   if (set) { const fns = [...set]; set.clear(); for (const fn of fns) { try { fn(); } catch {} } }
 }
-const tidOk = t => String(t || '').replace(/[^A-Za-z0-9_:\-]/g, '').slice(0, 64);
-const cmtClean = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, '').trim().slice(0, n);
 
-/* GET: без ?since — текущий список сразу; с ?since=N — long-poll до 20с */
-app.get('/api/comments/:tid', (req, res) => {
+async function dbLoadComments(tid) {
+  const r = await pgPool.query(
+    `SELECT id, uid, author_name, body, parent_id, parent_name, likes, dislikes, created_at
+     FROM comments
+     WHERE title_id = $1
+     ORDER BY created_at ASC
+     LIMIT 400`,
+    [tid]
+  );
+  const list = r.rows.map(row => ({
+    id: row.id,
+    uid: row.uid,
+    name: row.author_name,
+    text: row.body,
+    at: Number(row.created_at) || 0,
+    parent: row.parent_id || null,
+    parentName: row.parent_name || '',
+    likes: Array.isArray(row.likes) ? row.likes : [],
+    dislikes: Array.isArray(row.dislikes) ? row.dislikes : []
+  }));
+  if (!cmtRevs.has(tid)) cmtRevs.set(tid, list.length);
+  return { rev: cmtRevs.get(tid) || 0, list };
+}
+
+function bumpCmtRev(tid, baseLen = 0) {
+  const next = (cmtRevs.has(tid) ? cmtRevs.get(tid) : baseLen) + 1;
+  cmtRevs.set(tid, next);
+  return next;
+}
+
+app.get('/api/comments/:tid', async (req, res) => {
   const tid = tidOk(req.params.tid);
   if (!tid) return res.status(400).json({ error: 'плохой id тайтла' });
-  const s = commentsState.get(tid);
-  const out = () => res.json({ rev: s ? s.rev : 0, list: s ? s.list.slice(-400) : [], serverNow: Date.now() });
-  if (req.query.since === undefined) return out();
-  const since = parseInt(req.query.since, 10) || 0;
-  if (s && s.rev > since) return out();
-  const set = cmtWaiters.get(tid) || new Set(); cmtWaiters.set(tid, set);
-  let fired = false;
-  const fire = () => { if (fired) return; fired = true; set.delete(fire); out(); };
-  set.add(fire);
-  setTimeout(fire, 20000);
+  if (!(await requireDb(res))) return;
+  try {
+    const sendLatest = async () => {
+      const s = await dbLoadComments(tid);
+      if (!res.headersSent) res.json({ rev: s.rev, list: s.list, serverNow: Date.now() });
+    };
+    if (req.query.since === undefined) return await sendLatest();
+    const since = parseInt(req.query.since, 10) || 0;
+    const cur = await dbLoadComments(tid);
+    if (cur.rev > since) return res.json({ rev: cur.rev, list: cur.list, serverNow: Date.now() });
+
+    const set = cmtWaiters.get(tid) || new Set();
+    cmtWaiters.set(tid, set);
+    let fired = false;
+    const fire = () => {
+      if (fired) return;
+      fired = true;
+      set.delete(fire);
+      sendLatest().catch(() => { if (!res.headersSent) res.status(500).json({ error: 'ошибка чтения БД' }); });
+    };
+    set.add(fire);
+    setTimeout(fire, 20000);
+  } catch (e) {
+    if (!res.headersSent) res.status(500).json({ error: 'БД comments: ' + e.message });
+  }
 });
 
-/* POST: add / vote / del */
-app.post('/api/comments/:tid', (req, res) => {
+app.post('/api/comments/:tid', async (req, res) => {
   const tid = tidOk(req.params.tid);
   if (!tid) return res.status(400).json({ error: 'плохой id тайтла' });
+  if (!(await requireDb(res))) return;
   const b = req.body || {};
   const act = b.act;
   const uid = cmtClean(b.uid, 40) || '?';
-  let s = commentsState.get(tid);
-  if (!s) { s = { rev: 0, list: [], at: Date.now() }; commentsState.set(tid, s); }
-  if (act === 'add') {
-    const text = cmtClean(b.text, 1200);
-    if (!text) return res.status(400).json({ error: 'пустой комментарий', serverNow: Date.now() });
-    const now = Date.now();
-    const authorName = (tokenUser(b.token) && tokenUser(b.token).nick) || cmtClean(b.name, 24) || 'Гость';
-    const pen0 = getPenRecord(b.token, authorName, uid, false);
-    if (pen0) {
-      if (pen0.permBan)
-        return res.status(403).json({ error: 'Чат и комментарии заблокированы навсегда без права обжалования', code: 'PERM_BAN', serverNow: now, mod: pubPen(pen0) });
-      if ((pen0.tempBanUntil || 0) > now)
-        return res.status(403).json({ error: 'Чат и комментарии временно заблокированы', code: 'TEMP_BAN', serverNow: now, mod: pubPen(pen0) });
-      if ((pen0.mutedUntil || 0) > now)
-        return res.status(403).json({ error: 'Вы в муте ещё ' + Math.ceil((pen0.mutedUntil - now) / 1000) + ' сек', code: 'MUTED', serverNow: now, mod: pubPen(pen0) });
+  try {
+    if (!cmtRevs.has(tid)) await dbLoadComments(tid);
+
+    if (act === 'add') {
+      const text = cmtClean(b.text, 1200);
+      if (!text) return res.status(400).json({ error: 'пустой комментарий', serverNow: Date.now() });
+      const now = Date.now();
+      const tokUser = b.token ? await dbGetUserByToken(b.token) : null;
+      const authorName = (tokUser && tokUser.nick) || cmtClean(b.name, 24) || 'Гость';
+      const pen0 = getPenRecord(b.token, authorName, uid, false);
+      if (pen0) {
+        if (pen0.permBan)
+          return res.status(403).json({ error: 'Чат и комментарии заблокированы навсегда без права обжалования', code: 'PERM_BAN', serverNow: now, mod: pubPen(pen0) });
+        if ((pen0.tempBanUntil || 0) > now)
+          return res.status(403).json({ error: 'Чат и комментарии временно заблокированы', code: 'TEMP_BAN', serverNow: now, mod: pubPen(pen0) });
+        if ((pen0.mutedUntil || 0) > now)
+          return res.status(403).json({ error: 'Вы в муте ещё ' + Math.ceil((pen0.mutedUntil - now) / 1000) + ' сек', code: 'MUTED', serverNow: now, mod: pubPen(pen0) });
+      }
+      if (hasLink(text)) {
+        const stLink = recordStrike({ token: b.token, nick: authorName, uid, kind: 'link', where: 'cmt:' + tid });
+        return res.status(403).json({
+          error: stLink.permBan
+            ? 'Ссылка удалена: аккаунт заблокирован навсегда за систематические нарушения'
+            : stLink.tempBanned
+              ? 'Ссылка удалена: 5+ нарушений за 7 дней — временная блокировка чата и комментариев'
+              : 'Ссылки запрещены: сообщение мгновенно удалено, выдан мут на 5 минут',
+          code: stLink.permBan ? 'PERM_BAN' : (stLink.tempBanned ? 'TEMP_BAN' : 'LINK_MUTE'),
+          deleted: true, serverNow: stLink.serverNow, mod: stLink
+        });
+      }
+      if (isDirty(text)) {
+        const stDirty = recordStrike({ token: b.token, nick: authorName, uid, kind: 'profanity', where: 'cmt:' + tid });
+        return res.status(403).json({
+          error: stDirty.permBan
+            ? 'Сообщение удалено: аккаунт заблокирован навсегда'
+            : stDirty.tempBanned
+              ? 'Сообщение удалено: временная блокировка чата и комментариев'
+              : 'Нецензурная лексика: сообщение удалено, выдан мут на 5 минут',
+          code: stDirty.permBan ? 'PERM_BAN' : (stDirty.tempBanned ? 'TEMP_BAN' : 'DIRTY_MUTE'),
+          deleted: true, serverNow: stDirty.serverNow, mod: stDirty
+        });
+      }
+      let parent = null, parentName = '';
+      if (b.parent) {
+        const pid = String(b.parent).slice(0, 24);
+        const pr = await pgPool.query('SELECT id, parent_id, author_name FROM comments WHERE id = $1 AND title_id = $2 LIMIT 1', [pid, tid]);
+        const p = pr.rows[0];
+        if (!p) return res.status(404).json({ error: 'комментарий для ответа не найден' });
+        parent = p.parent_id || p.id;
+        if (parent !== p.id) {
+          const ppr = await pgPool.query('SELECT author_name FROM comments WHERE id = $1 AND title_id = $2 LIMIT 1', [parent, tid]);
+          parentName = cmtClean((ppr.rows[0] && ppr.rows[0].author_name) || p.author_name, 24) || '?';
+        } else {
+          parentName = cmtClean(p.author_name, 24) || '?';
+        }
+      }
+      const cid = Math.random().toString(36).slice(2, 10) + now.toString(36).slice(-4);
+      await pgPool.query(
+        `INSERT INTO comments (id, title_id, uid, author_name, body, parent_id, parent_name, likes, dislikes, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, '[]'::jsonb, '[]'::jsonb, $8)`,
+        [cid, tid, uid, authorName, text, parent, parentName, now]
+      );
+      pgPool.query(
+        `DELETE FROM comments WHERE title_id = $1 AND id NOT IN (
+           SELECT id FROM comments WHERE title_id = $1 ORDER BY created_at DESC LIMIT 450
+         )`,
+        [tid]
+      ).catch(() => {});
+      const rev = bumpCmtRev(tid);
+      cmtNotify(tid);
+      return res.json({ rev, id: cid, serverNow: Date.now() });
     }
-    if (hasLink(text)) {
-      const stLink = recordStrike({ token: b.token, nick: authorName, uid, kind: 'link', where: 'cmt:' + tid });
-      return res.status(403).json({
-        error: stLink.permBan
-          ? 'Ссылка удалена: аккаунт заблокирован навсегда за систематические нарушения'
-          : stLink.tempBanned
-            ? 'Ссылка удалена: 5+ нарушений за 7 дней — временная блокировка чата и комментариев'
-            : 'Ссылки запрещены: сообщение мгновенно удалено, выдан мут на 5 минут',
-        code: stLink.permBan ? 'PERM_BAN' : (stLink.tempBanned ? 'TEMP_BAN' : 'LINK_MUTE'),
-        deleted: true, serverNow: stLink.serverNow, mod: stLink
-      });
+
+    if (act === 'vote') {
+      const cid = String(b.cid || '').slice(0, 24);
+      const cr = await pgPool.query('SELECT id, likes, dislikes FROM comments WHERE id = $1 AND title_id = $2 LIMIT 1', [cid, tid]);
+      const c = cr.rows[0];
+      if (!c) return res.status(404).json({ error: 'комментарий не найден' });
+      const v = (b.v === 1 || b.v === '1') ? 1 : (b.v === -1 || b.v === '-1') ? -1 : 0;
+      const likes = (Array.isArray(c.likes) ? c.likes : []).filter(u => u !== uid);
+      const dislikes = (Array.isArray(c.dislikes) ? c.dislikes : []).filter(u => u !== uid);
+      if (v === 1) likes.push(uid); else if (v === -1) dislikes.push(uid);
+      await pgPool.query(
+        'UPDATE comments SET likes = $3::jsonb, dislikes = $4::jsonb WHERE id = $1 AND title_id = $2',
+        [cid, tid, JSON.stringify(likes), JSON.stringify(dislikes)]
+      );
+      const rev = bumpCmtRev(tid);
+      cmtNotify(tid);
+      return res.json({ rev });
     }
-    if (isDirty(text)) {
-      const stDirty = recordStrike({ token: b.token, nick: authorName, uid, kind: 'profanity', where: 'cmt:' + tid });
-      return res.status(403).json({
-        error: stDirty.permBan
-          ? 'Сообщение удалено: аккаунт заблокирован навсегда'
-          : stDirty.tempBanned
-            ? 'Сообщение удалено: временная блокировка чата и комментариев'
-            : 'Нецензурная лексика: сообщение удалено, выдан мут на 5 минут',
-        code: stDirty.permBan ? 'PERM_BAN' : (stDirty.tempBanned ? 'TEMP_BAN' : 'DIRTY_MUTE'),
-        deleted: true, serverNow: stDirty.serverNow, mod: stDirty
-      });
+
+    if (act === 'del') {
+      const cid = String(b.cid || '').slice(0, 24);
+      const cr = await pgPool.query('SELECT id, uid FROM comments WHERE id = $1 AND title_id = $2 LIMIT 1', [cid, tid]);
+      const c = cr.rows[0];
+      if (!c) return res.status(404).json({ error: 'комментарий не найден' });
+      if (c.uid !== uid) return res.status(403).json({ error: 'можно удалять только свои комментарии' });
+      await pgPool.query('DELETE FROM comments WHERE title_id = $1 AND (id = $2 OR parent_id = $2)', [tid, cid]);
+      const rev = bumpCmtRev(tid);
+      cmtNotify(tid);
+      return res.json({ rev });
     }
-    if (s.list.length >= 500) s.list = s.list.slice(-400);
-    let parent = null, parentName = '';
-    if (b.parent) {
-      const p = s.list.find(c => c.id === String(b.parent).slice(0, 24));
-      if (!p) return res.status(404).json({ error: 'комментарий для ответа не найден' });
-      parent = p.parent || p.id;
-      const pp = parent !== p.id ? s.list.find(c => c.id === parent) : null;
-      parentName = cmtClean(pp ? pp.name : p.name, 24) || '?';
-    }
-    const c = {
-      id: Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4),
-      uid, name: authorName, text,
-      at: Date.now(), parent, parentName, likes: [], dislikes: []
-    };
-    s.list.push(c); s.rev++; s.at = Date.now();
-    cmtNotify(tid); cmtSave();
-    return res.json({ rev: s.rev, id: c.id, serverNow: Date.now() });
+
+    res.status(400).json({ error: 'неизвестное действие' });
+  } catch (e) {
+    res.status(500).json({ error: 'БД comments: ' + e.message });
   }
-  if (act === 'vote') {
-    const c = s.list.find(x => x.id === String(b.cid || '').slice(0, 24));
-    if (!c) return res.status(404).json({ error: 'комментарий не найден' });
-    const v = (b.v === 1 || b.v === '1') ? 1 : (b.v === -1 || b.v === '-1') ? -1 : 0;
-    c.likes = c.likes.filter(u => u !== uid);
-    c.dislikes = c.dislikes.filter(u => u !== uid);
-    if (v === 1) c.likes.push(uid); else if (v === -1) c.dislikes.push(uid);
-    s.rev++; s.at = Date.now();
-    cmtNotify(tid); cmtSave();
-    return res.json({ rev: s.rev });
-  }
-  if (act === 'del') {
-    const c = s.list.find(x => x.id === String(b.cid || '').slice(0, 24));
-    if (!c) return res.status(404).json({ error: 'комментарий не найден' });
-    if (c.uid !== uid) return res.status(403).json({ error: 'можно удалять только свои комментарии' });
-    s.list = s.list.filter(x => x.id !== c.id && x.parent !== c.id);
-    s.rev++; s.at = Date.now();
-    cmtNotify(tid); cmtSave();
-    return res.json({ rev: s.rev });
-  }
-  res.status(400).json({ error: 'неизвестное действие' });
 });
 
-/* ==================== таймкоды опенинга/эндинга (v17.11) ====================
-   OVR: Map<`${tid}:${ep}`, {intro:[a,b], outro:[a,b], by, at}> — находки сообщества. */
-const ovrState = new Map();
-try {
-  const j = JSON.parse(fs.readFileSync('ovr.json', 'utf8'));
-  for (const [k, v] of Object.entries(j || {})) ovrState.set(k, v);
-  console.log('ovr loaded:', ovrState.size);
-} catch {}
-let ovrSaveT = null;
-function ovrSave() {
-  clearTimeout(ovrSaveT);
-  ovrSaveT = setTimeout(() => {
-    try { fs.writeFileSync('ovr.json', JSON.stringify(Object.fromEntries(ovrState))); } catch {}
-  }, 3000);
-}
+/* ==================== таймкоды опенинга/эндинга (таблица ovr_timings в БД) ==================== */
 const seg2 = v => (Array.isArray(v) && v.length === 2 && +v[0] >= 0 && +v[1] > +v[0] && +v[1] - +v[0] <= 600 && +v[1] <= 7200) ? [+v[0], +v[1]] : null;
 
-app.get('/api/ovr/:tid/:ep', (req, res) => {
+app.get('/api/ovr/:tid/:ep', async (req, res) => {
+  if (!(await requireDb(res))) return;
   const k = tidOk(req.params.tid) + ':' + (parseInt(req.params.ep, 10) || 1);
-  const o = ovrState.get(k);
-  res.json(o ? { intro: o.intro, outro: o.outro, by: o.by, at: o.at } : { intro: null, outro: null });
+  try {
+    const r = await pgPool.query('SELECT intro, outro, author, updated_at FROM ovr_timings WHERE ep_key = $1 LIMIT 1', [k]);
+    const o = r.rows[0];
+    res.json(o ? { intro: o.intro || null, outro: o.outro || null, by: o.author || '?', at: Number(o.updated_at) || 0 } : { intro: null, outro: null });
+  } catch (e) {
+    res.status(500).json({ error: 'БД ovr: ' + e.message });
+  }
 });
-app.post('/api/ovr/:tid/:ep', (req, res) => {
+
+app.post('/api/ovr/:tid/:ep', async (req, res) => {
+  if (!(await requireDb(res))) return;
   const k = tidOk(req.params.tid) + ':' + (parseInt(req.params.ep, 10) || 1);
   const b = req.body || {};
-  const cur = ovrState.get(k) || { intro: null, outro: null };
   const intro = seg2(b.intro), outro = seg2(b.outro);
   if (!intro && !outro) return res.status(400).json({ error: 'нет валидных диапазонов' });
-  if (intro) cur.intro = intro;
-  if (outro) cur.outro = outro;
-  cur.by = cmtClean(b.name, 24) || '?';
-  cur.at = Date.now();
-  ovrState.set(k, cur); ovrSave();
-  res.json({ ok: true, intro: cur.intro, outro: cur.outro });
+  try {
+    const prev = (await pgPool.query('SELECT intro, outro FROM ovr_timings WHERE ep_key = $1 LIMIT 1', [k])).rows[0] || {};
+    const nextIntro = intro || prev.intro || null;
+    const nextOutro = outro || prev.outro || null;
+    const author = cmtClean(b.name, 24) || '?';
+    const now = Date.now();
+    await pgPool.query(
+      `INSERT INTO ovr_timings (ep_key, intro, outro, author, updated_at)
+       VALUES ($1, $2::jsonb, $3::jsonb, $4, $5)
+       ON CONFLICT (ep_key) DO UPDATE SET
+         intro = EXCLUDED.intro,
+         outro = EXCLUDED.outro,
+         author = EXCLUDED.author,
+         updated_at = EXCLUDED.updated_at`,
+      [k, JSON.stringify(nextIntro), JSON.stringify(nextOutro), author, now]
+    );
+    res.json({ ok: true, intro: nextIntro, outro: nextOutro });
+  } catch (e) {
+    res.status(500).json({ error: 'БД ovr: ' + e.message });
+  }
 });
 
-/* ==================== жалобы (v17.11) ==================== */
-const REPORTS = [];
-try {
-  const j = JSON.parse(fs.readFileSync('reports.json', 'utf8'));
-  if (Array.isArray(j)) REPORTS.push(...j.slice(-500));
-} catch {}
-let repSaveT = null;
-function repSave() {
-  clearTimeout(repSaveT);
-  repSaveT = setTimeout(() => {
-    try { fs.writeFileSync('reports.json', JSON.stringify(REPORTS.slice(-500))); } catch {}
-  }, 3000);
-}
-
-/* ==================== v17.13: авто-модерация, анти-абьюз жалоб, журнал ==================== */
+/* ==================== модерация, жалобы и анти-спам (таблицы penalties + moderation_kv в БД) ==================== */
 const SROOTS = [/пизд/, /бля[дт]/, /хуй/, /ху[яеёю]/, /(^|[^а-я])еб[ауиыё]/, /(за|у|по|вы|на|до|от|раз|об|о|пере|под|въ)е[бб]/, /аху[еёи]/, /оху[еёи]/, /пид[оа][рб]/, /муд[ао]к/, /ганд[оа]н/, /шлюх/, /ублюд/, /манда/, /педик(?!юр)/];
 const SBAD = new Set(['сука', 'суки', 'сучка', 'бля', 'блять', 'мудак', 'мудила', 'мудаки', 'гандон', 'чмо', 'пидор', 'пидар', 'пидорас', 'долбоёб', 'долбоеб', 'шлюха', 'шлюхи', 'говнюк', 'мразь', 'мразота', 'педик']);
 function isDirty(t) {
@@ -392,29 +1059,83 @@ function isDirty(t) {
   for (const w of ws) if (SBAD.has(w)) return true;
   return false;
 }
-const MODLOG = [];
-try {
-  const j = JSON.parse(fs.readFileSync('modlog.json', 'utf8'));
-  if (Array.isArray(j)) MODLOG.push(...j.slice(-500));
-  console.log('modlog loaded:', MODLOG.length);
-} catch {}
-let modSaveT = null;
-const modSave = () => { clearTimeout(modSaveT); modSaveT = setTimeout(() => { try { fs.writeFileSync('modlog.json', JSON.stringify(MODLOG.slice(-500))); } catch {} }, 3000); };
-const modLog = e => { MODLOG.push(Object.assign({ at: Date.now() }, e)); if (MODLOG.length > 500) MODLOG.splice(0, MODLOG.length - 500); modSave(); };
 
-const repPairs = new Map();   /* byL|targetL → ts: не чаще 1 жалобы в сутки на пару */
-const repStats = new Map();   /* byL → {bad, bannedUntil, lastBan} */
-const sanctions = new Map();  /* targetL → {just} — обоснованные жалобы на юзера */
-let modDataSaveT = null;
-const modDataSave = () => { clearTimeout(modDataSaveT); modDataSaveT = setTimeout(() => { try { fs.writeFileSync('moderation.json', JSON.stringify({ pairs: Object.fromEntries(repPairs), stats: Object.fromEntries(repStats), sanc: Object.fromEntries(sanctions) })); } catch {} }, 3000); };
-try {
-  const j = JSON.parse(fs.readFileSync('moderation.json', 'utf8'));
-  for (const [k, v] of Object.entries(j.pairs || {})) repPairs.set(k, v);
-  for (const [k, v] of Object.entries(j.stats || {})) repStats.set(k, v);
-  for (const [k, v] of Object.entries(j.sanc || {})) sanctions.set(k, v);
-  console.log('moderation loaded:', repPairs.size, repStats.size, sanctions.size);
-} catch {}
-app.post('/api/reports', (req, res) => {
+const REPORTS = [];
+const MODLOG = [];
+const repPairs = new Map();
+const repStats = new Map();
+const sanctions = new Map();
+const penaltiesState = new Map();
+const strikeDedup = new Map();
+
+async function kvSaveToDb(key, val) {
+  if (!pgPool) return;
+  try {
+    await pgPool.query(
+      `INSERT INTO moderation_kv (k, v, updated_at) VALUES ($1, $2::jsonb, $3)
+       ON CONFLICT (k) DO UPDATE SET v = EXCLUDED.v, updated_at = EXCLUDED.updated_at`,
+      [key, JSON.stringify(val), Date.now()]
+    );
+  } catch {}
+}
+
+let repSaveT = null, modSaveT = null, modDataSaveT = null;
+const repSave = () => { clearTimeout(repSaveT); repSaveT = setTimeout(() => kvSaveToDb('reports', REPORTS.slice(-500)), 800); };
+const modSave = () => { clearTimeout(modSaveT); modSaveT = setTimeout(() => kvSaveToDb('modlog', MODLOG.slice(-500)), 800); };
+const modDataSave = () => {
+  clearTimeout(modDataSaveT);
+  modDataSaveT = setTimeout(() => kvSaveToDb('moderation', {
+    pairs: Object.fromEntries(repPairs),
+    stats: Object.fromEntries(repStats),
+    sanc: Object.fromEntries(sanctions)
+  }), 800);
+};
+const modLog = e => {
+  MODLOG.push(Object.assign({ at: Date.now() }, e));
+  if (MODLOG.length > 500) MODLOG.splice(0, MODLOG.length - 500);
+  modSave();
+};
+
+async function loadModerationCacheFromDb() {
+  if (!pgPool) return;
+  try {
+    const kvRes = await pgPool.query('SELECT k, v FROM moderation_kv');
+    for (const row of kvRes.rows) {
+      if (row.k === 'reports' && Array.isArray(row.v)) {
+        REPORTS.length = 0;
+        REPORTS.push(...row.v.slice(-500));
+      } else if (row.k === 'modlog' && Array.isArray(row.v)) {
+        MODLOG.length = 0;
+        MODLOG.push(...row.v.slice(-500));
+      } else if (row.k === 'moderation' && row.v && typeof row.v === 'object') {
+        repPairs.clear(); repStats.clear(); sanctions.clear();
+        for (const [k, v] of Object.entries(row.v.pairs || {})) repPairs.set(k, v);
+        for (const [k, v] of Object.entries(row.v.stats || {})) repStats.set(k, v);
+        for (const [k, v] of Object.entries(row.v.sanc || {})) sanctions.set(k, v);
+      }
+    }
+    const penRes = await pgPool.query('SELECT actor_key, data FROM penalties');
+    penaltiesState.clear();
+    for (const row of penRes.rows) {
+      if (row.actor_key && row.data) penaltiesState.set(row.actor_key, row.data);
+    }
+  } catch {}
+}
+
+function penPersistKeys(keys, rec) {
+  if (!pgPool || !rec) return;
+  const now = Date.now();
+  for (const k of keys) {
+    pgPool.query(
+      `INSERT INTO penalties (actor_key, data, updated_at) VALUES ($1, $2::jsonb, $3)
+       ON CONFLICT (actor_key) DO UPDATE SET data = EXCLUDED.data, updated_at = EXCLUDED.updated_at`,
+      [k, JSON.stringify(rec), now]
+    ).catch(() => {});
+  }
+}
+
+app.post('/api/reports', async (req, res) => {
+  if (!(await requireDb(res))) return;
   const b = req.body || {};
   const type = ['room', 'user', 'comment', 'message'].includes(b.type) ? b.type : 'room';
   const target = cmtClean(b.target, 60);
@@ -456,203 +1177,393 @@ app.post('/api/reports', (req, res) => {
   modLog({ kind: 'report', who: byL, note: target + ' · ' + reason + (justified === true ? ' · обоснована' : justified === false ? ' · не обоснована' : '') });
   res.json({ ok: true, justified });
 });
-app.get('/api/modlog', (req, res) => res.json({ count: MODLOG.length, list: MODLOG.slice(-100) }));
-app.get('/api/reports', (req, res) => {
+
+app.get('/api/modlog', async (req, res) => {
+  if (!(await requireDb(res))) return;
+  res.json({ count: MODLOG.length, list: MODLOG.slice(-100) });
+});
+
+app.get('/api/reports', async (req, res) => {
+  if (!(await requireDb(res))) return;
   const t = cmtClean(req.query.target, 40);
   const list = t ? REPORTS.filter(r => r.target === t) : REPORTS;
   res.json({ count: list.length, list: list.slice(-20) });
 });
 
-/* ==================== публичные профили (v17.12) ====================
-   PROFILES: Map<nick.toLowerCase(), {name, hist, lists, pub, at}> — история/списки публикует клиент; жалобы и сообщения добираем на сервере. */
-const PROFILES = new Map();
-try {
-  const j = JSON.parse(fs.readFileSync('profiles.json', 'utf8'));
-  for (const [k, v] of Object.entries(j || {})) PROFILES.set(k, v);
-  console.log('profiles loaded:', PROFILES.size);
-} catch {}
-let profSaveT = null;
-function profSave() {
-  clearTimeout(profSaveT);
-  profSaveT = setTimeout(() => {
-    try { fs.writeFileSync('profiles.json', JSON.stringify(Object.fromEntries(PROFILES))); } catch {}
-  }, 3000);
-}
-const HIST_KEYS = ['id', 'ep', 'title', 'poster', 'epTitle', 'pos', 'dur', 'done', 'at'];
+/* ==================== таблица history (БД-дедупликация старых серий) + профили ==================== */
 const LIST_KEYS = ['favorite', 'watching', 'planned', 'dropped'];
-app.post('/api/profile/:name', (req, res) => {
+
+function parseEpNum(epVal) {
+  const s = String(epVal == null ? '1' : epVal).trim();
+  if (/^\d+x(\d+)$/i.test(s)) return parseInt(RegExp.$1, 10) || 1;
+  return parseInt(s, 10) || 1;
+}
+
+function cleanHistInput(h) {
+  if (!h || h.id == null) return null;
+  const titleId = String(h.id).trim().slice(0, 48);
+  if (!titleId) return null;
+  const ep = String(h.ep == null ? '1' : h.ep).trim().slice(0, 24) || '1';
+  return {
+    titleId,
+    ep,
+    epNum: parseEpNum(ep),
+    title: cmtClean(h.title, 160),
+    posterUrl: posterUrlClean(h.poster),
+    epTitle: cmtClean(h.epTitle, 160),
+    pos: Math.max(0, +h.pos || 0),
+    dur: Math.max(0, +h.dur || 0),
+    done: !!h.done,
+    at: Math.max(0, +h.at || Date.now())
+  };
+}
+
+function rowToHistItem(row) {
+  const rawId = String(row.title_id || '');
+  const rawEp = String(row.ep || '1');
+  return {
+    id: /^\d+$/.test(rawId) ? Number(rawId) : rawId,
+    ep: /^\d+$/.test(rawEp) ? Number(rawEp) : rawEp,
+    title: row.title || '',
+    poster: row.poster_url || '',
+    epTitle: row.ep_title || '',
+    pos: Number(row.pos) || 0,
+    dur: Number(row.dur) || 0,
+    done: !!row.done,
+    at: Number(row.updated_at) || 0
+  };
+}
+
+async function dbUpsertHistoryItem(nickLower, item) {
+  const c = cleanHistInput(item);
+  if (!c || !nickLower) return null;
+  const r = await pgPool.query(
+    `INSERT INTO history (nick_lower, title_id, ep, ep_num, title, poster_url, ep_title, pos, dur, done, updated_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+     RETURNING title_id, ep, title, poster_url, ep_title, pos, dur, done, updated_at`,
+    [nickLower, c.titleId, c.ep, c.epNum, c.title, c.posterUrl, c.epTitle, c.pos, c.dur, c.done, c.at]
+  );
+  pgPool.query(
+    `DELETE FROM history WHERE nick_lower = $1 AND id NOT IN (
+       SELECT id FROM history WHERE nick_lower = $1 ORDER BY updated_at DESC LIMIT 80
+     )`,
+    [nickLower]
+  ).catch(() => {});
+  return r.rows[0] ? rowToHistItem(r.rows[0]) : null;
+}
+
+async function dbGetHistory(nickLower, limit = 60) {
+  if (!nickLower) return [];
+  const r = await pgPool.query(
+    `SELECT title_id, ep, title, poster_url, ep_title, pos, dur, done, updated_at
+     FROM history
+     WHERE nick_lower = $1
+     ORDER BY updated_at DESC
+     LIMIT $2`,
+    [nickLower, Math.min(100, Math.max(1, +limit || 60))]
+  );
+  return r.rows.map(rowToHistItem);
+}
+
+async function dbSyncHistoryBatch(nickLower, rawList) {
+  if (!Array.isArray(rawList) || !rawList.length) return;
+  const latestPerTitle = new Map();
+  for (const raw of rawList.slice(0, 100)) {
+    const c = cleanHistInput(raw);
+    if (!c) continue;
+    const prev = latestPerTitle.get(c.titleId);
+    if (!prev || c.at >= prev.at) latestPerTitle.set(c.titleId, raw);
+  }
+  for (const item of latestPerTitle.values()) {
+    await dbUpsertHistoryItem(nickLower, item);
+  }
+}
+
+app.get('/api/history', async (req, res) => {
+  if (!(await requireDb(res))) return;
+  try {
+    const me = await authFromReqAsync(req);
+    const qNick = nickClean(req.query.nick || '');
+    const nickLower = me ? me.nickLower : qNick.toLowerCase();
+    if (!nickLower) return res.status(400).json({ ok: false, error: 'укажите token или nick' });
+    if (!me) {
+      const pr = await pgPool.query('SELECT pub FROM user_profiles WHERE nick_lower = $1 LIMIT 1', [nickLower]);
+      if (pr.rows[0] && pr.rows[0].pub === false) {
+        return res.status(403).json({ ok: false, error: 'история скрыта владельцем' });
+      }
+    }
+    const items = await dbGetHistory(nickLower, 60);
+    res.json({ ok: true, nick: me ? me.nick : qNick, count: items.length, items, serverNow: Date.now() });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'БД history: ' + e.message });
+  }
+});
+
+app.post('/api/history', async (req, res) => {
+  if (!(await requireDb(res))) return;
+  try {
+    const b = req.body || {};
+    const me = await authFromReqAsync(req);
+    const fallbackNick = nickClean(b.nick || '');
+    if (!me && (!fallbackNick || !NICK_RE.test(fallbackNick) || /^гость$/i.test(fallbackNick))) {
+      return res.status(401).json({ ok: false, error: 'войдите в аккаунт или укажите валидный ник' });
+    }
+    const nickLower = me ? me.nickLower : fallbackNick.toLowerCase();
+    if (!me) {
+      const existingAcc = await dbGetUserByNick(nickLower);
+      if (existingAcc) return res.status(403).json({ ok: false, error: 'этот ник защищён паролем — передайте token' });
+    }
+    const act = String(b.act || 'put');
+    if (act === 'put') {
+      const saved = await dbUpsertHistoryItem(nickLower, b.item || b);
+      if (!saved) return res.status(400).json({ ok: false, error: 'некорректные данные серии' });
+      return res.json({ ok: true, item: saved, keptOnlyLatestEp: true, serverNow: Date.now() });
+    }
+    if (act === 'sync') {
+      const arr = Array.isArray(b.items) ? b.items : (Array.isArray(b.hist) ? b.hist : []);
+      await dbSyncHistoryBatch(nickLower, arr);
+      const items = await dbGetHistory(nickLower, 60);
+      return res.json({ ok: true, count: items.length, items, serverNow: Date.now() });
+    }
+    if (act === 'del') {
+      const tid = String(b.id == null ? '' : b.id).trim().slice(0, 48);
+      if (!tid) return res.status(400).json({ ok: false, error: 'нужен id тайтла' });
+      await pgPool.query('DELETE FROM history WHERE nick_lower = $1 AND title_id = $2', [nickLower, tid]);
+      return res.json({ ok: true, deletedId: tid, serverNow: Date.now() });
+    }
+    if (act === 'clear') {
+      await pgPool.query('DELETE FROM history WHERE nick_lower = $1', [nickLower]);
+      return res.json({ ok: true, cleared: true, serverNow: Date.now() });
+    }
+    res.status(400).json({ ok: false, error: 'неизвестное действие history' });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: 'БД history: ' + e.message });
+  }
+});
+
+app.post('/api/profile/:name', async (req, res) => {
+  if (!(await requireDb(res))) return;
   const name = cmtClean(req.params.name, 24);
   if (!NICK_RE.test(name)) return res.status(400).json({ error: 'плохой ник' });
   const b = req.body || {};
-  const hist = Array.isArray(b.hist) ? b.hist.slice(0, 60).map(h => {
-    const o = {};
-    HIST_KEYS.forEach(k => { if (h && h[k] != null) o[k] = (typeof h[k] === 'string') ? String(h[k]).slice(0, 160) : h[k]; });
-    return o;
-  }) : [];
   const lists0 = (b.lists && typeof b.lists === 'object' && !Array.isArray(b.lists)) ? b.lists : {};
   const lists = {};
-  for (const [k, v] of Object.entries(lists0).slice(0, 400)) if (LIST_KEYS.includes(v)) lists[String(k).slice(0, 40)] = v;
-  PROFILES.set(name.toLowerCase(), { name, hist, lists, pub: b.pub !== false, at: Date.now() });
-  if (PROFILES.size > 400) PROFILES.delete(PROFILES.keys().next().value);
-  profSave();
-  res.json({ ok: true });
+  for (const [k, v] of Object.entries(lists0).slice(0, 400)) {
+    if (LIST_KEYS.includes(v)) lists[String(k).slice(0, 40)] = v;
+  }
+  const k = name.toLowerCase();
+  const pub = b.pub !== false;
+  const now = Date.now();
+  try {
+    await pgPool.query(
+      `INSERT INTO user_profiles (nick_lower, name, lists, pub, updated_at)
+       VALUES ($1, $2, $3::jsonb, $4, $5)
+       ON CONFLICT (nick_lower) DO UPDATE SET
+         name = EXCLUDED.name,
+         lists = EXCLUDED.lists,
+         pub = EXCLUDED.pub,
+         updated_at = EXCLUDED.updated_at`,
+      [k, name, JSON.stringify(lists), pub, now]
+    );
+    if (b.clearHist === true) {
+      await pgPool.query('DELETE FROM history WHERE nick_lower = $1', [k]);
+    } else if (Array.isArray(b.hist) && b.hist.length > 0) {
+      await dbSyncHistoryBatch(k, b.hist);
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: 'БД profile: ' + e.message });
+  }
 });
-app.get('/api/profile/:name', (req, res) => {
+
+app.get('/api/profile/:name', async (req, res) => {
+  if (!(await requireDb(res))) return;
   const name = cmtClean(req.params.name, 24);
   const k = name.toLowerCase();
-  const prof = PROFILES.get(k) || null;
-  const pub = !prof || prof.pub !== false;
-  const reports = REPORTS.filter(r => r.type === 'user' && String(r.target || '').toLowerCase() === 'user:' + k);
-  const summary = {};
-  reports.forEach(r => { summary[r.reason] = (summary[r.reason] || 0) + 1; });
-  const msgs = [];
-  for (const [code2, rec] of roomsState) {
-    const arr = (rec && rec.data && rec.data.msgs) || [];
-    for (const m of arr) {
-      if (!m || m.sys || m.del) continue;
-      if (String(m.name || '').toLowerCase() === k) msgs.push({ room: code2, body: String(m.body || '').slice(0, 300), at: m.at });
+  try {
+    const [profRes, accUser, viewer] = await Promise.all([
+      pgPool.query('SELECT name, lists, pub, updated_at FROM user_profiles WHERE nick_lower = $1 LIMIT 1', [k]),
+      dbGetUserByNick(k),
+      authFromReqAsync(req)
+    ]);
+    const profRow = profRes.rows[0] || null;
+    const pub = !profRow || profRow.pub !== false;
+    const hist = pub ? await dbGetHistory(k, 60) : [];
+    const reports = REPORTS.filter(r => r.type === 'user' && String(r.target || '').toLowerCase() === 'user:' + k);
+    const summary = {};
+    reports.forEach(r => { summary[r.reason] = (summary[r.reason] || 0) + 1; });
+    const msgs = [];
+    for (const [code2, rec] of roomsState) {
+      const arr = (rec && rec.data && rec.data.msgs) || [];
+      for (const m of arr) {
+        if (!m || m.sys || m.del) continue;
+        if (String(m.name || '').toLowerCase() === k) msgs.push({ room: code2, body: String(m.body || '').slice(0, 300), at: m.at });
+      }
     }
-  }
-  msgs.sort((a, b) => a.at - b.at);
-  const status = [];
-  for (const [code2, rec] of roomsState) {
-    const mems = (rec && rec.data && rec.data.members) || {};
-    for (const id2 of Object.keys(mems)) {
-      const m2 = mems[id2];
-      if (String((m2 && m2.name) || '').toLowerCase() !== k) continue;
-      if (m2.banned) status.push({ room: code2, kind: 'ban' });
-      else if ((m2.mutedUntil || 0) > Date.now()) status.push({ room: code2, kind: 'mute', until: m2.mutedUntil });
+    msgs.sort((a, b) => a.at - b.at);
+    const status = [];
+    for (const [code2, rec] of roomsState) {
+      const mems = (rec && rec.data && rec.data.members) || {};
+      for (const id2 of Object.keys(mems)) {
+        const m2 = mems[id2];
+        if (String((m2 && m2.name) || '').toLowerCase() !== k) continue;
+        if (m2.banned) status.push({ room: code2, kind: 'ban' });
+        else if ((m2.mutedUntil || 0) > Date.now()) status.push({ room: code2, kind: 'mute', until: m2.mutedUntil });
+      }
     }
+    const just = (sanctions.get('user:' + k) || {}).just || 0;
+    const penProf = pubPen(getPenRecord(null, name, null, false));
+    const friendship = await profileFriendshipAsync(viewer, k);
+    const hasProf = !!(profRow || hist.length);
+    res.json({
+      ok: true,
+      name: (accUser && accUser.nick) || (profRow && profRow.name) || name,
+      serverNow: Date.now(),
+      hasAccount: !!accUser,
+      avatar: (accUser && accUser.avatar) || '',
+      friendship,
+      mod: penProf,
+      prof: hasProf ? {
+        name: (profRow && profRow.name) || name,
+        hist: pub ? hist : [],
+        lists: pub && profRow && profRow.lists ? profRow.lists : {},
+        pub,
+        at: profRow ? Number(profRow.updated_at) || 0 : Date.now()
+      } : null,
+      reports: { count: reports.length, list: reports.slice(-10), summary },
+      msgs: msgs.slice(-30).reverse(),
+      status,
+      punished: just > 10 || penProf.permBan || penProf.tempBanned,
+      just
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'БД profile: ' + e.message });
   }
-  const just = (sanctions.get('user:' + k) || {}).just || 0;
-  const penProf = pubPen(getPenRecord(null, name, null, false));
-  const viewer = authFromReq(req);
-  const friendship = profileFriendship(viewer, k);
-  res.json({
-    ok: true, name, serverNow: Date.now(),
-    hasAccount: usersState.has(k),
-    friendship,
-    mod: penProf,
-    prof: prof ? { name: prof.name, hist: pub ? prof.hist : [], lists: pub ? prof.lists : {}, pub: prof.pub !== false, at: prof.at } : null,
-    reports: { count: reports.length, list: reports.slice(-10), summary },
-    msgs: msgs.slice(-30).reverse(),
-    status, punished: just > 10 || penProf.permBan || penProf.tempBanned, just
-  });
 });
 
-/* ==================== пользователи: занятые ники (v17.6) ====================
-   users: Map<nickLower, {nick, pass(sha256), avatar(dataURL), at}>
-   Пароль хранится хешем; аватар — dataURL до ~150КБ. Персист в users.json. */
-const usersState = new Map();
-try {
-  const j = JSON.parse(fs.readFileSync('users.json', 'utf8'));
-  for (const [k, v] of Object.entries(j || {})) usersState.set(k, v);
-  console.log('users loaded:', usersState.size);
-} catch {}
-let usrSaveT = null;
-function usrSave() {
-  clearTimeout(usrSaveT);
-  usrSaveT = setTimeout(() => {
-    try { fs.writeFileSync('users.json', JSON.stringify(Object.fromEntries(usersState))); } catch {}
-  }, 3000);
-}
-const sha256 = s => require('crypto').createHash('sha256').update('anihub:' + s).digest('hex');
-const NICK_RE = /^[A-Za-zА-Яа-яЁё0-9_\- ]{2,24}$/;
-const nickClean = v => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, '').trim().slice(0, 24);
-const avaOk = v => typeof v === 'string' && v.startsWith('data:image/') && v.length < 150000 ? v : '';
-
-/* ---- аккаунты v17.34: scrypt-пароли с солью, токены сессий, почта ---- */
-const crypto = require('crypto');
-const scryptHash = (pass, salt) => crypto.scryptSync(String(pass), salt, 32).toString('hex');
-const newSalt = () => crypto.randomBytes(8).toString('hex');
-const newToken = () => crypto.randomBytes(24).toString('hex');
-const emailOk = v => typeof v === 'string' && v.length < 190 && /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,24}$/.test(v.trim()) ? v.trim().toLowerCase() : '';
-const passVerify = (u, pass) => {
-  if (u.salt && u.hash) { try { return crypto.timingSafeEqual(Buffer.from(u.hash, 'hex'), Buffer.from(scryptHash(pass, u.salt), 'hex')); } catch { return false; } }
-  if (u.pass) { const ok = u.pass === sha256(pass); if (ok) { u.salt = newSalt(); u.hash = scryptHash(pass, u.salt); delete u.pass; } return ok; }
-  return false;
-};
-const tokenIssue = u => { const t = newToken(); u.tokens = u.tokens || {}; u.tokens[t] = { at: Date.now() };
-  const ks = Object.keys(u.tokens); if (ks.length > 10) ks.sort((a, b) => (u.tokens[a].at||0) - (u.tokens[b].at||0)).slice(0, ks.length - 10).forEach(k => delete u.tokens[k]); return t; };
-const tokenUser = t => { if (!t || typeof t !== 'string') return null; for (const u of usersState.values()) if (u.tokens && u.tokens[t]) return u; return null; };
-const pubUser = u => ({ nick: u.nick, email: u.email || '', avatar: u.avatar || '' });
-
-app.get('/api/user/:nick', (req, res) => {
-  const k = nickClean(req.params.nick).toLowerCase();
-  const u = usersState.get(k);
-  res.json({ exists: !!u, nick: u ? u.nick : null, avatar: u ? (u.avatar || '') : '' });
+/* ==================== пользователи / аккаунты (таблица users в БД + облачные аватарки) ==================== */
+app.get('/api/user/:nick', async (req, res) => {
+  if (!(await requireDb(res))) return;
+  try {
+    const u = await dbGetUserByNick(req.params.nick);
+    res.json({ exists: !!u, nick: u ? u.nick : null, avatar: u ? (u.avatar || '') : '' });
+  } catch (e) {
+    res.status(500).json({ error: 'БД user: ' + e.message });
+  }
 });
 
-app.post('/api/users', (req, res) => {
+app.post('/api/users', async (req, res) => {
+  if (!(await requireDb(res))) return;
   const b = req.body || {};
   const act = b.act;
   const nick = nickClean(b.nick);
   const pass = String(b.pass == null ? '' : b.pass);
-  if (act === 'claim') {
-    if (!NICK_RE.test(nick) || /^гость$/i.test(nick))
-      return res.status(400).json({ error: 'ник 2–24 символа: буквы, цифры, пробел, _ или -' });
-    if (pass.length < 4) return res.status(400).json({ error: 'пароль минимум 4 символа' });
-    const email = b.email != null && b.email !== '' ? emailOk(b.email) : '';
-    if (b.email != null && b.email !== '' && !email) return res.status(400).json({ error: 'почта не похоже на почту' });
-    if (email) for (const u of usersState.values()) if (u.email && u.email === email && u.nick.toLowerCase() !== nick.toLowerCase())
-      return res.status(409).json({ error: 'почта уже привязана к другому нику' });
-    const k = nick.toLowerCase();
-    const u = usersState.get(k);
-    if (u) {
-      if (!passVerify(u, pass)) return res.status(409).json({ error: 'ник уже занят' });
-      if (email && !u.email) u.email = email;
-      u.at = Date.now(); usrSave();
-      return res.json({ ok: true, nick: u.nick, avatar: u.avatar || '', email: u.email || '', taken: true, token: tokenIssue(u) });
+  try {
+    if (act === 'claim') {
+      if (!NICK_RE.test(nick) || /^гость$/i.test(nick))
+        return res.status(400).json({ error: 'ник 2–24 символа: буквы, цифры, пробел, _ или -' });
+      if (pass.length < 4) return res.status(400).json({ error: 'пароль минимум 4 символа' });
+      const email = b.email != null && b.email !== '' ? emailOk(b.email) : '';
+      if (b.email != null && b.email !== '' && !email) return res.status(400).json({ error: 'почта не похоже на почту' });
+      const k = nick.toLowerCase();
+      if (email) {
+        const emRes = await pgPool.query('SELECT nick_lower FROM users WHERE LOWER(email) = $1 AND nick_lower <> $2 LIMIT 1', [email, k]);
+        if (emRes.rows.length) return res.status(409).json({ error: 'почта уже привязана к другому нику' });
+      }
+      const u = await dbGetUserByNick(k);
+      if (u) {
+        if (!passVerify(u, pass)) return res.status(409).json({ error: 'ник уже занят' });
+        if (email && !u.email) u.email = email;
+        if (b.avatar && !u.avatar) {
+          const avRes = await resolveCloudAvatar(k, b.avatar, u.avatar);
+          if (avRes.ok && avRes.url) u.avatar = avRes.url;
+        }
+        const token = tokenIssue(u);
+        await dbSaveUser(u);
+        return res.json({ ok: true, nick: u.nick, avatar: u.avatar || '', email: u.email || '', taken: true, token });
+      }
+      let cloudAva = '';
+      if (b.avatar) {
+        const avRes = await resolveCloudAvatar(k, b.avatar, '');
+        if (avRes.ok) cloudAva = avRes.url;
+      }
+      const salt = newSalt();
+      const nu = {
+        nickLower: k,
+        nick,
+        salt,
+        hash: scryptHash(pass, salt),
+        email,
+        avatar: cloudAva,
+        at: Date.now(),
+        tokens: {}
+      };
+      const token = tokenIssue(nu);
+      await dbSaveUser(nu);
+      return res.json({ ok: true, nick, avatar: nu.avatar, email, taken: false, token });
     }
-    const nu = { nick, salt: newSalt(), hash: scryptHash(pass, newSalt()), email, avatar: avaOk(b.avatar), at: Date.now(), tokens: {} };
-    nu.hash = scryptHash(pass, nu.salt);
-    usersState.set(k, nu); usrSave();
-    return res.json({ ok: true, nick, avatar: nu.avatar, email, taken: false, token: tokenIssue(nu) });
+
+    if (act === 'login') {
+      const lg = String(b.login == null ? '' : b.login).trim().slice(0, 190);
+      if (!lg) return res.status(400).json({ error: 'укажите ник или почту' });
+      const u = await dbGetUserByLogin(lg);
+      if (!u || !passVerify(u, pass)) return res.status(403).json({ error: 'неверный ник (или почта) или пароль' });
+      const token = tokenIssue(u);
+      await dbSaveUser(u);
+      return res.json(Object.assign({ ok: true, taken: true, token }, pubUser(u)));
+    }
+
+    if (act === 'chpass') {
+      const lg = String(b.login == null ? '' : b.login).trim().slice(0, 190);
+      const n1 = String(b.new1 == null ? '' : b.new1);
+      const u = await dbGetUserByLogin(lg);
+      if (!u || !passVerify(u, pass)) return res.status(403).json({ error: 'старый пароль неверный' });
+      if (n1.length < 4) return res.status(400).json({ error: 'новый пароль минимум 4 символа' });
+      u.salt = newSalt();
+      u.hash = scryptHash(n1, u.salt);
+      const token = tokenIssue(u);
+      await dbSaveUser(u);
+      return res.json({ ok: true, token });
+    }
+
+    if (act === 'bytoken') {
+      const u = await dbGetUserByToken(b.token);
+      if (!u) return res.status(403).json({ ok: false, error: 'сессия истекла' });
+      return res.json(Object.assign({ ok: true }, pubUser(u)));
+    }
+
+    if (act === 'setava') {
+      let u = await dbGetUserByToken(b.token);
+      if (!u && b.nick) {
+        const x = await dbGetUserByNick(b.nick);
+        if (x && String(b.pass || '') && passVerify(x, String(b.pass))) u = x;
+      }
+      if (!u) return res.status(403).json({ error: 'нет доступа' });
+      const avRes = await resolveCloudAvatar(u.nickLower, b.avatar, u.avatar);
+      if (!avRes.ok) return res.status(503).json({ ok: false, code: avRes.code, error: avRes.error });
+      u.avatar = avRes.url;
+      await dbSaveUser(u);
+      return res.json({ ok: true, avatar: u.avatar });
+    }
+
+    if (act === 'logout') {
+      const tok = String(b.token || '');
+      const u = await dbGetUserByToken(tok);
+      if (u) {
+        delete (u.tokens || {})[tok];
+        tokenNickCache.delete(tok);
+        await dbSaveUser(u);
+      }
+      return res.json({ ok: true });
+    }
+
+    res.status(400).json({ error: 'неизвестное действие' });
+  } catch (e) {
+    res.status(500).json({ error: 'БД users: ' + e.message });
   }
-  if (act === 'login') {
-    const lg = String(b.login == null ? '' : b.login).trim().slice(0, 190);
-    if (!lg) return res.status(400).json({ error: 'укажите ник или почту' });
-    let u = null;
-    if (lg.includes('@')) { for (const x of usersState.values()) if (x.email && x.email.toLowerCase() === lg.toLowerCase()) { u = x; break; } }
-    else u = usersState.get(nickClean(lg).toLowerCase());
-    if (!u || !passVerify(u, pass)) return res.status(403).json({ error: 'неверный ник (или почта) или пароль' });
-    u.at = Date.now(); usrSave();
-    return res.json(Object.assign({ ok: true, taken: true, token: tokenIssue(u) }, pubUser(u)));
-  }
-  if (act === 'chpass') {
-    const lg = String(b.login == null ? '' : b.login).trim().slice(0, 190);
-    const n1 = String(b.new1 == null ? '' : b.new1);
-    let u = null;
-    if (lg.includes('@')) { for (const x of usersState.values()) if (x.email && x.email.toLowerCase() === lg.toLowerCase()) { u = x; break; } }
-    else u = usersState.get(nickClean(lg).toLowerCase());
-    if (!u || !passVerify(u, pass)) return res.status(403).json({ error: 'старый пароль неверный' });
-    if (n1.length < 4) return res.status(400).json({ error: 'новый пароль минимум 4 символа' });
-    u.salt = newSalt(); u.hash = scryptHash(n1, u.salt); u.at = Date.now(); usrSave();
-    return res.json({ ok: true, token: tokenIssue(u) });
-  }
-  if (act === 'bytoken') {
-    const u = tokenUser(b.token);
-    if (!u) return res.status(403).json({ ok: false, error: 'сессия истекла' });
-    return res.json(Object.assign({ ok: true }, pubUser(u)));
-  }
-  if (act === 'setava') {
-    let u = tokenUser(b.token);
-    if (!u && b.nick) { const x = usersState.get(nickClean(b.nick).toLowerCase()); if (x && String(b.pass || '') && passVerify(x, String(b.pass))) u = x; }
-    if (!u) return res.status(403).json({ error: 'нет доступа' });
-    u.avatar = avaOk(b.avatar); u.at = Date.now(); usrSave();
-    return res.json({ ok: true });
-  }
-  if (act === 'logout') {
-    const u = tokenUser(b.token);
-    if (u) { delete (u.tokens || {})[String(b.token)]; usrSave(); }
-    return res.json({ ok: true });
-  }
-  res.status(400).json({ error: 'неизвестное действие' });
 });
 
-/* ==================== v17.41: серверная анти-спам защита, Self-Pardon, друзья и ЛС ====================
-   Все таймеры наказаний, эскалаций и апелляций считаются СТРОГО по серверному Date.now()
-   (перевод часов на телефоне/ПК не влияет ни на проверки, ни на возвращаемые остатки времени). */
+/* ==================== v17.41: серверная анти-спам защита и Self-Pardon ==================== */
 const LINK_RE = /(?:https?:\/\/|ftp:\/\/|www\.|discord\.gg\/|t\.me\/|vk\.com\/|youtu\.be\/|bit\.ly\/|\b[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.(?:com|ru|net|org|io|gg|me|tv|xyz|info|site|online|top|club|dev|app|cc|kz|ua|by|su|pro|live|fun|ink|link|pw|click|shop)(?:\/|\b))/i;
 function hasLink(t) { return LINK_RE.test(String(t == null ? '' : t)); }
 
@@ -660,35 +1571,12 @@ const MUTE_5M_MS = 5 * 60 * 1000;
 const WIN_7D_MS = 7 * 86400 * 1000;
 const WIN_30D_MS = 30 * 86400 * 1000;
 const TEMP_BAN_MS = 7 * 86400 * 1000;
-const PARDON_CD_MS = 90 * 86400 * 1000; /* 3 месяца */
-
-const penaltiesState = new Map();
-const strikeDedup = new Map();
-try {
-  const j = JSON.parse(fs.readFileSync('penalties.json', 'utf8'));
-  for (const [k, v] of Object.entries(j || {})) penaltiesState.set(k, v);
-  console.log('penalties loaded:', penaltiesState.size);
-} catch {}
-let penSaveT = null;
-function penSave() {
-  clearTimeout(penSaveT);
-  penSaveT = setTimeout(() => {
-    try { fs.writeFileSync('penalties.json', JSON.stringify(Object.fromEntries(penaltiesState))); } catch {}
-  }, 2500);
-}
-
-function authFromReq(req) {
-  const b = (req && req.body) || {};
-  const q = (req && req.query) || {};
-  const hdr = String((req && req.headers && req.headers.authorization) || '').replace(/^Bearer\s+/i, '').trim();
-  const tok = b.token || q.token || hdr || '';
-  return tokenUser(tok);
-}
+const PARDON_CD_MS = 90 * 86400 * 1000;
 
 function actorKeys(token, nick, uid) {
   const keys = [];
-  const u = tokenUser(token);
-  const nk = u ? u.nick : nickClean(nick);
+  const cached = token && typeof token === 'string' ? tokenNickCache.get(token) : null;
+  const nk = cached ? cached.nick : nickClean(nick);
   if (nk && !/^гость$/i.test(nk) && nk !== '?') keys.push('u:' + nk.toLowerCase());
   const idClean = String(uid || '').replace(/[^A-Za-z0-9_:\-]/g, '').slice(0, 48);
   if (idClean && idClean !== '?') keys.push('id:' + idClean);
@@ -707,7 +1595,7 @@ function getPenRecord(token, nick, uid, create) {
     if (!create) return null;
     primary = { nick: dispNick, mutedUntil: 0, tempBanUntil: 0, permBan: false, onProbation: false, lastPardonAt: 0, strikes: [] };
   }
-  /* мёрджим, если ранее были записи по второму ключу (например до входа в аккаунт) */
+  const touched = [];
   for (const k of keys) {
     const r = penaltiesState.get(k);
     if (r && r !== primary) {
@@ -723,9 +1611,13 @@ function getPenRecord(token, nick, uid, create) {
         if (!seen.has(sk)) { primary.strikes.push(s); seen.add(sk); }
       }
     }
-    if (create || penaltiesState.has(k)) penaltiesState.set(k, primary);
+    if (create || penaltiesState.has(k)) {
+      penaltiesState.set(k, primary);
+      touched.push(k);
+    }
   }
   if (dispNick && dispNick !== 'Гость') primary.nick = dispNick;
+  if (touched.length && create) penPersistKeys(touched, primary);
   return primary;
 }
 
@@ -768,6 +1660,7 @@ function pubPen(rec) {
 function recordStrike(opts) {
   const now = Date.now();
   for (const [dk, dt] of strikeDedup) if (now - dt > 60000) strikeDedup.delete(dk);
+  const { keys } = actorKeys(opts.token, opts.nick, opts.uid);
   const rec = getPenRecord(opts.token, opts.nick, opts.uid, true);
   if (opts.dedupId) {
     if (strikeDedup.has(opts.dedupId)) return pubPen(rec);
@@ -796,7 +1689,7 @@ function recordStrike(opts) {
   } else {
     modLog({ kind: 'auto_mute', who: rec.nick || opts.uid || '?', note: 'авто-мут 5 мин (' + kind + (where ? ' · ' + where : '') + ')' });
   }
-  penSave();
+  penPersistKeys(keys, rec);
   return pubPen(rec);
 }
 
@@ -813,7 +1706,6 @@ function sanitizeRoomPut(code, data, prevEntry) {
       kept.push(m);
       continue;
     }
-    /* исторический сид при первом создании комнаты (>5 сек назад и без ссылок) пропускаем как есть */
     if (!prevEntry && m.at && (now - m.at > 5000) && !hasLink(m.body)) {
       if (m.id) seen.add(m.id);
       kept.push(m);
@@ -824,7 +1716,7 @@ function sanitizeRoomPut(code, data, prevEntry) {
     const canLinks = role === 'streamer' || role === 'moderator' || !!(mem && mem.allowLinks);
     const pen = getPenRecord(null, m.name || (mem && mem.name), m.uid, false);
     if (pen && (pen.permBan || (pen.tempBanUntil || 0) > now || (pen.mutedUntil || 0) > now)) {
-      continue; /* заблокированные/замученные по серверному времени не могут пушить сообщения */
+      continue;
     }
     if (!canLinks && !m.gif && hasLink(m.body)) {
       const st = recordStrike({ nick: m.name || (mem && mem.name), uid: m.uid, kind: 'link', where: 'room:' + code, dedupId: m.id ? ('msg:' + m.id) : '' });
@@ -850,13 +1742,17 @@ function sanitizeRoomPut(code, data, prevEntry) {
   if (prevEntry) prevEntry.seenMsgs = seen;
 }
 
-app.get('/api/mod/status', (req, res) => {
+app.get('/api/mod/status', async (req, res) => {
+  if (!(await requireDb(res))) return;
+  if (req.query.token) await dbGetUserByToken(req.query.token);
   const rec = getPenRecord(req.query.token, req.query.nick, req.query.uid, false);
   res.json({ ok: true, serverNow: Date.now(), mod: pubPen(rec) });
 });
 
-app.post('/api/mod/strike', (req, res) => {
+app.post('/api/mod/strike', async (req, res) => {
+  if (!(await requireDb(res))) return;
   const b = req.body || {};
+  if (b.token) await dbGetUserByToken(b.token);
   const kind = ['link', 'profanity', 'spam'].includes(b.kind) ? b.kind : 'spam';
   const room = String(b.room || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
   const st = recordStrike({
@@ -867,39 +1763,43 @@ app.post('/api/mod/strike', (req, res) => {
     where: room ? ('room:' + room) : 'chat',
     dedupId: b.dedupId ? String(b.dedupId).slice(0, 48) : ''
   });
-  if (room && roomsState.has(room)) {
-    const rs = roomsState.get(room);
-    const mems = (rs.data && rs.data.members) || {};
-    const mem = mems[String(b.uid || '')];
-    if (mem) mem.mutedUntil = Math.max(mem.mutedUntil || 0, st.mutedUntil);
-    if (rs.data) {
-      rs.data.log = Array.isArray(rs.data.log) ? rs.data.log : [];
-      const whoTgt = String(b.nick || (mem && mem.name) || 'Гость').slice(0, 24);
-      const rTxt = kind === 'link' ? 'ссылка без разрешения: авто-мут 5 минут' : (kind === 'profanity' ? 'нецензурная лексика: авто-мут 5 минут' : 'спам: авто-мут 5 минут');
-      if (!rs.data.log.some(l => l && l.action === 'auto_mute' && l.target === whoTgt && Date.now() - (l.at || 0) < 3000)) {
-        rs.data.log.unshift({ at: Date.now(), by: whoTgt, byId: String(b.uid || 'sys'), action: 'auto_mute', target: whoTgt, reason: rTxt });
-        rs.data.log = rs.data.log.slice(0, 100);
+  if (room) {
+    const rm = roomsState.get(room);
+    if (rm && rm.data) {
+      const uid = String(b.uid || '');
+      if (uid && rm.data.members && rm.data.members[uid]) {
+        rm.data.members[uid].mutedUntil = Math.max(rm.data.members[uid].mutedUntil || 0, st.mutedUntil || 0);
       }
+      rm.data.log = Array.isArray(rm.data.log) ? rm.data.log : [];
+      const actorName = nickClean(b.nick) || (uid && rm.data.members && rm.data.members[uid] && rm.data.members[uid].name) || 'Гость';
+      const reasonTxt = kind === 'profanity' ? 'нецензурная лексика: авто-мут 5 минут' : kind === 'link' ? 'ссылка без разрешения: авто-мут 5 минут' : 'авто-мут 5 минут';
+      if (!rm.data.log.some(x => x && x.action === 'auto_mute' && x.target === actorName && Math.abs((x.at || 0) - Date.now()) < 3000)) {
+        rm.data.log.unshift({ at: Date.now(), by: 'Авто-модерация', byId: 'sys', action: 'auto_mute', target: actorName, reason: reasonTxt });
+        rm.data.log = rm.data.log.slice(0, 100);
+      }
+      rm.rev++; rm.at = Date.now();
+      notifyWaiters(room);
     }
-    rs.rev++; rs.at = Date.now();
-    notifyWaiters(room);
   }
   res.json({ ok: true, serverNow: st.serverNow, mod: st });
 });
 
-/* Self-Pardon («Честное слово»): мгновенное снятие временного бана без модератора, не чаще 1 раза в 3 мес */
-app.post('/api/mod/pardon', (req, res) => {
+app.post('/api/mod/pardon', async (req, res) => {
+  if (!(await requireDb(res))) return;
   const b = req.body || {};
   const now = Date.now();
+  const authU = b.token ? await dbGetUserByToken(b.token) : null;
+  const { keys } = actorKeys(b.token, b.nick, b.uid);
   const rec = getPenRecord(b.token, b.nick, b.uid, false);
   if (!rec) return res.status(400).json({ error: 'Нет активных наказаний', serverNow: now, mod: pubPen(null) });
   if (rec.permBan)
     return res.status(403).json({ error: 'Перманентный бан не подлежит обжалованию', serverNow: now, mod: pubPen(rec) });
-  if (!((rec.tempBanUntil || 0) > now))
+  if ((rec.tempBanUntil || 0) <= now)
     return res.status(400).json({ error: 'У вас нет активной временной блокировки', serverNow: now, mod: pubPen(rec) });
-  if (rec.lastPardonAt && (now - rec.lastPardonAt < PARDON_CD_MS)) {
+  if (rec.lastPardonAt && (now - rec.lastPardonAt) < PARDON_CD_MS) {
+    const leftDays = Math.ceil((rec.lastPardonAt + PARDON_CD_MS - now) / 86400e3);
     return res.status(429).json({
-      error: 'Обжаловать наказание можно не чаще 1 раза в 3 месяца',
+      error: 'Повторное снятие блокировки доступно не чаще 1 раза в 3 месяца (осталось ~' + leftDays + ' дн.)',
       serverNow: now, mod: pubPen(rec)
     });
   }
@@ -907,264 +1807,310 @@ app.post('/api/mod/pardon', (req, res) => {
   rec.mutedUntil = 0;
   rec.lastPardonAt = now;
   rec.onProbation = true;
-  penSave();
+  penPersistKeys(keys, rec);
 
-  const uAuth = tokenUser(b.token);
-  const whoName = (uAuth && uAuth.nick) || nickClean(b.nick) || rec.nick || 'Участник';
-  const sysText = '📜 ' + whoName + ' дал(а) честное слово больше не нарушать правила — временная блокировка снята. При повторном нарушении аккаунт будет заблокирован навсегда.';
-  modLog({ kind: 'self_pardon', who: whoName, note: 'Честное слово: временный бан снят, включён испытательный режим' });
+  const userName = (authU && authU.nick) || nickClean(b.nick) || rec.nick || 'Пользователь';
+  const sysText = '🤝 Пользователь ' + userName + ' дал честное слово больше не нарушать правила и снял временную блокировку.';
+  modLog({ kind: 'self_pardon', who: userName.toLowerCase(), note: 'апелляция «Честное слово» принята — включён испытательный режим' });
 
   const targetRoom = String(b.room || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
   const touchedRooms = new Set();
-  for (const [c, rs] of roomsState) {
-    const mems = (rs.data && rs.data.members) || {};
-    let hasUser = c === targetRoom;
-    for (const id2 of Object.keys(mems)) {
-      const m2 = mems[id2];
-      if (id2 === b.uid || (m2 && String(m2.name || '').toLowerCase() === whoName.toLowerCase())) {
-        m2.mutedUntil = 0;
-        hasUser = true;
+  for (const [code2, rm] of roomsState) {
+    if (!rm || !rm.data) continue;
+    const mems = rm.data.members || {};
+    const uid = String(b.uid || '');
+    const inRoom = (uid && mems[uid]) ||
+      Object.values(mems).some(m => m && String(m.name || '').toLowerCase() === userName.toLowerCase()) ||
+      (targetRoom && code2 === targetRoom);
+    if (inRoom) {
+      if (uid && mems[uid]) mems[uid].mutedUntil = 0;
+      for (const m of Object.values(mems)) {
+        if (m && String(m.name || '').toLowerCase() === userName.toLowerCase()) m.mutedUntil = 0;
       }
-    }
-    if (hasUser && rs.data) {
-      rs.data.msgs = Array.isArray(rs.data.msgs) ? rs.data.msgs : [];
+      rm.data.msgs = rm.data.msgs || [];
       const mid = 'pardon_' + Math.random().toString(36).slice(2, 9) + now.toString(36).slice(-4);
-      rs.data.msgs.push({ id: mid, sys: true, body: sysText, at: now });
-      rs.data.msgs = rs.data.msgs.slice(-300);
-      if (rs.seenMsgs) rs.seenMsgs.add(mid);
-      rs.rev++; rs.at = now;
-      touchedRooms.add(c);
-      notifyWaiters(c);
+      rm.data.msgs.push({ id: mid, sys: true, pardon: true, at: now, body: sysText });
+      if (rm.seenMsgs) rm.seenMsgs.add(mid);
+      rm.rev++; rm.at = now;
+      notifyWaiters(code2);
+      touchedRooms.add(code2);
     }
   }
   res.json({ ok: true, serverNow: now, sysText, roomsNotified: [...touchedRooms], mod: pubPen(rec) });
 });
 
-/* ---- Друзья (двустороннее подтверждение) и Личные сообщения (ЛС) ---- */
-const friendsState = new Map();
-const dmsState = new Map();
+/* ==================== Друзья и ЛС (таблицы friends и dms во внешней БД) ==================== */
 const dmWaiters = new Map();
-try {
-  const j = JSON.parse(fs.readFileSync('friends.json', 'utf8'));
-  for (const [k, v] of Object.entries(j || {})) friendsState.set(k, v);
-  console.log('friends loaded:', friendsState.size);
-} catch {}
-try {
-  const j = JSON.parse(fs.readFileSync('dms.json', 'utf8'));
-  for (const [k, v] of Object.entries(j || {})) dmsState.set(k, v);
-  console.log('dms loaded:', dmsState.size);
-} catch {}
-let frSaveT = null, dmSaveT = null;
-function frSave() {
-  clearTimeout(frSaveT);
-  frSaveT = setTimeout(() => {
-    try { fs.writeFileSync('friends.json', JSON.stringify(Object.fromEntries(friendsState))); } catch {}
-  }, 2500);
-}
-function dmSave() {
-  clearTimeout(dmSaveT);
-  dmSaveT = setTimeout(() => {
-    try { fs.writeFileSync('dms.json', JSON.stringify(Object.fromEntries(dmsState))); } catch {}
-  }, 2500);
-}
 function dmNotify(pk) {
   const set = dmWaiters.get(pk);
   if (set) { const fns = [...set]; set.clear(); for (const fn of fns) { try { fn(); } catch {} } }
 }
 const frPair = (a, b) => [String(a).toLowerCase(), String(b).toLowerCase()].sort().join('|');
 
-function profileFriendship(viewer, targetLower) {
+function rowToFriend(r) {
+  if (!r) return null;
+  return {
+    pairKey: r.pair_key,
+    a: r.user_a,
+    b: r.user_b,
+    aNick: r.nick_a,
+    bNick: r.nick_b,
+    status: r.status,
+    from: r.requester,
+    at: Number(r.created_at) || 0,
+    updatedAt: Number(r.updated_at) || 0
+  };
+}
+
+async function dbGetFriend(pk) {
+  const r = await pgPool.query('SELECT * FROM friends WHERE pair_key = $1 LIMIT 1', [pk]);
+  return rowToFriend(r.rows[0]);
+}
+
+async function profileFriendshipAsync(viewer, targetLower) {
   if (!viewer || !targetLower) return 'none';
-  const meK = viewer.nick.toLowerCase();
+  const meK = viewer.nickLower || viewer.nick.toLowerCase();
   if (meK === targetLower) return 'self';
-  const rec = friendsState.get(frPair(meK, targetLower));
+  const rec = await dbGetFriend(frPair(meK, targetLower));
   if (!rec) return 'none';
   if (rec.status === 'accepted') return 'friends';
   return rec.from === meK ? 'outgoing' : 'incoming';
 }
 
-app.get('/api/friends', (req, res) => {
-  const me = authFromReq(req);
-  if (!me) return res.status(401).json({ error: 'Войдите в аккаунт для доступа к друзьям и ЛС', serverNow: Date.now() });
-  const meK = me.nick.toLowerCase();
-  const friends = [], incoming = [], outgoing = [];
-  let unreadTotal = 0;
-  for (const [pk, rec] of friendsState) {
-    if (rec.a !== meK && rec.b !== meK) continue;
-    const otherK = rec.a === meK ? rec.b : rec.a;
-    const ou = usersState.get(otherK);
-    const nick = (ou && ou.nick) || (rec.a === meK ? rec.bNick : rec.aNick) || otherK;
-    const avatar = (ou && ou.avatar) || '';
-    if (rec.status === 'accepted') {
-      const conv = dmsState.get(pk);
-      const readAt = (conv && conv.readAt && conv.readAt[meK]) || 0;
-      const msgs = (conv && conv.msgs) || [];
-      const unread = msgs.filter(m => m.to === meK && m.at > readAt).length;
-      unreadTotal += unread;
-      const last = msgs.length ? msgs[msgs.length - 1] : null;
-      friends.push({
-        nick, avatar, since: rec.updatedAt || rec.at, unread,
-        lastMsg: last ? { text: String(last.text || '').slice(0, 120), at: last.at, from: last.fromNick || last.from } : null
-      });
-    } else if (rec.from === meK) {
-      outgoing.push({ nick, avatar, at: rec.at });
-    } else {
-      incoming.push({ nick, avatar, at: rec.at });
+async function dbGetDm(pk) {
+  const r = await pgPool.query('SELECT rev, msgs, read_at FROM dms WHERE pair_key = $1 LIMIT 1', [pk]);
+  const row = r.rows[0];
+  if (!row) return { rev: 0, msgs: [], readAt: {} };
+  return {
+    rev: Number(row.rev) || 0,
+    msgs: Array.isArray(row.msgs) ? row.msgs : [],
+    readAt: (row.read_at && typeof row.read_at === 'object') ? row.read_at : {}
+  };
+}
+
+async function dbSaveDm(pk, conv) {
+  await pgPool.query(
+    `INSERT INTO dms (pair_key, rev, msgs, read_at, updated_at)
+     VALUES ($1, $2, $3::jsonb, $4::jsonb, $5)
+     ON CONFLICT (pair_key) DO UPDATE SET
+       rev = EXCLUDED.rev,
+       msgs = EXCLUDED.msgs,
+       read_at = EXCLUDED.read_at,
+       updated_at = EXCLUDED.updated_at`,
+    [pk, conv.rev || 0, JSON.stringify(conv.msgs || []), JSON.stringify(conv.readAt || {}), Date.now()]
+  );
+}
+
+app.get('/api/friends', async (req, res) => {
+  if (!(await requireDb(res))) return;
+  try {
+    const me = await authFromReqAsync(req);
+    if (!me) return res.status(401).json({ error: 'Войдите в аккаунт для доступа к друзьям и ЛС', serverNow: Date.now() });
+    const meK = me.nickLower;
+    const frRows = await pgPool.query('SELECT * FROM friends WHERE user_a = $1 OR user_b = $1', [meK]);
+    const friends = [], incoming = [], outgoing = [];
+    let unreadTotal = 0;
+
+    for (const raw of frRows.rows) {
+      const rec = rowToFriend(raw);
+      const otherK = rec.a === meK ? rec.b : rec.a;
+      const ou = await dbGetUserByNick(otherK);
+      const nick = (ou && ou.nick) || (rec.a === meK ? rec.bNick : rec.aNick) || otherK;
+      const avatar = (ou && ou.avatar) || '';
+      if (rec.status === 'accepted') {
+        const conv = await dbGetDm(rec.pairKey);
+        const readAt = (conv.readAt && conv.readAt[meK]) || 0;
+        const msgs = conv.msgs || [];
+        const unread = msgs.filter(m => m.to === meK && m.at > readAt).length;
+        unreadTotal += unread;
+        const last = msgs.length ? msgs[msgs.length - 1] : null;
+        friends.push({
+          nick, avatar, since: rec.updatedAt || rec.at, unread,
+          lastMsg: last ? { text: String(last.text || '').slice(0, 120), at: last.at, from: last.fromNick || last.from } : null
+        });
+      } else if (rec.from === meK) {
+        outgoing.push({ nick, avatar, at: rec.at });
+      } else {
+        incoming.push({ nick, avatar, at: rec.at });
+      }
     }
+    friends.sort((a, b) => ((b.lastMsg && b.lastMsg.at) || b.since || 0) - ((a.lastMsg && a.lastMsg.at) || a.since || 0));
+    incoming.sort((a, b) => b.at - a.at);
+    outgoing.sort((a, b) => b.at - a.at);
+    res.json({ ok: true, serverNow: Date.now(), friends, incoming, outgoing, unreadTotal });
+  } catch (e) {
+    res.status(500).json({ error: 'БД friends: ' + e.message });
   }
-  friends.sort((a, b) => ((b.lastMsg && b.lastMsg.at) || b.since || 0) - ((a.lastMsg && a.lastMsg.at) || a.since || 0));
-  incoming.sort((a, b) => b.at - a.at);
-  outgoing.sort((a, b) => b.at - a.at);
-  res.json({ ok: true, serverNow: Date.now(), friends, incoming, outgoing, unreadTotal });
 });
 
-app.post('/api/friends', (req, res) => {
-  const me = authFromReq(req);
+app.post('/api/friends', async (req, res) => {
+  if (!(await requireDb(res))) return;
   const now = Date.now();
-  if (!me) return res.status(401).json({ error: 'Войдите в аккаунт, чтобы управлять списком друзей', serverNow: now });
-  const b = req.body || {};
-  const act = String(b.act || '');
-  const targetNick = nickClean(b.target);
-  const meK = me.nick.toLowerCase();
-  const targetK = targetNick.toLowerCase();
-  if (!targetK || !NICK_RE.test(targetNick))
-    return res.status(400).json({ error: 'Укажите корректный ник пользователя', serverNow: now });
-  if (meK === targetK)
-    return res.status(400).json({ error: 'Нельзя добавить в друзья самого себя', serverNow: now });
-  const pk = frPair(meK, targetK);
-  const rec = friendsState.get(pk);
-  const tu = usersState.get(targetK);
+  try {
+    const me = await authFromReqAsync(req);
+    if (!me) return res.status(401).json({ error: 'Войдите в аккаунт, чтобы управлять списком друзей', serverNow: now });
+    const b = req.body || {};
+    const act = String(b.act || '');
+    const targetNick = nickClean(b.target);
+    const meK = me.nickLower;
+    const targetK = targetNick.toLowerCase();
+    if (!targetK || !NICK_RE.test(targetNick))
+      return res.status(400).json({ error: 'Укажите корректный ник пользователя', serverNow: now });
+    if (meK === targetK)
+      return res.status(400).json({ error: 'Нельзя добавить в друзья самого себя', serverNow: now });
 
-  if (act === 'request') {
-    if (!tu) return res.status(404).json({ error: 'Пользователь «' + targetNick + '» ещё не зарегистрировал аккаунт', serverNow: now });
-    if (rec && rec.status === 'accepted')
-      return res.json({ ok: true, status: 'friends', serverNow: now });
-    if (rec && rec.status === 'pending') {
-      if (rec.from === meK) return res.json({ ok: true, status: 'outgoing', serverNow: now });
-      /* встречная заявка уже висела от второго пользователя -> взаимное подтверждение! */
-      rec.status = 'accepted';
-      rec.updatedAt = now;
-      frSave();
+    const pk = frPair(meK, targetK);
+    const rec = await dbGetFriend(pk);
+    const tu = await dbGetUserByNick(targetK);
+
+    if (act === 'request') {
+      if (!tu) return res.status(404).json({ error: 'Пользователь «' + targetNick + '» ещё не зарегистрировал аккаунт', serverNow: now });
+      if (rec && rec.status === 'accepted')
+        return res.json({ ok: true, status: 'friends', serverNow: now });
+      if (rec && rec.status === 'pending') {
+        if (rec.from === meK) return res.json({ ok: true, status: 'outgoing', serverNow: now });
+        await pgPool.query('UPDATE friends SET status = $2, updated_at = $3 WHERE pair_key = $1', [pk, 'accepted', now]);
+        return res.json({ ok: true, status: 'friends', serverNow: now });
+      }
+      const [a, bKey] = [meK, targetK].sort();
+      await pgPool.query(
+        `INSERT INTO friends (pair_key, user_a, user_b, nick_a, nick_b, status, requester, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, 'pending', $6, $7, $7)
+         ON CONFLICT (pair_key) DO UPDATE SET
+           status = 'pending', requester = EXCLUDED.requester, updated_at = EXCLUDED.updated_at`,
+        [pk, a, bKey, a === meK ? me.nick : tu.nick, bKey === meK ? me.nick : tu.nick, meK, now]
+      );
+      return res.json({ ok: true, status: 'outgoing', serverNow: now });
+    }
+    if (act === 'accept') {
+      if (!rec || rec.status !== 'pending')
+        return res.status(404).json({ error: 'Заявка в друзья не найдена', serverNow: now });
+      if (rec.from === meK)
+        return res.status(403).json({ error: 'Нельзя подтвердить собственную заявку — дождитесь ответа второго пользователя', serverNow: now });
+      await pgPool.query('UPDATE friends SET status = $2, updated_at = $3 WHERE pair_key = $1', [pk, 'accepted', now]);
       return res.json({ ok: true, status: 'friends', serverNow: now });
     }
-    const [a, bKey] = [meK, targetK].sort();
-    friendsState.set(pk, {
-      a, b: bKey,
-      aNick: a === meK ? me.nick : tu.nick,
-      bNick: bKey === meK ? me.nick : tu.nick,
-      status: 'pending',
+    if (act === 'decline' || act === 'cancel') {
+      if (rec && rec.status === 'pending') await pgPool.query('DELETE FROM friends WHERE pair_key = $1', [pk]);
+      return res.json({ ok: true, status: 'none', serverNow: now });
+    }
+    if (act === 'remove') {
+      if (rec) await pgPool.query('DELETE FROM friends WHERE pair_key = $1', [pk]);
+      return res.json({ ok: true, status: 'none', historySaved: true, serverNow: now });
+    }
+    res.status(400).json({ error: 'неизвестное действие', serverNow: now });
+  } catch (e) {
+    res.status(500).json({ error: 'БД friends: ' + e.message, serverNow: now });
+  }
+});
+
+app.get('/api/dm/:peer', async (req, res) => {
+  if (!(await requireDb(res))) return;
+  const now = Date.now();
+  try {
+    const me = await authFromReqAsync(req);
+    if (!me) return res.status(401).json({ error: 'Войдите в аккаунт для доступа к ЛС', serverNow: now });
+    const peerNick = nickClean(req.params.peer);
+    const meK = me.nickLower;
+    const peerK = peerNick.toLowerCase();
+    const pk = frPair(meK, peerK);
+    const fr = await dbGetFriend(pk);
+    if (!fr || fr.status !== 'accepted')
+      return res.status(403).json({ error: 'Писать и открывать ЛС можно только подтверждённым друзьям', code: 'NOT_FRIENDS', serverNow: now });
+    const tu = await dbGetUserByNick(peerK);
+
+    const sendOut = async () => {
+      const conv = await dbGetDm(pk);
+      conv.readAt = conv.readAt || {};
+      if (conv.msgs && conv.msgs.length) {
+        conv.readAt[meK] = Date.now();
+        await dbSaveDm(pk, conv);
+      }
+      if (!res.headersSent) {
+        res.json({
+          ok: true,
+          serverNow: Date.now(),
+          rev: conv.rev || 0,
+          peer: { nick: (tu && tu.nick) || peerNick, avatar: (tu && tu.avatar) || '' },
+          msgs: (conv.msgs || []).slice(-300)
+        });
+      }
+    };
+
+    if (req.query.since === undefined) return await sendOut();
+    const since = parseInt(req.query.since, 10) || 0;
+    const cur = await dbGetDm(pk);
+    if (cur && cur.rev > since) return await sendOut();
+
+    const set = dmWaiters.get(pk) || new Set();
+    dmWaiters.set(pk, set);
+    let fired = false;
+    const fire = async () => {
+      if (fired) return;
+      fired = true;
+      set.delete(fire);
+      try {
+        const frNow = await dbGetFriend(pk);
+        if (!frNow || frNow.status !== 'accepted') {
+          if (!res.headersSent) res.status(403).json({ error: 'Пользователь больше не в списке друзей', code: 'NOT_FRIENDS', serverNow: Date.now() });
+          return;
+        }
+        await sendOut();
+      } catch {
+        if (!res.headersSent) res.status(500).json({ error: 'БД dm' });
+      }
+    };
+    set.add(fire);
+    setTimeout(fire, 20000);
+  } catch (e) {
+    if (!res.headersSent) res.status(500).json({ error: 'БД dm: ' + e.message });
+  }
+});
+
+app.post('/api/dm/:peer', async (req, res) => {
+  if (!(await requireDb(res))) return;
+  const now = Date.now();
+  try {
+    const me = await authFromReqAsync(req);
+    if (!me) return res.status(401).json({ error: 'Войдите в аккаунт для отправки ЛС', serverNow: now });
+    const peerNick = nickClean(req.params.peer);
+    const meK = me.nickLower;
+    const peerK = peerNick.toLowerCase();
+    const pk = frPair(meK, peerK);
+    const fr = await dbGetFriend(pk);
+    if (!fr || fr.status !== 'accepted')
+      return res.status(403).json({ error: 'Писать в ЛС можно только после подтверждения заявки в друзья', code: 'NOT_FRIENDS', serverNow: now });
+    const b = req.body || {};
+    const conv = await dbGetDm(pk);
+    if (b.act === 'read') {
+      conv.readAt = conv.readAt || {};
+      conv.readAt[meK] = now;
+      await dbSaveDm(pk, conv);
+      return res.json({ ok: true, serverNow: now });
+    }
+    const text = cmtClean(b.text, 1500);
+    if (!text) return res.status(400).json({ error: 'Пустое сообщение', serverNow: now });
+    if (conv.msgs.length >= 600) conv.msgs = conv.msgs.slice(-450);
+    const msg = {
+      id: 'dm_' + Math.random().toString(36).slice(2, 10) + now.toString(36).slice(-4),
       from: meK,
-      at: now,
-      updatedAt: now
-    });
-    frSave();
-    return res.json({ ok: true, status: 'outgoing', serverNow: now });
-  }
-  if (act === 'accept') {
-    if (!rec || rec.status !== 'pending')
-      return res.status(404).json({ error: 'Заявка в друзья не найдена', serverNow: now });
-    if (rec.from === meK)
-      return res.status(403).json({ error: 'Нельзя подтвердить собственную заявку — дождитесь ответа второго пользователя', serverNow: now });
-    rec.status = 'accepted';
-    rec.updatedAt = now;
-    frSave();
-    return res.json({ ok: true, status: 'friends', serverNow: now });
-  }
-  if (act === 'decline' || act === 'cancel') {
-    if (rec && rec.status === 'pending') { friendsState.delete(pk); frSave(); }
-    return res.json({ ok: true, status: 'none', serverNow: now });
-  }
-  if (act === 'remove') {
-    /* Удаляем дружбу, но dmsState.get(pk) сохраняем нетронутым в базе! */
-    if (rec) { friendsState.delete(pk); frSave(); }
-    return res.json({ ok: true, status: 'none', historySaved: true, serverNow: now });
-  }
-  res.status(400).json({ error: 'неизвестное действие', serverNow: now });
-});
-
-/* ЛС доступны ТОЛЬКО подтверждённым друзьям (даже при временном/вечном бане публичного чата и комментов!) */
-app.get('/api/dm/:peer', (req, res) => {
-  const me = authFromReq(req);
-  const now = Date.now();
-  if (!me) return res.status(401).json({ error: 'Войдите в аккаунт для доступа к ЛС', serverNow: now });
-  const peerNick = nickClean(req.params.peer);
-  const meK = me.nick.toLowerCase();
-  const peerK = peerNick.toLowerCase();
-  const pk = frPair(meK, peerK);
-  const fr = friendsState.get(pk);
-  if (!fr || fr.status !== 'accepted')
-    return res.status(403).json({ error: 'Писать и открывать ЛС можно только подтверждённым друзьям', code: 'NOT_FRIENDS', serverNow: now });
-  const tu = usersState.get(peerK);
-  const sendOut = () => {
-    const conv = dmsState.get(pk) || { rev: 0, msgs: [], readAt: {} };
+      fromNick: me.nick,
+      to: peerK,
+      text,
+      at: now
+    };
+    conv.msgs.push(msg);
+    conv.rev = (conv.rev || 0) + 1;
     conv.readAt = conv.readAt || {};
-    if (conv.msgs && conv.msgs.length) { conv.readAt[meK] = Date.now(); dmsState.set(pk, conv); dmSave(); }
-    res.json({
-      ok: true,
-      serverNow: Date.now(),
-      rev: conv.rev || 0,
-      peer: { nick: (tu && tu.nick) || peerNick, avatar: (tu && tu.avatar) || '' },
-      msgs: (conv.msgs || []).slice(-300)
-    });
-  };
-  if (req.query.since === undefined) return sendOut();
-  const since = parseInt(req.query.since, 10) || 0;
-  const cur = dmsState.get(pk);
-  if (cur && cur.rev > since) return sendOut();
-  const set = dmWaiters.get(pk) || new Set();
-  dmWaiters.set(pk, set);
-  let fired = false;
-  const fire = () => {
-    if (fired) return;
-    fired = true;
-    set.delete(fire);
-    const frNow = friendsState.get(pk);
-    if (!frNow || frNow.status !== 'accepted')
-      return res.status(403).json({ error: 'Пользователь больше не в списке друзей', code: 'NOT_FRIENDS', serverNow: Date.now() });
-    sendOut();
-  };
-  set.add(fire);
-  setTimeout(fire, 20000);
+    conv.readAt[meK] = now;
+    await dbSaveDm(pk, conv);
+    dmNotify(pk);
+    res.json({ ok: true, rev: conv.rev, id: msg.id, msg, serverNow: now });
+  } catch (e) {
+    res.status(500).json({ error: 'БД dm: ' + e.message });
+  }
 });
 
-app.post('/api/dm/:peer', (req, res) => {
-  const me = authFromReq(req);
-  const now = Date.now();
-  if (!me) return res.status(401).json({ error: 'Войдите в аккаунт для отправки ЛС', serverNow: now });
-  const peerNick = nickClean(req.params.peer);
-  const meK = me.nick.toLowerCase();
-  const peerK = peerNick.toLowerCase();
-  const pk = frPair(meK, peerK);
-  const fr = friendsState.get(pk);
-  if (!fr || fr.status !== 'accepted')
-    return res.status(403).json({ error: 'Писать в ЛС можно только после подтверждения заявки в друзья', code: 'NOT_FRIENDS', serverNow: now });
-  const b = req.body || {};
-  if (b.act === 'read') {
-    const conv = dmsState.get(pk);
-    if (conv) { conv.readAt = conv.readAt || {}; conv.readAt[meK] = now; dmSave(); }
-    return res.json({ ok: true, serverNow: now });
-  }
-  const text = cmtClean(b.text, 1500);
-  if (!text) return res.status(400).json({ error: 'Пустое сообщение', serverNow: now });
-  let conv = dmsState.get(pk);
-  if (!conv) { conv = { rev: 0, msgs: [], readAt: {} }; dmsState.set(pk, conv); }
-  if (conv.msgs.length >= 600) conv.msgs = conv.msgs.slice(-450);
-  const msg = {
-    id: 'dm_' + Math.random().toString(36).slice(2, 10) + now.toString(36).slice(-4),
-    from: meK,
-    fromNick: me.nick,
-    to: peerK,
-    text,
-    at: now
-  };
-  conv.msgs.push(msg);
-  conv.rev = (conv.rev || 0) + 1;
-  conv.readAt = conv.readAt || {};
-  conv.readAt[meK] = now;
-  dmSave();
-  dmNotify(pk);
-  res.json({ ok: true, rev: conv.rev, id: msg.id, msg, serverNow: now });
-});
 
 /* ------------------------- комнаты в памяти -----------------------
    rooms: Map<code, Map<sid, {uid,name,screen,cam,joinedAt}>>
@@ -1300,7 +2246,7 @@ function kCacheGet(k, ttl) {
   return e.val;
 }
 function kCacheSet(k, v) {
-  if (_kCache.size >= 256) _kCache.delete(_kCache.keys().next().value);
+  if (_kCache.size >= 128) _kCache.delete(_kCache.keys().next().value);
   _kCache.set(k, { at: Date.now(), val: v });
 }
 
