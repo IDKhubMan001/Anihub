@@ -352,7 +352,7 @@ footer.foot{border-top:1px solid var(--line)}
 <script>/* APP */
 (()=>{
 'use strict';
-const BUILD='2026-10-10 v18-preview · автономные живые обложки без Render (VideoHub + AnimeVost + авто-резерв баннера), внешняя БД Supabase';
+const BUILD='2026-10-10 v18-preview · облачные комментарии напрямую в Supabase без Render, исправлен ложный тост модерации, автономные живые обложки';
 const STUDIO_SNAPSHOT={"date":"10.10.2026","days":[{"name":"Понедельник","entries":[{"time":"16:10","title":"Я влюбился в тебя, когда ты бежала в лунной ночи"},{"time":"16:30","title":"Тайная битва за престол сильнейшего принца-дуралея"},{"time":"18:10","title":"Разгневанная леди поклялась отомстить"},{"time":"18:15","title":"Мир танцует"},{"time":"18:30","title":"Аккуратная и симпатичная девочка в моей новой школе"},{"time":"18:40","title":"Рыцарь-скелет вступает в параллельный мир 2"},{"time":"18:55","title":"Необъятный океан 3"},{"time":"20:20","title":"Игра лжецов"},{"time":"21:15","title":"Отверженная святая и её гастрономическое путешествие в другом мире"}]},{"name":"Вторник","entries":[{"time":"13:10","title":"Призрак в доспехах"},{"time":"17:10","title":"Забывчивая святая дева неосознанно изливает свою силу"},{"time":"22:55","title":"Непревзойдённый"},{"time":"19:15","title":"Истинные чудотворные рыцари 2"},{"time":"22:05","title":"Красная река"},{"time":"23:00","title":"Виктория с множеством козырей"}]},{"name":"Среда","entries":[{"time":"15:45","title":"Клеватесс 2"},{"time":"17:05","title":"Военная хроника маленькой девочки 2"},{"time":"18:00","title":"Мир отомэ-игр — это тяжелый мир для мобов 2"},{"time":"18:10","title":"Героиня? Святая? Нет, я всемогущая горничная!"},{"time":"19:45","title":"Для тебя во всём цвету 2"},{"time":"20:10","title":"Крестьянин 999-го уровня"},{"time":"20:20","title":"Тройной шторм"},{"time":"20:40","title":"Старик из деревни становится Святым мечом"}]},{"name":"Четверг","entries":[{"time":"09:45","title":"Для тебя во всём цвету 2"},{"time":"16:15","title":"Дара из Рэйвы"},{"time":"16:30","title":"Бродячие псы: Шуточные истории 2"},{"time":"18:25","title":"Ура мечте! Бесконечная мечта"},{"time":"18:45","title":"Пыль Мёбиуса"},{"time":"19:45","title":"Табакошка"},{"time":"19:50","title":"Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры"},{"time":"20:00","title":"Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга"},{"time":"21:05","title":"Монстрик Карамелька"}]},{"name":"Пятница","entries":[{"time":"18:20","title":"Прошло десять лет с момента, как я стал легендой"},{"time":"18:30","title":"О моём перерождении в слизь 4"},{"time":"19:00","title":"Население приграничного владения начинается с нуля"},{"time":"19:10","title":"Нарисуй это, потом умри"},{"time":"20:10","title":"Пожалуйста, простите моих младших братьев"},{"time":"20:15","title":"Адский режим 2"},{"time":"20:45","title":"Юный лорд — мастер побега 2"},{"time":"22:10","title":"Слёзы Бога"}]},{"name":"Суббота","entries":[{"time":"13:10","title":"Добро пожаловать в ад, Ирума! 4"},{"time":"14:10","title":"Власть книжного червя 4"},{"time":"16:45","title":"Чёрный факел"},{"time":"17:55","title":"Рекомендация старшеклассника Ивамото"},{"time":"20:15","title":"Шатёр чародея"},{"time":"20:35","title":"Шоу для взрослых: Цирк «Подсолнух»"},{"time":"20:40","title":"Следующий герцог, который скажет: «Я не хочу любить тебя», будет любить тебя по какой-то причине"},{"time":"20:50","title":"Невеста демона"},{"time":"20:55","title":"Лиричная волшебница Наноха: Опередители — Огненный выстрел возмездия"},{"time":"21:00","title":"Кот и дракон"},{"time":"21:10","title":"Ханаори хочет драться даже после перерождения"},{"time":"21:40","title":"Забота об одарённой девушке"},{"time":"22:30","title":"Мао"},{"time":"22:50","title":"Цугаи загробного мира"}]},{"name":"Воскресенье","entries":[{"time":"10:10","title":"Компания «Маги-Люмьер» 2"},{"time":"11:55","title":"Вперёд, отряд мистики!"},{"time":"12:00","title":"Прощай, Лара"},{"time":"12:10","title":"Ты и я полные противоположности"},{"time":"12:20","title":"Железный котелок Жана!"},{"time":"16:25","title":"Самый сильный в мире заступник"},{"time":"17:40","title":"История электричества в двадцатом веке"},{"time":"17:50","title":"Сто девушек 3"},{"time":"18:40","title":"Дигимоны: Битбрейк"},{"time":"18:50","title":"Реинкарнация безработного 3"},{"time":"19:20","title":"Чёрная кошка и класс ведьм"},{"time":"19:40","title":"Хоть я и бездарная злодейка"},{"time":"20:10","title":"Лазурный путь: Малый вперёд! 2"}]}]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2179,9 +2179,34 @@ function pageCatalog(qs){
   const go=patch=>{location.hash=url(patch)};const ib=$('#imgbtn');if(ib)ib.onclick=imageSearchModal;let tm;$('#cq').oninput=e=>{clearTimeout(tm);const v=e.target.value;tm=setTimeout(()=>{location.replace(url({q:v}));setTimeout(()=>{const i=$('#cq');if(i){i.focus();i.setSelectionRange(v.length,v.length)}},0)},250)};$('#cq').onkeydown=e=>{if(e.key==='Enter'){clearTimeout(tm);location.replace(url({q:e.target.value}))}};$('#cs').onchange=e=>go({sort:e.target.value});$('#cst').onchange=e=>go({status:e.target.value});$('#dice').onclick=dice;const m=$('#cmin');if(m)m.onchange=e=>go({min:+e.target.value})
 }
 
-/* ==== v17.5: комментарии к тайтлам — спойлеры ||так||, лайки, ответы ==== */
+/* ==== v17.5 / v17.49: комментарии к тайтлам — спойлеры ||так||, лайки, ответы + прямое облако Supabase без Render ==== */
 const CMT={revealed:new Set()};
-const cmtApi=async(tid,act,p)=>{try{const cb=await roomsBase();const r=await withTimeout(fetch((cb||location.origin)+'/api/comments/'+encodeURIComponent(tid),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({act,uid:ME.id,name:S.name||'Гость',token:(S.auth&&S.auth.token)||''},p||{}))}),12000,'cmt');const j=await r.json().catch(()=>null);if(j&&j.serverNow)srvSyncClock(j.serverNow);if(j&&j.mod)S._mod=j.mod;return r.ok?j:Object.assign({_err:true,status:r.status},j||{})}catch{return null}};
+const SB_CMT_RPC='https://siohvvljzvrrbiuntjua.supabase.co/rest/v1/rpc/anihub_public_comments';
+const SB_CMT_KEY='sb_publishable_U7FdJw1PZkm12JF6gXVnuw_3RXtFLFT';
+const sbCmtCall=async(tid,act,payload)=>{try{
+  const r=await withTimeout(fetch(SB_CMT_RPC,{method:'POST',headers:{'Content-Type':'application/json','apikey':SB_CMT_KEY,'Authorization':'Bearer '+SB_CMT_KEY},body:JSON.stringify({p_tid:String(tid),p_act:act,p_payload:payload||{}})}),10000,'sbcmt');
+  if(!r.ok)return null;const j=await r.json().catch(()=>null);if(!j||typeof j!=='object')return null;
+  if(j.serverNow)srvSyncClock(j.serverNow);
+  if(j.avatars&&typeof j.avatars==='object'){let chg=false;for(const [nk,au] of Object.entries(j.avatars)){if(au&&S.avamap[nk]!==au){S.avamap[nk]=au;chg=true}}if(chg)save('avamap')}
+  return j.ok===false?Object.assign({_err:true,status:j.status||400},j):j}catch{return null}};
+const cmtFetchList=async(tid,cb,since)=>{
+  if(cb){try{const u=cb+'/api/comments/'+encodeURIComponent(tid)+(since==null?'':'?since='+since);
+    const r=await withTimeout(fetch(u),since==null?10000:26000,'cmt');
+    if(r.ok){const j=await r.json().catch(()=>null);if(j&&Array.isArray(j.list))return j}
+    if(r.status&&r.status<500)return null}catch{}}
+  return await sbCmtCall(tid,'list',{})};
+const cmtApi=async(tid,act,p)=>{
+  const bodyObj=Object.assign({act,uid:ME.id,name:S.name||'Гость',token:(S.auth&&S.auth.token)||''},p||{});
+  const cb=await roomsBase();
+  if(cb){try{
+    const r=await withTimeout(fetch(cb+'/api/comments/'+encodeURIComponent(tid),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bodyObj)}),10000,'cmt');
+    const j=await r.json().catch(()=>null);
+    if(j&&j.serverNow)srvSyncClock(j.serverNow);
+    if(j&&j.mod)S._mod=j.mod;
+    if(r.ok&&j)return j;
+    if(r.status>=400&&r.status<500&&j&&j.error)return Object.assign({_err:true,status:r.status},j);
+  }catch{}}
+  return await sbCmtCall(tid,act,bodyObj)};
 const cmtFmt=c=>{let i=0;return linkify(c.text).replace(/\b(\d{1,2}):([0-5]?\d)(?::([0-5]?\d))?/g,(mm,h,m2,s3)=>{const tt=(+h)*60+(+m2)+(s3?+s3.slice(1):0);if(!(tt>0))return mm;return '<a data-tc="'+tt+'" href="#/watch/'+(CMT.ctx?CMT.ctx.tid:'')+'/'+(CMT.ctx?CMT.ctx.ep:1)+'?t='+tt+'" style="color:var(--accent);font-weight:700">'+mm+'</a>'}).replace(/\|\|([^|]{1,300}?)\|\|/g,(m,x)=>{const k=c.id+'|'+(i++);return '<span class="sp'+(CMT.revealed.has(k)?' on':'')+'" data-key="'+esc(k)+'">'+x+'</span>'})};
 function cmtItem(c,kids,depth){
   const mine=c.uid===ME.id,voted=c.likes.includes(ME.id)?1:c.dislikes.includes(ME.id)?-1:0;
@@ -2214,13 +2239,14 @@ async function cmtInit(t,my){
     listEl.querySelectorAll('.sp').forEach(sp=>{if(CMT.revealed.has(sp.dataset.key))sp.classList.add('on')});
     items.forEach(c=>{const k=(c.name||'').toLowerCase();if(k&&!S.avamap[k]&&!c.__aq){c.__aq=1;userAva(c.name).then(()=>repaint())}})};
   const CB=await roomsBase();
-  const pullFast=async()=>{try{const r=await withTimeout(fetch((CB||location.origin)+'/api/comments/'+encodeURIComponent(tid)),12000,'cmt');
-    if(r.ok){const j=await r.json();if(j&&j.serverNow)srvSyncClock(j.serverNow);if(rev===null||j.rev>rev){rev=j.rev;items=j.list;repaint()}}}catch{}};
+  const pullFast=async()=>{try{const j=await cmtFetchList(tid,CB,null);
+    if(j&&Array.isArray(j.list)){if(j.serverNow)srvSyncClock(j.serverNow);if(rev===null||j.rev!==rev){rev=j.rev;items=j.list;repaint()}}}catch{}};
   const send=async(txt,parent,boxEl)=>{txt=(txt||'').trim();if(!txt){toast('Пусто','Напишите что-нибудь');return}
     if(!await ensureName())return;
     const j=await cmtApi(tid,'add',{text:txt,parent:parent||null});
     if(j&&j.id){toast(parent?'Ответ отправлен':'Комментарий добавлен','','ok');if(boxEl){boxEl.value='';const rb=boxEl.closest('[data-repbox]');if(rb)rb.hidden=true}else inp.value='';pullFast();paintModBar()}
-    else if(j&&j._err){if(j.deleted){if(boxEl){boxEl.value='';const rb=boxEl.closest('[data-repbox]');if(rb)rb.hidden=true}else inp.value=''}paintModBar();toast('Сообщение удалено',j.error||'Нарушение правил','err')}
+    else if(j&&j._err&&(j.deleted||j.status===403||j.mod)){if(j.deleted){if(boxEl){boxEl.value='';const rb=boxEl.closest('[data-repbox]');if(rb)rb.hidden=true}else inp.value=''}paintModBar();toast('Сообщение удалено',j.error||'Нарушение правил','err')}
+    else if(j&&j._err&&j.error){toast('Не отправилось',j.error,'err')}
     else toast('Не отправилось','Сервер комментариев недоступен','err')};
   box.addEventListener('click',async e=>{
     const cp=e.target.closest('[data-cprof]');if(cp){profileCard(cp.dataset.cprof);return}
@@ -2230,19 +2256,18 @@ async function cmtInit(t,my){
     if(b.matches('[data-csend]'))return send(inp.value,null,null);
     const item=b.closest('.cmt');if(!item)return;const cid=item.dataset.cid;
     if(b.matches('[data-v]')){const me=items.find(c=>c.id===cid);if(!me)return;const cur=me.likes.includes(ME.id)?1:me.dislikes.includes(ME.id)?-1:0;
-      const j=await cmtApi(tid,'vote',{cid,v:+b.dataset.v===cur?0:+b.dataset.v});if(j)pullFast();else toast('Не получилось','Сервер комментариев недоступен','err');return}
+      const j=await cmtApi(tid,'vote',{cid,v:+b.dataset.v===cur?0:+b.dataset.v});if(j&&!j._err)pullFast();else toast('Не получилось',(j&&j.error)||'Сервер комментариев недоступен','err');return}
     if(b.matches('[data-rep]')){const rb=item.querySelector('[data-repbox]');if(rb){rb.hidden=false;rb.querySelector('textarea').focus()}return}
     if(b.matches('[data-repcancel]')){const rb=b.closest('[data-repbox]');if(rb)rb.hidden=true;return}
     if(b.matches('[data-repsend]')){const rb=b.closest('[data-repbox]');if(rb)return send(rb.querySelector('textarea').value,cid,rb.querySelector('textarea'));return}
     if(b.matches('[data-flag]')){const cc2=items.find(z=>z.id===cid);reportModalG('comment','comment:'+cid,'комментарий',cc2?cc2.body:'');return}
-    if(b.matches('[data-del]')){const j=await cmtApi(tid,'del',{cid});if(j)pullFast();else toast('Не получилось','Можно удалять только свои комментарии','err')}});
+    if(b.matches('[data-del]')){const j=await cmtApi(tid,'del',{cid});if(j&&!j._err)pullFast();else toast('Не получилось',(j&&j.error)||'Можно удалять только свои комментарии','err')}});
   inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send(inp.value,null,null)}});
   (async()=>{while(my===nav){try{
-    const u=(CB||location.origin)+'/api/comments/'+encodeURIComponent(tid)+(rev===null?'':'?since='+rev);
-    const r=await withTimeout(fetch(u),26000,'cmt');
-    if(r.ok){const j=await r.json();if(rev===null||j.rev>rev){rev=j.rev;items=j.list;repaint()}}
+    const j=await cmtFetchList(tid,CB,rev===null?null:rev);
+    if(j&&Array.isArray(j.list)&&(rev===null||j.rev!==rev)){rev=j.rev;items=j.list;repaint()}
   }catch{}
-  await new Promise(x=>setTimeout(x,600))}})();
+  await new Promise(x=>setTimeout(x,CB?600:8000))}})();
 }
 /* ==== v17.6: языки интерфейса, регистрация ника, аватары с сервера ==== */
 const I18N={
@@ -2386,7 +2411,7 @@ async function reportModalG(type,target,label,ev,rroom,ruid,rname){try{const ub=
   setTimeout(pubProf,3000);
   async function profileCard(name,opts){opts=opts||{};const isMgr=opts.mgr===true;
     const d=ask('Профиль · '+name,'<p class="muted tiny">Загрузка…</p>');
-    try{const ub=await roomsBase();const pq=(S.auth&&S.auth.token)?('?token='+encodeURIComponent(S.auth.token)):'';const r2=await withTimeout(fetch(ub+'/api/profile/'+encodeURIComponent(name)+pq),10000,'prof');const j2=await r2.json();if(j2&&j2.serverNow)srvSyncClock(j2.serverNow);
+    try{const ub=await roomsBase();if(!ub)throw new Error('offline');const pq=(S.auth&&S.auth.token)?('?token='+encodeURIComponent(S.auth.token)):'';const r2=await withTimeout(fetch(ub+'/api/profile/'+encodeURIComponent(name)+pq),10000,'prof');const j2=await r2.json();if(j2&&j2.serverNow)srvSyncClock(j2.serverNow);
       const plur2=(n,a,b,c)=>{const m10=n%10,m100=n%100;return n===1?a:(m10>=2&&m10<=4&&(m100<10||m100>=20)?b:c)};
       const sec=(t,inner,id)=>'<div data-psec="'+id+'" style="margin-top:12px"><b class="tiny muted" style="letter-spacing:.14em;text-transform:uppercase">'+t+'</b>'+inner+'</div>';
       const rep=(j2.reports&&j2.reports.list||[]).slice().reverse().map(x2=>'<div style="border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:6px"><b class="tiny" style="color:var(--live)">'+esc(x2.reason)+(x2.justified===true?' · ✓ обоснована':x2.justified===false?' · ✗ не подтверждена':'')+'</b><div class="sm">'+esc(x2.details||'')+'</div><small class="muted tiny">'+esc(x2.by||'?')+' · '+ago(x2.at)+'</small></div>').join('');
@@ -2870,7 +2895,7 @@ ${IN_FRAME&&used==='kodik'&&!kodikDirect?`<p class="warn" style="margin:12px 0 0
         ctl.addSubs(ext,activeSubStream?(S.prefs.subLang||S.prefs.prefSubLang||'ru'):'');
       }).catch(()=>{});
     }}
-    (async()=>{try{const CB=await roomsBase();if(!CB||!t.id)return;const r2=await withTimeout(fetch(CB+'/api/comments/'+t.id),10000,'c');if(!r2.ok)return;const j2=await r2.json();const marks=[];
+    (async()=>{try{if(!t.id)return;const CB=await roomsBase();const j2=await cmtFetchList(t.id,CB,null);if(!j2||!Array.isArray(j2.list))return;const marks=[];
       (j2.list||[]).forEach(c=>{const re=/\b(\d{1,2}):([0-5]?\d)(?::([0-5]?\d))?/g;let m3;while((m3=re.exec(c.text||''))){const tt=(+m3[1])*60+(+m3[2])+(m3[3]?+m3[3].slice(1):0);if(tt>0&&tt<(ep.dur||7200)&&marks.length<60)marks.push({t:tt,who:c.name,txt:(c.text||'').slice(0,140)})}});
       if(!marks.length)return;const bar=$('#pl .bar');if(!bar)return;const mk=document.createElement('span');
       mk.innerHTML=marks.map(M=>'<span class="cmark" data-t="'+M.t+'" data-w="'+esc(M.who)+'" data-x="'+esc(M.txt).replace(/"/g,'&quot;')+'" title="'+esc(M.who)+': '+esc(M.txt)+'" style="position:absolute;left:'+Math.min(99,M.t/(ep.dur||1)*100)+'%;top:-5px;pointer-events:auto;cursor:pointer;font-size:10px;transform:translateX(-50%)">💬</span>').join('');

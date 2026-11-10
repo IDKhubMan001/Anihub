@@ -200,3 +200,223 @@ REVOKE ALL ON FUNCTION public.anihub_srv_query(text, jsonb) FROM anon;
 REVOKE ALL ON FUNCTION public.anihub_srv_query(text, jsonb) FROM authenticated;
 GRANT EXECUTE ON FUNCTION public.anihub_srv_query(text, jsonb) TO service_role;
 
+-- 8. Защищённый публичный RPC для автономной работы комментариев напрямую в Supabase
+-- без участия Render (чтение, отправка с анти-спамом ссылок, ответы, лайки/дизлайки, удаление своих).
+CREATE OR REPLACE FUNCTION public.anihub_public_comments(
+  p_tid text,
+  p_act text DEFAULT 'list',
+  p_payload jsonb DEFAULT '{}'::jsonb
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_tid text;
+  v_now bigint;
+  v_list jsonb;
+  v_avas jsonb;
+  v_rev bigint;
+  v_uid text;
+  v_token text;
+  v_tok_nick text;
+  v_name text;
+  v_text text;
+  v_parent_in text;
+  v_parent_id text;
+  v_parent_name text;
+  v_pen jsonb;
+  v_id text;
+  v_cid text;
+  v_v int;
+  v_can_del boolean;
+BEGIN
+  v_tid := left(regexp_replace(coalesce(p_tid, ''), '[^a-zA-Z0-9_-]', '', 'g'), 40);
+  v_now := (extract(epoch from clock_timestamp()) * 1000)::bigint;
+  IF v_tid = '' THEN
+    RETURN jsonb_build_object('ok', false, 'status', 400, 'error', 'плохой id тайтла', 'serverNow', v_now);
+  END IF;
+
+  IF p_act = 'list' THEN
+    SELECT
+      coalesce(jsonb_agg(
+        jsonb_build_object(
+          'id', c.id,
+          'uid', c.uid,
+          'name', c.author_name,
+          'text', c.body,
+          'at', c.created_at,
+          'parent', c.parent_id,
+          'parentName', c.parent_name,
+          'likes', c.likes,
+          'dislikes', c.dislikes
+        ) ORDER BY c.created_at ASC
+      ), '[]'::jsonb),
+      coalesce(max(c.created_at), 0)
+        + count(*)::bigint * 7
+        + coalesce(sum(jsonb_array_length(c.likes) * 13 + jsonb_array_length(c.dislikes) * 17), 0)::bigint
+    INTO v_list, v_rev
+    FROM (
+      SELECT id, uid, author_name, body, parent_id, parent_name, likes, dislikes, created_at
+      FROM public.comments
+      WHERE title_id = v_tid
+      ORDER BY created_at ASC
+      LIMIT 400
+    ) c;
+
+    SELECT coalesce(jsonb_object_agg(u.nick_lower, u.avatar_url), '{}'::jsonb)
+    INTO v_avas
+    FROM public.users u
+    WHERE u.avatar_url <> ''
+      AND u.nick_lower IN (
+        SELECT DISTINCT lower(author_name) FROM public.comments WHERE title_id = v_tid
+      );
+
+    RETURN jsonb_build_object('ok', true, 'rev', v_rev, 'list', v_list, 'avatars', v_avas, 'serverNow', v_now);
+  END IF;
+
+  v_uid := left(regexp_replace(coalesce(p_payload->>'uid', ''), '[^a-zA-Z0-9_.:-]', '', 'g'), 40);
+  IF v_uid = '' THEN v_uid := '?'; END IF;
+  v_token := left(coalesce(p_payload->>'token', ''), 120);
+  v_tok_nick := NULL;
+  IF v_token <> '' THEN
+    SELECT u.nick INTO v_tok_nick
+    FROM public.users u
+    WHERE u.tokens ? v_token
+    LIMIT 1;
+  END IF;
+
+  IF p_act = 'add' THEN
+    v_text := btrim(left(regexp_replace(coalesce(p_payload->>'text', ''), '[\x00-\x08\x0B\x0C\x0E-\x1F]', '', 'g'), 1200));
+    IF v_text = '' THEN
+      RETURN jsonb_build_object('ok', false, 'status', 400, 'error', 'пустой комментарий', 'serverNow', v_now);
+    END IF;
+
+    v_name := coalesce(v_tok_nick, btrim(left(regexp_replace(coalesce(p_payload->>'name', ''), '[\x00-\x1F<>]', '', 'g'), 24)));
+    IF v_name IS NULL OR v_name = '' THEN v_name := 'Гость'; END IF;
+
+    SELECT p.data INTO v_pen
+    FROM public.penalties p
+    WHERE p.actor_key IN ('acct:' || lower(v_name), 'uid:' || v_uid)
+    ORDER BY coalesce((p.data->>'permBan')::boolean, false) DESC,
+             coalesce((p.data->>'tempBanUntil')::bigint, 0) DESC,
+             coalesce((p.data->>'mutedUntil')::bigint, 0) DESC
+    LIMIT 1;
+
+    IF v_pen IS NOT NULL THEN
+      IF coalesce((v_pen->>'permBan')::boolean, false) THEN
+        RETURN jsonb_build_object('ok', false, 'status', 403, 'code', 'PERM_BAN', 'error', 'Чат и комментарии заблокированы навсегда', 'serverNow', v_now);
+      END IF;
+      IF coalesce((v_pen->>'tempBanUntil')::bigint, 0) > v_now THEN
+        RETURN jsonb_build_object('ok', false, 'status', 403, 'code', 'TEMP_BAN', 'error', 'Чат и комментарии временно заблокированы', 'serverNow', v_now);
+      END IF;
+      IF coalesce((v_pen->>'mutedUntil')::bigint, 0) > v_now THEN
+        RETURN jsonb_build_object('ok', false, 'status', 403, 'code', 'MUTED', 'error', 'Вы в муте ещё ' || ceil((coalesce((v_pen->>'mutedUntil')::bigint, 0) - v_now) / 1000.0)::int || ' сек', 'serverNow', v_now);
+      END IF;
+    END IF;
+
+    IF v_text ~* '(https?://|www\.|t\.me/|discord\.gg/|vk\.cc/|bit\.ly/|[a-z0-9-]+\.(ru|com|net|org|io|me|gg|xyz|top|site|club|online|info|shop|fun|pw|su|tv|cc)(/|$|\s))' THEN
+      RETURN jsonb_build_object('ok', false, 'status', 403, 'deleted', true, 'code', 'LINK_MUTE', 'error', 'Ссылки запрещены: сообщение удалено', 'serverNow', v_now);
+    END IF;
+
+    IF v_uid <> '?' AND EXISTS (
+      SELECT 1 FROM public.comments c2 WHERE c2.uid = v_uid AND c2.created_at > v_now - 1500
+    ) THEN
+      RETURN jsonb_build_object('ok', false, 'status', 429, 'error', 'Подождите пару секунд перед следующим комментарием', 'serverNow', v_now);
+    END IF;
+
+    v_parent_in := left(coalesce(p_payload->>'parent', ''), 60);
+    v_parent_id := NULL;
+    v_parent_name := '';
+    IF v_parent_in <> '' THEN
+      SELECT coalesce(cp.parent_id, cp.id), cp.author_name
+      INTO v_parent_id, v_parent_name
+      FROM public.comments cp
+      WHERE cp.id = v_parent_in AND cp.title_id = v_tid
+      LIMIT 1;
+      IF v_parent_name IS NULL THEN v_parent_name := ''; END IF;
+    END IF;
+
+    v_id := 'c' || to_hex(v_now) || substr(md5(random()::text || clock_timestamp()::text), 1, 6);
+    INSERT INTO public.comments (id, title_id, uid, author_name, body, parent_id, parent_name, likes, dislikes, created_at)
+    VALUES (v_id, v_tid, v_uid, v_name, v_text, v_parent_id, v_parent_name, '[]'::jsonb, '[]'::jsonb, v_now);
+
+    RETURN jsonb_build_object('ok', true, 'id', v_id, 'serverNow', v_now);
+  END IF;
+
+  IF p_act = 'vote' THEN
+    v_cid := left(coalesce(p_payload->>'cid', ''), 60);
+    v_v := coalesce((p_payload->>'v')::int, 0);
+    IF v_cid = '' OR v_uid = '?' THEN
+      RETURN jsonb_build_object('ok', false, 'status', 400, 'error', 'плохой голос', 'serverNow', v_now);
+    END IF;
+
+    UPDATE public.comments c
+    SET
+      likes = CASE
+        WHEN v_v = 1 THEN (
+          SELECT coalesce(jsonb_agg(x), '[]'::jsonb)
+          FROM (
+            SELECT elem AS x FROM jsonb_array_elements(c.likes) elem WHERE elem #>> '{}' <> v_uid
+            UNION ALL
+            SELECT to_jsonb(v_uid)
+          ) s1
+        )
+        ELSE (
+          SELECT coalesce(jsonb_agg(elem), '[]'::jsonb)
+          FROM jsonb_array_elements(c.likes) elem WHERE elem #>> '{}' <> v_uid
+        )
+      END,
+      dislikes = CASE
+        WHEN v_v = -1 THEN (
+          SELECT coalesce(jsonb_agg(x), '[]'::jsonb)
+          FROM (
+            SELECT elem AS x FROM jsonb_array_elements(c.dislikes) elem WHERE elem #>> '{}' <> v_uid
+            UNION ALL
+            SELECT to_jsonb(v_uid)
+          ) s2
+        )
+        ELSE (
+          SELECT coalesce(jsonb_agg(elem), '[]'::jsonb)
+          FROM jsonb_array_elements(c.dislikes) elem WHERE elem #>> '{}' <> v_uid
+        )
+      END
+    WHERE c.id = v_cid AND c.title_id = v_tid;
+
+    RETURN jsonb_build_object('ok', true, 'id', v_cid, 'serverNow', v_now);
+  END IF;
+
+  IF p_act = 'del' THEN
+    v_cid := left(coalesce(p_payload->>'cid', ''), 60);
+    IF v_cid = '' THEN
+      RETURN jsonb_build_object('ok', false, 'status', 400, 'error', 'нет cid', 'serverNow', v_now);
+    END IF;
+
+    SELECT EXISTS (
+      SELECT 1 FROM public.comments cd
+      WHERE cd.id = v_cid AND cd.title_id = v_tid
+        AND (
+          (v_uid <> '?' AND cd.uid = v_uid)
+          OR (v_tok_nick IS NOT NULL AND lower(cd.author_name) = lower(v_tok_nick))
+        )
+    ) INTO v_can_del;
+
+    IF NOT v_can_del THEN
+      RETURN jsonb_build_object('ok', false, 'status', 403, 'error', 'Можно удалять только свои комментарии', 'serverNow', v_now);
+    END IF;
+
+    DELETE FROM public.comments
+    WHERE title_id = v_tid AND (id = v_cid OR parent_id = v_cid);
+
+    RETURN jsonb_build_object('ok', true, 'deleted', v_cid, 'serverNow', v_now);
+  END IF;
+
+  RETURN jsonb_build_object('ok', false, 'status', 400, 'error', 'неизвестное действие', 'serverNow', v_now);
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.anihub_public_comments(text, text, jsonb) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.anihub_public_comments(text, text, jsonb) TO anon, authenticated, service_role;
+NOTIFY pgrst, 'reload schema';
+
