@@ -352,7 +352,7 @@ footer.foot{border-top:1px solid var(--line)}
 <script>/* APP */
 (()=>{
 'use strict';
-const BUILD='2026-10-10 v18-preview · внешняя БД PostgreSQL (Supabase/Neon), облачные аватарки Storage/R2, 0 байт на диске Render, SQL-дедупликация истории';
+const BUILD='2026-10-10 v18-preview · автономные живые обложки без Render (VideoHub + AnimeVost + авто-резерв баннера), внешняя БД Supabase';
 const STUDIO_SNAPSHOT={"date":"10.10.2026","days":[{"name":"Понедельник","entries":[{"time":"16:10","title":"Я влюбился в тебя, когда ты бежала в лунной ночи"},{"time":"16:30","title":"Тайная битва за престол сильнейшего принца-дуралея"},{"time":"18:10","title":"Разгневанная леди поклялась отомстить"},{"time":"18:15","title":"Мир танцует"},{"time":"18:30","title":"Аккуратная и симпатичная девочка в моей новой школе"},{"time":"18:40","title":"Рыцарь-скелет вступает в параллельный мир 2"},{"time":"18:55","title":"Необъятный океан 3"},{"time":"20:20","title":"Игра лжецов"},{"time":"21:15","title":"Отверженная святая и её гастрономическое путешествие в другом мире"}]},{"name":"Вторник","entries":[{"time":"13:10","title":"Призрак в доспехах"},{"time":"17:10","title":"Забывчивая святая дева неосознанно изливает свою силу"},{"time":"22:55","title":"Непревзойдённый"},{"time":"19:15","title":"Истинные чудотворные рыцари 2"},{"time":"22:05","title":"Красная река"},{"time":"23:00","title":"Виктория с множеством козырей"}]},{"name":"Среда","entries":[{"time":"15:45","title":"Клеватесс 2"},{"time":"17:05","title":"Военная хроника маленькой девочки 2"},{"time":"18:00","title":"Мир отомэ-игр — это тяжелый мир для мобов 2"},{"time":"18:10","title":"Героиня? Святая? Нет, я всемогущая горничная!"},{"time":"19:45","title":"Для тебя во всём цвету 2"},{"time":"20:10","title":"Крестьянин 999-го уровня"},{"time":"20:20","title":"Тройной шторм"},{"time":"20:40","title":"Старик из деревни становится Святым мечом"}]},{"name":"Четверг","entries":[{"time":"09:45","title":"Для тебя во всём цвету 2"},{"time":"16:15","title":"Дара из Рэйвы"},{"time":"16:30","title":"Бродячие псы: Шуточные истории 2"},{"time":"18:25","title":"Ура мечте! Бесконечная мечта"},{"time":"18:45","title":"Пыль Мёбиуса"},{"time":"19:45","title":"Табакошка"},{"time":"19:50","title":"Изгнанный реинкарнированный тяжёлый рыцарь не имеет себе равных в знаниях игры"},{"time":"20:00","title":"Необыкновенный неудачник: Дневник переродившегося колдуна S-ранга"},{"time":"21:05","title":"Монстрик Карамелька"}]},{"name":"Пятница","entries":[{"time":"18:20","title":"Прошло десять лет с момента, как я стал легендой"},{"time":"18:30","title":"О моём перерождении в слизь 4"},{"time":"19:00","title":"Население приграничного владения начинается с нуля"},{"time":"19:10","title":"Нарисуй это, потом умри"},{"time":"20:10","title":"Пожалуйста, простите моих младших братьев"},{"time":"20:15","title":"Адский режим 2"},{"time":"20:45","title":"Юный лорд — мастер побега 2"},{"time":"22:10","title":"Слёзы Бога"}]},{"name":"Суббота","entries":[{"time":"13:10","title":"Добро пожаловать в ад, Ирума! 4"},{"time":"14:10","title":"Власть книжного червя 4"},{"time":"16:45","title":"Чёрный факел"},{"time":"17:55","title":"Рекомендация старшеклассника Ивамото"},{"time":"20:15","title":"Шатёр чародея"},{"time":"20:35","title":"Шоу для взрослых: Цирк «Подсолнух»"},{"time":"20:40","title":"Следующий герцог, который скажет: «Я не хочу любить тебя», будет любить тебя по какой-то причине"},{"time":"20:50","title":"Невеста демона"},{"time":"20:55","title":"Лиричная волшебница Наноха: Опередители — Огненный выстрел возмездия"},{"time":"21:00","title":"Кот и дракон"},{"time":"21:10","title":"Ханаори хочет драться даже после перерождения"},{"time":"21:40","title":"Забота об одарённой девушке"},{"time":"22:30","title":"Мао"},{"time":"22:50","title":"Цугаи загробного мира"}]},{"name":"Воскресенье","entries":[{"time":"10:10","title":"Компания «Маги-Люмьер» 2"},{"time":"11:55","title":"Вперёд, отряд мистики!"},{"time":"12:00","title":"Прощай, Лара"},{"time":"12:10","title":"Ты и я полные противоположности"},{"time":"12:20","title":"Железный котелок Жана!"},{"time":"16:25","title":"Самый сильный в мире заступник"},{"time":"17:40","title":"История электричества в двадцатом веке"},{"time":"17:50","title":"Сто девушек 3"},{"time":"18:40","title":"Дигимоны: Битбрейк"},{"time":"18:50","title":"Реинкарнация безработного 3"},{"time":"19:20","title":"Чёрная кошка и класс ведьм"},{"time":"19:40","title":"Хоть я и бездарная злодейка"},{"time":"20:10","title":"Лазурный путь: Малый вперёд! 2"}]}]};
 const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -2129,7 +2129,7 @@ function pageHome(){
   const liveHeroOn=canPlayHeroVideo();
   if(window.__ahHomeT)clearInterval(window.__ahHomeT);
   window.__ahHomeT=setInterval(()=>{if(!(location.hash===''||location.hash==='#/'||location.hash==='#'))return;if(document.hidden)return;ensureCatalog(true).then(()=>{if(location.hash===''||location.hash==='#/'||location.hash==='#')router()}).catch(()=>{})},60000);
-  app.innerHTML=`<section class="hero" data-livehero="${liveHeroOn?'1':'0'}"><div class="bg" style="background-image:url('${esc(hero?.banner||hero?.poster||'')}')"></div>${liveHeroOn&&hero?.video?`<video class="hero-vid" id="heroVid" src="${esc(hero.video)}" poster="${esc(hero?.banner||hero?.poster||'')}" muted autoplay loop playsinline preload="metadata" aria-hidden="true"></video>`:''}<div class="wrap in"><div>
+  app.innerHTML=`<section class="hero" data-livehero="${liveHeroOn?'1':'0'}"><div class="bg" style="background-image:url('${esc(hero?.banner||hero?.poster||'')}')"></div>${liveHeroOn&&hero?.video?`<video class="hero-vid" id="heroVid" src="${esc(hero.video)}" data-heromal="${hero?.mal||hc.mal||0}" data-herotitle="${esc(hero?.title||hc.title||'')}" poster="${esc(hero?.banner||hero?.poster||'')}" muted autoplay loop playsinline preload="metadata" aria-hidden="true"></video>`:''}<div class="wrap in"><div>
   <div class="hero-card"><a href="#/title/${hero?.id||hc.id}" style="flex:none"><img class="hero-poster" referrerpolicy="no-referrer" src="${esc(hero?.poster||hc.poster)}" alt="${esc(hero?.title||hc.title)}"></a><div style="min-width:0"><div class="row" style="gap:8px;flex-wrap:wrap"><span class="pill">${liveHeroOn?'🎬 живая обложка':'🖼 статичная обложка'} · ★ ${(hero?.score||8.5).toFixed(1)}</span>${hero?.year?`<span class="pill">${hero.year} · ${esc(hero.studio||'Anime')}</span>`:''}</div><h1 style="margin-top:14px;font-size:clamp(2rem,4.6vw,3.6rem);line-height:1.02">${esc(hero?.title||hc.title)}</h1><p class="hero-desc">${esc(hero?.desc||hc.desc)}</p><div class="row" style="margin-top:22px;gap:10px;flex-wrap:wrap"><a class="btn pri lg" id="heroWatchBtn" href="#/title/${hero?.id||hc.id}">${SICON('next')} Смотреть</a><a class="btn lg" href="#/catalog" style="background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.25)">Каталог</a><a class="btn lg" href="#/streaming" style="background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.25)">● Комнаты</a><button class="btn sm ghost" type="button" data-heronext title="Другая экшен-сцена" style="color:#fff;border-color:rgba(255,255,255,.2)">${SICON('refresh')} Сцена</button></div></div></div>
   <div class="stats" style="margin-top:26px"><div><b>${ALL.length}</b><small>тайтлов</small></div><div><b>${ongoing}</b><small>онгоингов</small></div><div><b>${ALL.reduce((a,t)=>a+t.aired,0)}</b><small>серий</small></div><div><b>${Object.keys(R.all()).length}</b><small>комнат</small></div></div></div>
   <div class="glass" style="align-self:center"><div class="row between"><b class="tiny" style="letter-spacing:.16em;text-transform:uppercase"><span class="dot"></span> сейчас в эфире</b><a class="tiny" href="#/streaming" style="opacity:.6">все комнаты →</a></div><div class="list" style="margin-top:12px">${rooms.length?rooms.map(([c,r])=>`<a class="item" href="#/room/${c}" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1)"><span class="code" style="font-size:12px;letter-spacing:.1em;width:42px;color:var(--accent)">${c.slice(0,2)}</span><span class="t"><b>${esc(r.title)}</b><small style="color:rgba(255,255,255,.55)">${esc(Object.values(r.members).find(m=>m.role==='streamer')?.name||'')} · ${Object.keys(r.members).length} в комнате</small></span></a>`).join(''):'<p class="sm" style="color:rgba(255,255,255,.6);margin:0">Эфиров пока нет. Создайте комнату — код приглашения появится сразу.</p>'}</div><p class="tiny" style="margin:14px 0 0;color:rgba(255,255,255,.65)">Роли Streamer / Moderator / VIP / Sub видны рядом с ником.</p></div></div></section>
@@ -2143,10 +2143,20 @@ app&&document.addEventListener('click',e=>{if(e.target.closest('[data-recresh]')
 (function(){const bindHeroVid=()=>{const hv=document.getElementById('heroVid');if(!hv||hv._hb)return;hv._hb=1;hv.muted=true;hv.defaultMuted=true;
   const show=()=>hv.classList.add('ready');
   const kill=()=>{try{hv.pause();hv.removeAttribute('src');hv.load()}catch{}hv.remove()};
-  hv.addEventListener('loadeddata',show);hv.addEventListener('playing',show);hv.addEventListener('error',kill);
+  const tryHeroFallback=async()=>{if(hv._hfb||!document.body.contains(hv))return kill();hv._hfb=1;
+    try{const hMal=+(hv.dataset.heromal||0)||0,hTit=hv.dataset.herotitle||'';
+      const fb=(typeof clientFallbackLiveClip==='function')?await clientFallbackLiveClip({shiki:hMal,libria:0,title:hTit,q:'480'}):null;
+      if(!fb||!fb.url||!document.body.contains(hv))return kill();
+      const sAt=+(fb.atSec||180)||180,wDur=+(fb.durSec||12)||12;
+      hv.src=fb.url;hv.dataset.source=String(fb.source||'cvh');
+      hv.addEventListener('loadedmetadata',()=>{if(document.body.contains(hv)&&hv.duration>sAt+3){try{hv.currentTime=sAt}catch{}}},{once:true});
+      hv.addEventListener('timeupdate',()=>{if(document.body.contains(hv)&&hv.currentTime>=sAt+wDur){try{hv.currentTime=sAt}catch{}}});
+      const pr2=hv.play();if(pr2&&pr2.catch)pr2.catch(()=>{});
+    }catch{kill()}};
+  hv.addEventListener('loadeddata',show);hv.addEventListener('playing',show);hv.addEventListener('error',tryHeroFallback);
   try{const pr=hv.play();if(pr&&pr.catch)pr.catch(()=>{})}catch{}
   const isMob=(typeof matchMedia==='function'&&matchMedia('(max-width:760px)').matches)||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
-  if(isMob){setTimeout(()=>{if(document.body.contains(hv)&&hv.readyState<2)kill()},4200)}};
+  setTimeout(()=>{if(document.body.contains(hv)&&hv.readyState<2&&!hv._hfb)tryHeroFallback()},isMob?3800:5200)};
   const mo=new MutationObserver(bindHeroVid);if(app)mo.observe(app,{childList:true});setTimeout(bindHeroVid,50)})();
 
 function pageCatalog(qs){
@@ -2431,8 +2441,10 @@ const own=S.name&&S.name.toLowerCase()===String(name).toLowerCase();
     await d.pr}
 
 /* v17.10: индикатор сервера + регистрация Service Worker (PWA) */
-(function(){const hd=document.querySelector('.top .hrow')||document.body;const sp=document.createElement('span');sp.id='srvdot';sp.title='Сервер комнат';sp.style.cssText='display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);margin-left:10px';sp.innerHTML='<i style="width:8px;height:8px;border-radius:50%;background:#ffc531;display:inline-block"></i>';hd.appendChild(sp);
-  const upd=async()=>{const i2=sp.querySelector('i');if(!i2)return;i2.style.background='#ffc531';let b='';try{b=await roomsBase()}catch{}i2.style.background=b?'#2fd67f':'#ff4d5e';sp.title=b?'Сервер комнат: на связи':'Сервер комнат: не отвечает (просыпается?)'};
+(function(){const hd=document.querySelector('.top .hrow')||document.body;const sp=document.createElement('span');sp.id='srvdot';sp.title='Сервер комнат';sp.style.cssText='display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);margin-left:10px;cursor:pointer';sp.innerHTML='<i style="width:8px;height:8px;border-radius:50%;background:#ffc531;display:inline-block"></i>';hd.appendChild(sp);
+  let lastUp=null;
+  const upd=async()=>{const i2=sp.querySelector('i');if(!i2)return false;i2.style.background='#ffc531';let b='';try{b=await roomsBase()}catch{}lastUp=!!b;i2.style.background=b?'#2fd67f':'#ff4d5e';sp.title=b?'Сервер комнат: на связи':'Сервер комнат: спит или на паузе (каталог, плеер, живые обложки и P2P-комнаты работают напрямую)';return !!b};
+  sp.onclick=async()=>{const okS=await upd();toast(okS?'Сервер комнат на связи':'Сервер комнат сейчас спит или на паузе',okS?'Аккаунты, комментарии и WebRTC-эфиры активны':'Нажмите Resume Service на Render — а каталог, плеер, живые обложки и P2P-комнаты работают напрямую',okS?'ok':'')};
   upd();setInterval(upd,60000)})();
 if('serviceWorker' in navigator&&/^https:/.test(location.protocol)){try{navigator.serviceWorker.register(location.pathname.replace(/[^/]*$/,'')+'sw.js').catch(()=>{})}catch{}}
 async function pageTitle(id){
@@ -3648,11 +3660,80 @@ function extractLiveMeta(cardEl){
   return{id:rawId,shiki,libria,title,q};
 }
 
+const _liveCvhPlMem=new Map();
+let _liveSrvDownUntil=0;
+
 async function clientFallbackLiveClip(meta){
+  /* 1. Прямой видеопоток из настоящей серии через CDNVideoHub (0 зависимости от Render, HTTP 206 MP4) */
+  if(meta.shiki>0){
+    try{
+      let vkItems=_liveCvhPlMem.get(meta.shiki);
+      if(!vkItems||Date.now()-vkItems.at>1800000){
+        const rPl=await withTimeout(fetch(CVH_API()+'/player/sv/playlist?pub=745&aggr=mali&id='+encodeURIComponent(meta.shiki),{headers:{'Accept':'application/json'}}),5500,'cvh_pl');
+        if(rPl.ok&&rPl.status!==204){
+          const jPl=await rPl.json();
+          const arr=(Array.isArray(jPl&&jPl.items)?jPl.items:[]).filter(x=>x&&x.vkId);
+          _liveCvhPlMem.set(meta.shiki,{at:Date.now(),list:arr});
+          vkItems={list:arr};
+        }else if(rPl.status===204){
+          _liveCvhPlMem.set(meta.shiki,{at:Date.now(),list:[]});
+          vkItems={list:[]};
+        }
+      }
+      const list=(vkItems&&vkItems.list)||[];
+      if(list.length){
+        const pick=list[Math.floor(Math.random()*list.length)];
+        const rVd=await withTimeout(fetch(CVH_API()+'/player/sv/video/'+encodeURIComponent(pick.vkId),{headers:{'Accept':'application/json'}}),5500,'cvh_vd');
+        if(rVd.ok){
+          const jVd=await rVd.json();const sc=(jVd&&jVd.sources)||{};
+          const rawMp4=meta.q==='480'?(sc.mpegMediumUrl||sc.mpegLowUrl||sc.mpegHighUrl||sc.mpegLowestUrl):(sc.mpegLowUrl||sc.mpegMediumUrl||sc.mpegLowestUrl||sc.mpegHighUrl);
+          const dur=Math.max(180,+(jVd&&jVd.duration)||1420);
+          const minS=Math.min(150,Math.floor(dur*0.15));
+          const maxS=Math.max(minS+20,Math.floor(dur*0.8));
+          const atSec=minS+Math.floor(Math.random()*Math.max(1,maxS-minS));
+          if(rawMp4&&/^https?:/.test(rawMp4)){
+            return{ok:true,kind:'video',source:'cvh',ep:+(pick.episode||1)||1,url:String(rawMp4).replace(/^http:/,'https:'),atSec,durSec:10};
+          }
+          if(sc.hlsUrl&&/^https?:/.test(sc.hlsUrl)){
+            const hu=String(sc.hlsUrl).replace(/^http:/,'https:');
+            return{ok:true,kind:'hls',source:'cvh',ep:+(pick.episode||1)||1,playlistUrl:hu,url:hu,atSec,durSec:10};
+          }
+        }
+      }
+    }catch{}
+  }
+  /* 2. Прямой видеопоток из настоящей серии через AnimeVost (HTTP 206 MP4 с ACAO: *) */
+  if(meta.title){
+    try{
+      const qTit=String(meta.title).split(/[:—–/]/)[0].trim();
+      if(qTit.length>=3){
+        const rVs=await withTimeout(fetch(VOST_API()+'/search',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'name='+encodeURIComponent(qTit)}),5500,'vost_s');
+        if(rVs.ok){
+          const jVs=await rVs.json();const arr=Array.isArray(jVs&&jVs.data)?jVs.data:[];
+          const norm=s=>String(s||'').toLowerCase().replace(/\[[^\]]*\]/g,'').replace(/[^a-zа-яё0-9]+/gi,' ').trim();
+          const want=norm(qTit);
+          const hit=arr.find(r=>String(r&&r.title||'').split('/').map(norm).some(p=>p&&want&&(p===want||p.includes(want)||want.includes(p))&&Math.min(p.length,want.length)>=4));
+          if(hit&&hit.id){
+            const rVp=await withTimeout(fetch(VOST_API()+'/playlist',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'id='+encodeURIComponent(hit.id)}),5500,'vost_p');
+            if(rVp.ok){
+              const pl=await rVp.json();
+              const eps=(Array.isArray(pl)?pl:[]).filter(e=>e&&(e.std||e.hd));
+              if(eps.length){
+                const epPick=eps[Math.floor(Math.random()*eps.length)];
+                const rawU=meta.q==='480'?(epPick.hd||epPick.std):(epPick.std||epPick.hd);
+                return{ok:true,kind:'video',source:'animevost',url:String(rawU).replace(/^http:/,'https:'),atSec:160+Math.floor(Math.random()*580),durSec:10};
+              }
+            }
+          }
+        }
+      }
+    }catch{}
+  }
+  /* 3. Запасной внешний архив опенингов AnimeThemes */
   if(meta.shiki>0){
     try{
       const u='https://api.animethemes.moe/anime?filter%5Bhas%5D=resources&filter%5Bsite%5D=MyAnimeList&filter%5Bexternal_id%5D='+encodeURIComponent(meta.shiki)+'&include=animethemes.animethemeentries.videos';
-      const r=await withTimeout(fetch(u),7000,'at');
+      const r=await withTimeout(fetch(u),4500,'at');
       if(r.ok){
         const d=await r.json();const vids=[];
         for(const an of (d&&d.anime)||[])for(const th of (an&&an.animethemes)||[])for(const en of (th&&th.animethemeentries)||[])for(const vd of (en&&en.videos)||[])if(vd&&vd.link)vids.push(vd.link);
@@ -3672,16 +3753,25 @@ async function fetchLiveClipMeta(meta){
   if(meta.libria)qs.set('libria',String(meta.libria));
   if(meta.title)qs.set('title',meta.title);
   if(meta.q)qs.set('q',meta.q);
-  try{
-    const lBase=(PB_BASE||(function(){try{return localStorage.getItem('ah:roomSrv')||''}catch{return ''}})()||PB()).replace(/\/+$/,'');const r=await withTimeout(fetch(lBase+'/api/live-clip?'+qs.toString(),{cache:'no-store'}),12000,'clip');
-    if(r.ok){
-      const j=await r.json();
-      if(j&&j.ok&&(j.m3u8||j.url||j.playlistUrl)){
-        _liveClipCache.set(ck,{at:Date.now(),val:j});
-        return j;
+  const customSrv=PB_BASE||(function(){try{return localStorage.getItem('ah:roomSrv')||''}catch{return ''}})();
+  if(customSrv||Date.now()>_liveSrvDownUntil){
+    try{
+      const lBase=(customSrv||PB()).replace(/\/+$/,'');
+      const r=await withTimeout(fetch(lBase+'/api/live-clip?'+qs.toString(),{cache:'no-store'}),4800,'clip');
+      if(r.ok){
+        _liveSrvDownUntil=0;
+        const j=await r.json();
+        if(j&&j.ok&&(j.m3u8||j.url||j.playlistUrl)){
+          _liveClipCache.set(ck,{at:Date.now(),val:j});
+          return j;
+        }
+      }else if(r.status===502||r.status===503||r.status===504){
+        _liveSrvDownUntil=Date.now()+60000;
       }
+    }catch{
+      _liveSrvDownUntil=Date.now()+60000;
     }
-  }catch{}
+  }
   const fb=await clientFallbackLiveClip(meta);
   if(fb){_liveClipCache.set(ck,{at:Date.now(),val:fb});return fb}
   return null;
@@ -3757,19 +3847,25 @@ async function startLiveSlot(cardEl,isAuto){
   if(imgEl&&imgEl.nextSibling)slot.insertBefore(vid,imgEl.nextSibling);
   else slot.appendChild(vid);
 
-  if(clip.kind==='hls'&&clip.m3u8){
+  if(clip.kind==='hls'&&(clip.m3u8||clip.playlistUrl)){
     const HlsCtor=window.Hls;
     if(HlsCtor&&typeof HlsCtor.isSupported==='function'&&HlsCtor.isSupported()){
       try{
-        const blob=new Blob([clip.m3u8],{type:'application/vnd.apple.mpegurl'});
-        st.blobUrl=URL.createObjectURL(blob);
+        let hlsSrc=clip.playlistUrl||clip.url||'';
+        if(clip.m3u8){
+          const blob=new Blob([clip.m3u8],{type:'application/vnd.apple.mpegurl'});
+          st.blobUrl=URL.createObjectURL(blob);
+          hlsSrc=st.blobUrl;
+        }
         const hls=new HlsCtor({maxBufferLength:15,maxMaxBufferLength:20,enableWorker:true,startLevel:0});
         st.hls=hls;
-        hls.loadSource(st.blobUrl);
+        hls.loadSource(hlsSrc);
         hls.attachMedia(vid);
-        hls.on(HlsCtor.Events.MANIFEST_PARSED,()=>{if(!st.dead){const p=vid.play();if(p&&p.catch)p.catch(()=>{})}});
-        vid.addEventListener('timeupdate',()=>{if(!st.dead&&vid.duration>1&&vid.currentTime>=vid.duration-0.12){try{vid.currentTime=0;const p=vid.play();if(p&&p.catch)p.catch(()=>{})}catch{}}});
-        vid.addEventListener('ended',()=>{if(!st.dead){try{vid.currentTime=0;const p=vid.play();if(p&&p.catch)p.catch(()=>{})}catch{}}});
+        const hAt=clip.m3u8?0:(+(clip.atSec||0)||0);
+        const hDur=+(clip.durSec||10)||10;
+        hls.on(HlsCtor.Events.MANIFEST_PARSED,()=>{if(!st.dead){if(hAt>0){try{vid.currentTime=hAt}catch{}}const p=vid.play();if(p&&p.catch)p.catch(()=>{})}});
+        vid.addEventListener('timeupdate',()=>{if(!st.dead&&vid.duration>1){if(hAt>0&&vid.currentTime>=hAt+hDur){try{vid.currentTime=hAt}catch{}}else if(!hAt&&vid.currentTime>=vid.duration-0.12){try{vid.currentTime=0;const p=vid.play();if(p&&p.catch)p.catch(()=>{})}catch{}}}});
+        vid.addEventListener('ended',()=>{if(!st.dead){try{vid.currentTime=hAt||0;const p=vid.play();if(p&&p.catch)p.catch(()=>{})}catch{}}});
       }catch{
         vid.src=clip.playlistUrl||clip.url||'';
         try{const p=vid.play();if(p&&p.catch)p.catch(()=>{})}catch{}
