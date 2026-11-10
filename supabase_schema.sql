@@ -132,3 +132,71 @@ CREATE TABLE IF NOT EXISTS moderation_kv (
   v          JSONB NOT NULL,
   updated_at BIGINT NOT NULL
 );
+
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE history ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE friends ENABLE ROW LEVEL SECURITY;
+ALTER TABLE dms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ovr_timings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE penalties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE moderation_kv ENABLE ROW LEVEL SECURITY;
+
+-- 7. Защищённый серверный RPC для работы server.js через SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
+-- Доступ открыт СТРОГО роли service_role (публичные/анонимные ключи получают 401 permission denied).
+CREATE OR REPLACE FUNCTION public.anihub_srv_query(q text, p jsonb DEFAULT '[]'::jsonb)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  sql_exec text := q;
+  trimmed  text := btrim(q);
+  n        int  := COALESCE(jsonb_array_length(p), 0);
+  i        int;
+  elem     jsonb;
+  t        text;
+  rep      text;
+  res      jsonb;
+BEGIN
+  IF COALESCE(current_setting('request.jwt.claim.role', true), '') <> 'service_role'
+     AND current_user NOT IN ('postgres', 'supabase_admin') THEN
+    RAISE EXCEPTION 'permission denied for anihub_srv_query';
+  END IF;
+
+  FOR i IN REVERSE n..1 LOOP
+    elem := p -> (i - 1);
+    t := jsonb_typeof(elem);
+    IF t IS NULL OR t = 'null' THEN
+      rep := 'NULL';
+    ELSIF t = 'boolean' THEN
+      rep := CASE WHEN (elem)::boolean THEN 'TRUE' ELSE 'FALSE' END;
+    ELSIF t = 'number' THEN
+      rep := elem #>> '{}';
+    ELSIF t = 'string' THEN
+      rep := quote_literal(elem #>> '{}');
+    ELSE
+      rep := quote_literal(elem::text);
+    END IF;
+    sql_exec := regexp_replace(sql_exec, '\$' || i::text || '(?![0-9])', replace(rep, '\', '\\'), 'g');
+  END LOOP;
+
+  sql_exec := regexp_replace(sql_exec, ';\s*$', '');
+
+  IF trimmed ~* '^(select|with)\M' OR trimmed ~* '\mreturning\M' THEN
+    EXECUTE 'WITH _r AS (' || sql_exec || ') SELECT COALESCE(jsonb_agg(row_to_json(_r)), ''[]''::jsonb) FROM _r' INTO res;
+    RETURN COALESCE(res, '[]'::jsonb);
+  ELSE
+    EXECUTE sql_exec;
+    RETURN '[]'::jsonb;
+  END IF;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.anihub_srv_query(text, jsonb) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.anihub_srv_query(text, jsonb) FROM anon;
+REVOKE ALL ON FUNCTION public.anihub_srv_query(text, jsonb) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.anihub_srv_query(text, jsonb) TO service_role;
+

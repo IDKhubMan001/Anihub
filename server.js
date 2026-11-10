@@ -309,7 +309,7 @@ purgeRenderDisk();
 /* --- 2. Облачное хранилище для картинок и аватарок (Supabase Storage / Cloudflare R2) --- */
 function getStorageCfg() {
   const sbUrl = String(process.env.SUPABASE_URL || '').trim().replace(/\/+$/, '');
-  const sbKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || '').trim();
+  const sbKey = String(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_KEY || '').trim();
   const sbBucket = String(process.env.SUPABASE_BUCKET || 'avatars').trim();
   if (sbUrl && sbKey) return { provider: 'supabase', sbUrl, sbKey, bucket: sbBucket };
 
@@ -634,24 +634,60 @@ function buildPgPool(connStr) {
   });
 }
 
+function buildSupabaseRpcPool(sbUrl, sbKey) {
+  const endpoint = sbUrl.replace(/\/+$/, '') + '/rest/v1/rpc/anihub_srv_query';
+  return {
+    isRpc: true,
+    on() {},
+    async end() {},
+    async query(sql, params = []) {
+      const safeParams = Array.isArray(params) ? params.map(v => v === undefined ? null : v) : [];
+      const r = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          apikey: sbKey,
+          Authorization: 'Bearer ' + sbKey,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ q: String(sql), p: safeParams })
+      });
+      const txt = await r.text().catch(() => '');
+      if (!r.ok) throw new Error('Supabase RPC ' + r.status + ': ' + txt.slice(0, 200));
+      const rows = txt ? JSON.parse(txt) : [];
+      return { rows: Array.isArray(rows) ? rows : [] };
+    }
+  };
+}
+
+function hasDbConfig() {
+  if (getDbUrl()) return true;
+  return getStorageCfg().provider === 'supabase';
+}
+
 async function initExternalDb() {
   const url = getDbUrl();
-  if (!url) {
-    dbInitError = 'DATABASE_URL не задан';
+  const st = getStorageCfg();
+  const connKey = url ? ('pg:' + url) : (st.provider === 'supabase' ? ('sbrpc:' + st.sbUrl) : '');
+  if (!connKey) {
+    dbInitError = 'DATABASE_URL / SUPABASE_URL не заданы';
     return false;
   }
-  if (pgPool && dbConnectedUrl === url && dbInitPromise) return dbInitPromise;
-  dbConnectedUrl = url;
+  if (pgPool && dbConnectedUrl === connKey && dbInitPromise) return dbInitPromise;
+  dbConnectedUrl = connKey;
   if (pgPool) { try { await pgPool.end(); } catch {} pgPool = null; }
-  pgPool = buildPgPool(url);
+  pgPool = url ? buildPgPool(url) : buildSupabaseRpcPool(st.sbUrl, st.sbKey);
   pgPool.on('error', err => console.warn('[PG-Pool] idle error:', err && err.message));
   dbInitPromise = (async () => {
     try {
-      await pgPool.query(SCHEMA_SQL);
+      if (url) {
+        await pgPool.query(SCHEMA_SQL);
+      } else {
+        await pgPool.query('SELECT nick_lower FROM users LIMIT 1');
+      }
       dbInitError = '';
       await loadModerationCacheFromDb();
-      if (getStorageCfg().provider === 'supabase') ensureCloudBucket().catch(() => {});
-      console.log('[DB] External PostgreSQL schema ready (users, comments, history + trigger)');
+      if (st.provider === 'supabase') ensureCloudBucket().catch(() => {});
+      console.log('[DB] External PostgreSQL ready via', url ? 'TCP pg.Pool' : 'Supabase HTTPS RPC');
       return true;
     } catch (e) {
       dbInitError = String((e && e.message) || e);
@@ -671,7 +707,7 @@ async function requireDb(res) {
     res.status(503).json({
       ok: false,
       code: 'DB_NOT_CONFIGURED',
-      error: 'Внешняя база данных не подключена. Укажите DATABASE_URL (Supabase / Neon.tech) в переменных окружения сервера.',
+      error: 'Внешняя база данных не подключена. Укажите DATABASE_URL или SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY в переменных окружения сервера.',
       detail: dbInitError || undefined,
       serverNow: Date.now()
     });
@@ -681,12 +717,13 @@ async function requireDb(res) {
 }
 
 app.get('/api/db/status', async (req, res) => {
-  const hasUrl = !!getDbUrl();
-  const ok = hasUrl ? await initExternalDb() : false;
+  const configured = hasDbConfig();
+  const ok = configured ? await initExternalDb() : false;
   const stCfg = getStorageCfg();
   res.json({
     ok,
-    dbConfigured: hasUrl,
+    dbConfigured: configured,
+    dbMode: getDbUrl() ? 'pg_pool' : (stCfg.provider === 'supabase' ? 'supabase_rpc' : 'none'),
     dbReady: ok,
     dbError: ok ? null : (dbInitError || 'DATABASE_URL not set'),
     storageProvider: stCfg.provider,
